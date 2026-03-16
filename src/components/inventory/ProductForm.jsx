@@ -25,9 +25,8 @@ const CATEGORY_PREFIXES = {
 
 const generateSKU = (category) => {
   const prefix = CATEGORY_PREFIXES[category] || "OTH";
-  const timestamp = Date.now().toString(36).toUpperCase().slice(-4);
-  const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
-  return `${prefix}-${timestamp}${rand}`;
+  const num = Math.floor(Math.random() * 99999999).toString().padStart(8, "0");
+  return `${prefix}-${num}`;
 };
 const conditions = [
   { value: "new", label: "New" },
