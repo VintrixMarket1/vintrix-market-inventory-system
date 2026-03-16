@@ -72,6 +72,9 @@ export default function Inventory() {
           <p className="text-sm text-slate-500 mt-1">{filtered.length} products</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowCsvImport(true)} className="gap-1.5">
+            <Plus className="w-4 h-4" /> Import CSV
+          </Button>
           <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
             <Download className="w-4 h-4" /> Export
           </Button>
