@@ -63,14 +63,15 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const generateCode = () => {
-    const prefix = (form.category || "item").substring(0, 3).toUpperCase();
-    const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
-    return `${prefix}-${rand}`;
-  };
-
   const handleChange = (field, value) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm(prev => {
+      const updated = { ...prev, [field]: value };
+      // Auto-regenerate SKU when category changes (only for new products)
+      if (field === "category" && !isEdit) {
+        updated.internal_code = generateSKU(value);
+      }
+      return updated;
+    });
   };
 
   const handleImageUpload = async (e) => {
