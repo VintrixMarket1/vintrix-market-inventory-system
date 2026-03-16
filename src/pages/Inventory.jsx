@@ -16,6 +16,7 @@ export default function Inventory() {
   const [editProduct, setEditProduct] = useState(null);
   const [listingProduct, setListingProduct] = useState(null);
   const [saleProduct, setSaleProduct] = useState(null);
+  const [showCsvImport, setShowCsvImport] = useState(false);
   const [filters, setFilters] = useState({ search: "", category: "all", status: "all" });
 
   const { data: products = [], isLoading } = useQuery({
