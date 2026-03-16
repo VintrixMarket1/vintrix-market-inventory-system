@@ -21,6 +21,7 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
     listing_id: listing?.id || "",
     platform: listing?.platform || "vinted",
     sale_price: listing?.listing_price || product?.suggested_sale_price || "",
+    final_sale_price: "",
     sale_date: format(new Date(), "yyyy-MM-dd"),
     purchase_price: product?.purchase_price || 0,
     product_name: product?.product_name || "",
