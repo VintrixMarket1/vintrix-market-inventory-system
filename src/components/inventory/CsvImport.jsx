@@ -71,23 +71,34 @@ export default function CsvImport({ open, onClose, pallets = [], selectedPalletI
   const handleImport = async () => {
     if (!preview?.rows?.length) return;
     setImporting(true);
-    const products = preview.rows.map(row => ({
-      product_name: row.product_name,
-      category: row.category,
-      condition: row.condition,
-      purchase_price: parseFloat(row.purchase_price) || 0,
-      suggested_sale_price: parseFloat(row.suggested_sale_price) || 0,
-      size: row.size || undefined,
-      warehouse_zone: row.warehouse_zone || undefined,
-      shelf: row.shelf || undefined,
-      box_number: row.box_number || undefined,
-      notes: row.notes || undefined,
-      internal_code: generateCode(row.category),
-      status: "in_stock",
-      quantity: 1,
-      images: [],
-      pallet_id: palletId || undefined,
-    }));
+    // Build pallet_code -> id map
+    const palletByCode = Object.fromEntries(pallets.map(p => [p.pallet_code?.trim().toLowerCase(), p.id]));
+
+    const products = preview.rows.map(row => {
+      // Pallet from CSV column takes priority, fallback to selected dropdown
+      let resolvedPalletId = palletId || undefined;
+      if (row.pallet_code) {
+        const found = palletByCode[row.pallet_code.trim().toLowerCase()];
+        if (found) resolvedPalletId = found;
+      }
+      return {
+        product_name: row.product_name,
+        category: row.category,
+        condition: row.condition,
+        purchase_price: parseFloat(row.purchase_price) || 0,
+        suggested_sale_price: parseFloat(row.suggested_sale_price) || 0,
+        size: row.size || undefined,
+        warehouse_zone: row.warehouse_zone || undefined,
+        shelf: row.shelf || undefined,
+        box_number: row.box_number || undefined,
+        notes: row.notes || undefined,
+        internal_code: generateCode(row.category),
+        status: "in_stock",
+        quantity: 1,
+        images: [],
+        pallet_id: resolvedPalletId,
+      };
+    });
     await base44.entities.Product.bulkCreate(products);
     setImporting(false);
     setResult({ count: products.length });
