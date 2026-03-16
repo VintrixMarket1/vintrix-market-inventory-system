@@ -8,6 +8,7 @@ import ProductForm from "../components/inventory/ProductForm";
 import SearchFilters from "../components/inventory/SearchFilters";
 import ListingForm from "../components/listings/ListingForm";
 import SaleForm from "../components/sales/SaleForm";
+import CsvImport from "../components/inventory/CsvImport";
 
 export default function Inventory() {
   const queryClient = useQueryClient();
