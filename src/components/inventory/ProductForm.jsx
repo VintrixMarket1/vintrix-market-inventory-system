@@ -10,6 +10,25 @@ import { Upload, X, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 const categories = ["clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
+
+const CATEGORY_PREFIXES = {
+  clothing: "CLO",
+  shoes: "SHO",
+  accessories: "ACC",
+  electronics: "ELC",
+  home: "HOM",
+  toys: "TOY",
+  sports: "SPT",
+  books: "BOK",
+  other: "OTH",
+};
+
+const generateSKU = (category) => {
+  const prefix = CATEGORY_PREFIXES[category] || "OTH";
+  const timestamp = Date.now().toString(36).toUpperCase().slice(-4);
+  const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
+  return `${prefix}-${timestamp}${rand}`;
+};
 const conditions = [
   { value: "new", label: "New" },
   { value: "like_new", label: "Like New" },
