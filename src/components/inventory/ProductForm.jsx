@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { base44 } from "@/api/base44Client";
 import { Upload, X, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 const categories = ["clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
 const conditions = [

@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Package, Tag, DollarSign, Zap, 
-  Menu, X, ChevronRight 
+  Menu, X, ChevronRight, Layers
 } from "lucide-react";
 
 const navItems = [
   { path: "/Dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/Inventory", label: "Inventory", icon: Package },
+  { path: "/Pallets", label: "Pallets", icon: Layers },
   { path: "/Listings", label: "Listings", icon: Tag },
   { path: "/Sales", label: "Sales", icon: DollarSign },
   { path: "/QuickAdd", label: "Quick Add", icon: Zap },
