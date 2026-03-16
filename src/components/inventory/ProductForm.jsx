@@ -101,7 +101,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
       purchase_price: parseFloat(form.purchase_price) || 0,
       suggested_sale_price: parseFloat(form.suggested_sale_price) || 0,
       quantity: parseInt(form.quantity) || 1,
-      internal_code: form.internal_code || generateCode(),
+      internal_code: form.internal_code || generateSKU(form.category),
     };
     if (isEdit) {
       await base44.entities.Product.update(product.id, data);
