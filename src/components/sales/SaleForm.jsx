@@ -32,9 +32,10 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
 
   const handleSubmit = async () => {
     setSaving(true);
+    const finalPrice = parseFloat(form.final_sale_price) || parseFloat(form.sale_price) || 0;
     const data = {
       ...form,
-      sale_price: parseFloat(form.sale_price) || 0,
+      sale_price: finalPrice,
       purchase_price: parseFloat(form.purchase_price) || 0,
     };
     await base44.entities.Sale.create(data);
