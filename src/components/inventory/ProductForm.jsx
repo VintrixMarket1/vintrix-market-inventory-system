@@ -126,8 +126,13 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
               <Input value={form.product_name} onChange={e => handleChange("product_name", e.target.value)} placeholder="e.g. Nike Air Max 90" />
             </div>
             <div className="space-y-1.5">
-              <Label>Internal Code</Label>
-              <Input value={form.internal_code} onChange={e => handleChange("internal_code", e.target.value)} placeholder="Auto-generated if empty" />
+              <Label>SKU / Internal Code</Label>
+              <div className="flex gap-1.5">
+                <Input value={form.internal_code} onChange={e => handleChange("internal_code", e.target.value)} placeholder="Auto-generated" className="font-mono text-sm" />
+                <Button type="button" variant="outline" size="icon" title="Regenerate SKU" onClick={() => handleChange("internal_code", generateSKU(form.category))}>
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </Button>
+              </div>
             </div>
           </div>
 
