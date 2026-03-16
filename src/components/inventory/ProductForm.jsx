@@ -171,6 +171,25 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
             <Input value={form.barcode} onChange={e => handleChange("barcode", e.target.value)} placeholder="Scan or enter barcode" />
           </div>
 
+          {pallets.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Pallet <span className="text-slate-400 font-normal">(internal only)</span></Label>
+              <Select value={form.pallet_id || ""} onValueChange={v => handleChange("pallet_id", v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select pallet..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>No pallet</SelectItem>
+                  {pallets.map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.pallet_code} — {p.investor_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label>Notes</Label>
             <Textarea value={form.notes} onChange={e => handleChange("notes", e.target.value)} placeholder="Any additional notes..." rows={2} />
