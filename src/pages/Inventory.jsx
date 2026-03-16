@@ -154,6 +154,14 @@ export default function Inventory() {
           onSaved={refresh}
         />
       )}
+      {showCsvImport && (
+        <CsvImport
+          open={showCsvImport}
+          onClose={() => setShowCsvImport(false)}
+          pallets={pallets}
+          onImported={refresh}
+        />
+      )}
     </div>
   );
 }
