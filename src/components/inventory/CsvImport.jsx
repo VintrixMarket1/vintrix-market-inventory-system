@@ -39,7 +39,7 @@ function generateCode(category) {
   return `${prefix}-${num}`;
 }
 
-export default function CsvImport({ open, onClose, pallets, selectedPalletId, onImported }) {
+export default function CsvImport({ open, onClose, pallets = [], selectedPalletId, onImported }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [importing, setImporting] = useState(false);
