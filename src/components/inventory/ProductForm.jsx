@@ -57,7 +57,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
     shelf: "",
     box_number: "",
     size: "",
-    internal_code: "",
+    internal_code: generateSKU("clothing"),
     pallet_id: "",
   });
   const [saving, setSaving] = useState(false);
