@@ -12,6 +12,7 @@ import Inventory from './pages/Inventory';
 import Listings from './pages/Listings';
 import Sales from './pages/Sales';
 import QuickAdd from './pages/QuickAdd';
+import Pallets from './pages/Pallets';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
