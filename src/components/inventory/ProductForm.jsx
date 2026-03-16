@@ -39,6 +39,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
     box_number: "",
     size: "",
     internal_code: "",
+    pallet_id: "",
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
