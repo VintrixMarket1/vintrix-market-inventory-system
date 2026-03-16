@@ -18,6 +18,12 @@ const conditions = [
 
 export default function ProductForm({ open, onClose, product, onSaved }) {
   const isEdit = !!product;
+
+  const { data: pallets = [] } = useQuery({
+    queryKey: ["pallets"],
+    queryFn: () => base44.entities.Pallet.list("-created_date"),
+  });
+
   const [form, setForm] = useState(product || {
     product_name: "",
     category: "clothing",
