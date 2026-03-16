@@ -106,6 +106,13 @@ export default function Inventory() {
                 onEdit={(p) => { setEditProduct(p); setShowForm(true); }}
                 onDelete={handleDelete}
               />
+              {product.pallet_id && palletsMap[product.pallet_id] && (
+                <div className="mt-1 px-1">
+                  <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded font-medium">
+                    📦 {palletsMap[product.pallet_id].pallet_code}
+                  </span>
+                </div>
+              )}
               <div className="flex gap-1 mt-1.5">
                 {(product.status || "in_stock") !== "sold" && (
                   <>
