@@ -4,9 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Upload, Download, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
-const CSV_TEMPLATE = `product_name,category,condition,purchase_price,suggested_sale_price,size,warehouse_zone,shelf,box_number,notes
-Nike Air Max 90,shoes,like_new,45,120,42,A,1,3,
-Zara Hoodie Black,clothing,new,25,65,L,A,2,1,Good condition`;
+const CSV_TEMPLATE = `product_name,category,condition,purchase_price,suggested_sale_price,size,warehouse_zone,shelf,box_number,pallet_code,notes
+Nike Air Max 90,shoes,like_new,45,120,42,A,1,3,,
+Zara Hoodie Black,clothing,new,25,65,L,A,2,1,PAL-001,Good condition`;
 
 const CATEGORIES = ["clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
 const CONDITIONS = ["new", "like_new", "used"];
