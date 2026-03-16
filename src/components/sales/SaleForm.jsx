@@ -72,9 +72,19 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Sale Price (PLN)</Label>
-              <Input type="number" value={form.sale_price} onChange={e => handleChange("sale_price", e.target.value)} />
+              <Label>Listed Price (PLN)</Label>
+              <Input type="number" value={form.sale_price} onChange={e => handleChange("sale_price", e.target.value)} placeholder="Cena wystawienia" />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Final Sale Price (PLN) <span className="text-slate-400 font-normal text-xs">— kwota faktycznej sprzedaży</span></Label>
+            <Input
+              type="number"
+              value={form.final_sale_price}
+              onChange={e => handleChange("final_sale_price", e.target.value)}
+              placeholder={form.sale_price ? `Domyślnie: ${form.sale_price} PLN` : "Wpisz kwotę sprzedaży"}
+              className="border-emerald-300 focus-visible:ring-emerald-400"
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Sale Date</Label>
