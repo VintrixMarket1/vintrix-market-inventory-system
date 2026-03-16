@@ -23,6 +23,11 @@ export default function Inventory() {
     queryKey: ["products"],
     queryFn: () => base44.entities.Product.list("-created_date"),
   });
+  const { data: pallets = [] } = useQuery({
+    queryKey: ["pallets"],
+    queryFn: () => base44.entities.Pallet.list(),
+  });
+  const palletsMap = Object.fromEntries(pallets.map(p => [p.id, p]));
 
   const filtered = products.filter(p => {
     const searchMatch = !filters.search || p.product_name?.toLowerCase().includes(filters.search.toLowerCase()) || p.internal_code?.toLowerCase().includes(filters.search.toLowerCase());
