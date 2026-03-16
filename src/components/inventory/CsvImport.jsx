@@ -28,10 +28,15 @@ function parseCSV(text) {
   return { rows, errors };
 }
 
+const CATEGORY_PREFIXES = {
+  clothing: "CLO", shoes: "SHO", accessories: "ACC", electronics: "ELC",
+  home: "HOM", toys: "TOY", sports: "SPT", books: "BOK", other: "OTH",
+};
+
 function generateCode(category) {
-  const prefix = category.substring(0, 3).toUpperCase();
-  const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
-  return `${prefix}-${rand}`;
+  const prefix = CATEGORY_PREFIXES[category] || "OTH";
+  const num = Math.floor(Math.random() * 99999999).toString().padStart(8, "0");
+  return `${prefix}-${num}`;
 }
 
 export default function CsvImport({ open, onClose, pallets, selectedPalletId, onImported }) {
