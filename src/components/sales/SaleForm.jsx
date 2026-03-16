@@ -90,11 +90,11 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
             <Label>Sale Date</Label>
             <Input type="date" value={form.sale_date} onChange={e => handleChange("sale_date", e.target.value)} />
           </div>
-          {form.sale_price && product?.purchase_price ? (
+          {(form.final_sale_price || form.sale_price) && product?.purchase_price ? (
             <div className="bg-emerald-50 rounded-lg p-3 text-center">
-              <p className="text-xs text-emerald-600">Profit</p>
+              <p className="text-xs text-emerald-600">Profit (na podstawie ceny finalnej)</p>
               <p className="text-lg font-bold text-emerald-700">
-                {(parseFloat(form.sale_price) - parseFloat(product.purchase_price)).toFixed(2)} PLN
+                {((parseFloat(form.final_sale_price) || parseFloat(form.sale_price)) - parseFloat(product.purchase_price)).toFixed(2)} PLN
               </p>
             </div>
           ) : null}
