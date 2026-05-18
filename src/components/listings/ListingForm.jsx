@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, CheckSquare, Square } from "lucide-react";
 
 const platforms = [
   { value: "vinted", label: "Vinted" },
@@ -27,6 +27,15 @@ export default function ListingForm({ open, onClose, product, listing, onSaved }
   });
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [selectedImages, setSelectedImages] = useState(listing?.selected_images || []);
+
+  const productImages = product?.images || [];
+
+  const toggleImage = (url) => {
+    setSelectedImages(prev =>
+      prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url]
+    );
+  };
 
   const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
@@ -62,7 +71,7 @@ Keep it concise, friendly, and optimized for quick sales. Write in English.`;
 
   const handleSubmit = async () => {
     setSaving(true);
-    const data = { ...form, listing_price: parseFloat(form.listing_price) || 0 };
+    const data = { ...form, listing_price: parseFloat(form.listing_price) || 0, selected_images: selectedImages };
     if (isEdit) {
       await base44.entities.Listing.update(listing.id, data);
     } else {
@@ -119,6 +128,32 @@ Keep it concise, friendly, and optimized for quick sales. Write in English.`;
             </div>
             <Textarea value={form.listing_description} onChange={e => handleChange("listing_description", e.target.value)} rows={6} placeholder="Write or generate a description..." />
           </div>
+          {productImages.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label>Zdjęcia do listingu</Label>
+                <span className="text-xs text-muted-foreground">{selectedImages.length} / {productImages.length} zaznaczonych</span>
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {productImages.map((url, i) => {
+                  const selected = selectedImages.includes(url);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => toggleImage(url)}
+                      className={`relative rounded-lg overflow-hidden border-2 transition-all aspect-square ${selected ? "border-emerald-500 ring-2 ring-emerald-200" : "border-slate-200 hover:border-slate-400"}`}
+                    >
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <div className={`absolute top-1 right-1 ${selected ? "text-emerald-500" : "text-slate-300"}`}>
+                        {selected ? <CheckSquare className="w-4 h-4 drop-shadow" /> : <Square className="w-4 h-4 drop-shadow" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>Status</Label>
             <Select value={form.listing_status} onValueChange={v => handleChange("listing_status", v)}>

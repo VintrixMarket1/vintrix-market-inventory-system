@@ -1,0 +1,55 @@
+{
+  "name": "Listing",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "Reference to product"
+    },
+    "listing_title": {
+      "type": "string",
+      "description": "Listing title"
+    },
+    "listing_description": {
+      "type": "string",
+      "description": "Listing description text"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "vinted",
+        "olx",
+        "allegro",
+        "ebay"
+      ],
+      "description": "Marketplace platform"
+    },
+    "listing_price": {
+      "type": "number",
+      "description": "Listing price"
+    },
+    "listing_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "listed",
+        "sold"
+      ],
+      "default": "draft",
+      "description": "Listing status"
+    },
+    "selected_images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs of product images selected for this listing"
+    }
+  },
+  "required": [
+    "product_id",
+    "listing_title",
+    "platform",
+    "listing_price"
+  ]
+}
