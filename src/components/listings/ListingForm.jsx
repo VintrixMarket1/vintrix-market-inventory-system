@@ -7,8 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { base44 } from "@/api/base44Client";
 import { Loader2, Sparkles, CheckSquare, Square } from "lucide-react";
+import ShopifyActions from "./ShopifyActions";
 
 const platforms = [
+  { value: "shopify", label: "Shopify" },
   { value: "vinted", label: "Vinted" },
   { value: "olx", label: "OLX" },
   { value: "allegro", label: "Allegro" },
@@ -165,6 +167,9 @@ Keep it concise, friendly, and optimized for quick sales. Write in English.`;
               </SelectContent>
             </Select>
           </div>
+          {isEdit && (
+            <ShopifyActions listing={listing} product={product} onRefresh={onSaved} />
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={handleSubmit} disabled={saving || !form.listing_title} className="bg-emerald-600 hover:bg-emerald-700">
