@@ -1,0 +1,138 @@
+import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, BookOpen } from "lucide-react";
+
+const categories = ["all", "clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
+const genders = ["all", "men", "women", "unisex", "kids", "none"];
+
+const categoryColors = {
+  clothing: "bg-blue-100 text-blue-700",
+  shoes: "bg-purple-100 text-purple-700",
+  accessories: "bg-pink-100 text-pink-700",
+  electronics: "bg-yellow-100 text-yellow-700",
+  home: "bg-orange-100 text-orange-700",
+  toys: "bg-red-100 text-red-700",
+  sports: "bg-green-100 text-green-700",
+  books: "bg-teal-100 text-teal-700",
+  other: "bg-slate-100 text-slate-600",
+};
+
+export default function ProductModels() {
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
+  const [gender, setGender] = useState("all");
+
+  const { data: models = [], isLoading } = useQuery({
+    queryKey: ["productModels"],
+    queryFn: () => base44.entities.ProductModel.list("-created_date"),
+  });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ["products"],
+    queryFn: () => base44.entities.Product.list(),
+  });
+
+  // Count products per model
+  const countByModel = products.reduce((acc, p) => {
+    if (p.product_model_id) acc[p.product_model_id] = (acc[p.product_model_id] || 0) + 1;
+    return acc;
+  }, {});
+
+  const filtered = models.filter(m => {
+    const searchMatch = !search || m.name?.toLowerCase().includes(search.toLowerCase()) || m.brand?.toLowerCase().includes(search.toLowerCase());
+    const categoryMatch = category === "all" || m.category === category;
+    const genderMatch = gender === "all" || m.gender === gender;
+    return searchMatch && categoryMatch && genderMatch;
+  });
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Product Catalog</h1>
+        <p className="text-sm text-slate-500 mt-1">{filtered.length} model types</p>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            placeholder="Search by name or brand..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={category} onValueChange={setCategory}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map(c => (
+              <SelectItem key={c} value={c}>{c === "all" ? "All categories" : c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={gender} onValueChange={setGender}>
+          <SelectTrigger className="w-36">
+            <SelectValue placeholder="Gender" />
+          </SelectTrigger>
+          <SelectContent>
+            {genders.map(g => (
+              <SelectItem key={g} value={g}>{g === "all" ? "All genders" : g}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-20">
+          <div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-20">
+          <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-400">No product models found</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {filtered.map(model => (
+            <div key={model.id} className="bg-white rounded-xl border border-slate-200/60 overflow-hidden hover:shadow-md transition-shadow">
+              {/* Image */}
+              <div className="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
+                {model.reference_images?.[0] ? (
+                  <img src={model.reference_images[0]} alt={model.name} className="w-full h-full object-cover" />
+                ) : (
+                  <BookOpen className="w-10 h-10 text-slate-300" />
+                )}
+              </div>
+              {/* Info */}
+              <div className="p-3 space-y-1.5">
+                <p className="font-semibold text-slate-900 text-sm truncate">{model.name}</p>
+                {model.brand && <p className="text-xs text-slate-500 truncate">{model.brand}</p>}
+                <div className="flex items-center justify-between gap-1 flex-wrap">
+                  <Badge className={`text-[10px] px-1.5 ${categoryColors[model.category] || "bg-slate-100 text-slate-600"}`}>
+                    {model.category}
+                  </Badge>
+                  {model.gender && model.gender !== "none" && (
+                    <span className="text-[10px] text-slate-400 font-medium">{model.gender}</span>
+                  )}
+                </div>
+                <p className="text-xs text-emerald-600 font-medium">
+                  {countByModel[model.id] || 0} items in stock
+                </p>
+                {model.notes && (
+                  <p className="text-[10px] text-slate-400 truncate">{model.notes}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

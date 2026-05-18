@@ -14,6 +14,7 @@ import Sales from './pages/Sales';
 import QuickAdd from './pages/QuickAdd';
 import Pallets from './pages/Pallets';
 import AddProduct from './pages/AddProduct';
+import ProductModels from './pages/ProductModels';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -46,6 +47,7 @@ const AuthenticatedApp = () => {
         <Route path="/Sales" element={<Sales />} />
         <Route path="/QuickAdd" element={<QuickAdd />} />
         <Route path="/AddProduct" element={<AddProduct />} />
+        <Route path="/ProductModels" element={<ProductModels />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
