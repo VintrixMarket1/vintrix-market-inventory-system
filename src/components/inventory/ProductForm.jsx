@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { base44 } from "@/api/base44Client";
-import { Upload, X, Loader2, RefreshCw } from "lucide-react";
+import { Upload, X, Loader2, RefreshCw, Package } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { SUBCATEGORIES } from "@/lib/subcategories";
 
@@ -60,6 +60,8 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
     size: "",
     internal_code: generateSKU("clothing"),
     pallet_id: "",
+    is_multi_item: false,
+    stock_quantity: "",
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -103,6 +105,8 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
       suggested_sale_price: parseFloat(form.suggested_sale_price) || 0,
       quantity: parseInt(form.quantity) || 1,
       internal_code: form.internal_code || generateSKU(form.category),
+      is_multi_item: !!form.is_multi_item,
+      stock_quantity: form.is_multi_item ? (parseInt(form.stock_quantity) || null) : null,
     };
     if (isEdit) {
       await base44.entities.Product.update(product.id, data);
@@ -172,11 +176,35 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
               <Input value={form.size} onChange={e => handleChange("size", e.target.value)} placeholder="e.g. M, 42" />
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-1.5">
-              <Label>Quantity</Label>
-              <Input type="number" value={form.quantity} onChange={e => handleChange("quantity", e.target.value)} min={1} />
-            </div>
+          {/* Wielosztuk */}
+          <div className="rounded-lg border border-slate-200 p-3 space-y-3 bg-slate-50">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={!!form.is_multi_item}
+                onChange={e => {
+                  handleChange("is_multi_item", e.target.checked);
+                  if (!e.target.checked) handleChange("stock_quantity", "");
+                }}
+                className="w-4 h-4 rounded accent-emerald-600"
+              />
+              <Package className="w-4 h-4 text-slate-500" />
+              <span className="text-sm font-medium text-slate-700">Wielosztuk</span>
+              <span className="text-xs text-slate-400">(wiele sztuk tego samego egzemplarza)</span>
+            </label>
+            {form.is_multi_item && (
+              <div className="space-y-1.5 pl-6">
+                <Label>Stan magazynowy (liczba sztuk)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={form.stock_quantity}
+                  onChange={e => handleChange("stock_quantity", e.target.value)}
+                  placeholder="np. 50"
+                  className="max-w-[160px]"
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

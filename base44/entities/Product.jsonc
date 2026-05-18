@@ -144,6 +144,15 @@
     "ebay_listing_id": {
       "type": "string",
       "description": "ID aukcji na eBay"
+    },
+    "is_multi_item": {
+      "type": "boolean",
+      "default": false,
+      "description": "Czy produkt jest wielosztuk\u0105 (wiele sztuk tego samego egzemplarza)"
+    },
+    "stock_quantity": {
+      "type": "number",
+      "description": "Stan magazynowy (liczba sztuk) \u2014 tylko dla wielosztuk\u00f3w"
     }
   },
   "required": [
