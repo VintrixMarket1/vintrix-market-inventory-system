@@ -1,110 +1,70 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { CheckCircle2, XCircle, AlertTriangle, Loader2, RefreshCw, Plug, Info, ShoppingBag } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, RefreshCw, Plug, ShoppingBag, ExternalLink, Info } from "lucide-react";
 
 export default function ShopifySettings() {
-  const [domain, setDomain] = useState("");
-  const [clientId, setClientId] = useState("");
-  const [clientSecret, setClientSecret] = useState("");
-  const [apiVersion, setApiVersion] = useState("2026-04");
-  const [legacyToken, setLegacyToken] = useState("");
-
-  const [status, setStatus] = useState(null); // null | 'connected' | 'error' | 'loading'
+  const [status, setStatus] = useState(null);
   const [shopInfo, setShopInfo] = useState(null);
   const [lastError, setLastError] = useState(null);
-  const [lastTested, setLastTested] = useState(null);
-  const [lastTokenRefresh, setLastTokenRefresh] = useState(null);
-
-  const [saving, setSaving] = useState(false);
-  const [generatingToken, setGeneratingToken] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState(true);
 
-  const [diagnostic, setDiagnostic] = useState(null);
-  const [loadingDiag, setLoadingDiag] = useState(false);
+  useEffect(() => {
+    handleTest(true);
+  }, []);
 
-  const handleSave = async () => {
-    setSaving(true);
+  const handleTest = async (silent = false) => {
+    if (!silent) setTesting(true);
     setLastError(null);
-    const res = await base44.functions.invoke("connectShopify", {
-      shop_domain: domain,
-      client_id: clientId,
-      client_secret: clientSecret,
-      api_version: apiVersion,
-      legacy_token: legacyToken || undefined,
-    });
-    setSaving(false);
-    if (res.data?.success) {
-      setStatus("saved");
-    } else {
-      setLastError(res.data?.error || "Failed to save settings");
-      setStatus("error");
-    }
-  };
-
-  const handleGenerateToken = async () => {
-    setGeneratingToken(true);
-    setLastError(null);
-    try {
-      const res = await base44.functions.invoke("getShopifyAccessToken", {});
-      if (res.data?.success) {
-        setLastTokenRefresh(new Date().toISOString());
-        setStatus("token_generated");
-      } else {
-        setLastError(res.data?.error || "Token generation failed");
-        setStatus("error");
-      }
-    } catch (err) {
-      setLastError(err?.response?.data?.error || err.message || "Błąd generowania tokenu");
-      setStatus("error");
-    }
-    setGeneratingToken(false);
-  };
-
-  const handleTest = async () => {
-    setTesting(true);
-    setLastError(null);
-    setShopInfo(null);
     try {
       const res = await base44.functions.invoke("testShopifyConnection", {});
       if (res.data?.connected) {
         setStatus("connected");
         setShopInfo(res.data);
-        setLastTested(res.data.tested_at || new Date().toISOString());
       } else {
-        setLastError(res.data?.error || "Connection test failed");
-        setStatus("error");
+        setStatus("disconnected");
+        if (!silent) setLastError(res.data?.error || "Brak połączenia z Shopify");
+        setShopInfo(null);
       }
     } catch (err) {
-      setLastError(err?.response?.data?.error || err.message || "Nieznany błąd połączenia");
-      setStatus("error");
+      setStatus("disconnected");
+      if (!silent) setLastError(err?.response?.data?.error || err.message || "Błąd testu połączenia");
     }
     setTesting(false);
+    setLoadingStatus(false);
   };
 
-  const handleDiagnostic = async () => {
-    setLoadingDiag(true);
-    const res = await base44.functions.invoke("testShopifyConnection", {});
-    setLoadingDiag(false);
-    setDiagnostic(res.data);
+  const handleConnect = async () => {
+    setConnecting(true);
+    setLastError(null);
+    try {
+      const currentUrl = window.location.origin + "/ShopifyCallback";
+      const res = await base44.functions.invoke("getShopifyAuthUrl", { redirect_uri: currentUrl });
+      if (res.data?.auth_url) {
+        window.location.href = res.data.auth_url;
+      } else {
+        setLastError(res.data?.error || "Nie udało się wygenerować URL autoryzacji");
+        setConnecting(false);
+      }
+    } catch (err) {
+      setLastError(err?.response?.data?.error || err.message || "Błąd inicjowania OAuth");
+      setConnecting(false);
+    }
   };
 
   const StatusBadge = () => {
+    if (loadingStatus) return <Badge variant="outline" className="gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Sprawdzanie...</Badge>;
     if (status === "connected") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 gap-1"><CheckCircle2 className="w-3 h-3" /> Połączono</Badge>;
-    if (status === "error") return <Badge className="bg-red-100 text-red-700 border-red-300 gap-1"><XCircle className="w-3 h-3" /> Błąd</Badge>;
-    if (status === "token_generated") return <Badge className="bg-blue-100 text-blue-700 border-blue-300 gap-1"><CheckCircle2 className="w-3 h-3" /> Token wygenerowany</Badge>;
-    if (status === "saved") return <Badge className="bg-amber-100 text-amber-700 border-amber-300 gap-1"><AlertTriangle className="w-3 h-3" /> Zapisano — przetestuj połączenie</Badge>;
-    return <Badge variant="outline" className="gap-1"><XCircle className="w-3 h-3" /> Niepołączono</Badge>;
+    return <Badge className="bg-red-100 text-red-700 border-red-300 gap-1"><XCircle className="w-3 h-3" /> Niepołączono</Badge>;
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <ShoppingBag className="w-6 h-6 text-emerald-600" />
@@ -113,104 +73,68 @@ export default function ShopifySettings() {
         <StatusBadge />
       </div>
 
-      <Alert className="border-amber-200 bg-amber-50">
-        <Info className="w-4 h-4 text-amber-600" />
-        <AlertDescription className="text-amber-800 text-sm">
-          <strong>Aplikacje Shopify Dev Dashboard</strong> nie pokazują klasycznego tokenu Admin API. Jeśli widzisz tylko Client ID i Client Secret — ta aplikacja wygeneruje token dostępu automatycznie (tryb B — zalecany).
-        </AlertDescription>
-      </Alert>
+      {/* Connected state */}
+      {status === "connected" && shopInfo && (
+        <Card className="border-emerald-200 bg-emerald-50">
+          <CardContent className="pt-5 space-y-2">
+            <p className="text-emerald-800 font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" /> Połączono z Shopify
+            </p>
+            <div className="text-sm text-emerald-700 space-y-1">
+              <p>Sklep: <strong>{shopInfo.shop_name}</strong> ({shopInfo.shop_domain})</p>
+              <p>Plan: {shopInfo.plan} | API: {shopInfo.api_version}</p>
+              {shopInfo.scopes && <p>Zakresy: <span className="font-mono text-xs">{shopInfo.scopes}</span></p>}
+              {shopInfo.connected_at && <p>Połączono: {new Date(shopInfo.connected_at).toLocaleString("pl-PL")}</p>}
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button onClick={() => handleTest(false)} disabled={testing} variant="outline" size="sm" className="border-emerald-300 text-emerald-700 hover:bg-emerald-100">
+                {testing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                Odśwież status
+              </Button>
+              <Button onClick={handleConnect} disabled={connecting} variant="outline" size="sm">
+                {connecting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plug className="w-4 h-4 mr-2" />}
+                Ponownie autoryzuj
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      <Tabs defaultValue="modeB">
-        <TabsList className="w-full">
-          <TabsTrigger value="modeB" className="flex-1">Tryb B — Client ID + Secret (Zalecany)</TabsTrigger>
-          <TabsTrigger value="modeA" className="flex-1">Tryb A — Legacy Admin API Token</TabsTrigger>
-        </TabsList>
+      {/* Disconnected state */}
+      {status === "disconnected" && (
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-base">Połącz aplikację ze Shopify</CardTitle>
+            <CardDescription>
+              Kliknij poniżej, aby rozpocząć przepływ OAuth i autoryzować dostęp do sklepu Shopify.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert className="border-blue-200 bg-blue-50">
+              <Info className="w-4 h-4 text-blue-600" />
+              <AlertDescription className="text-blue-800 text-sm">
+                Upewnij się, że w sekretach Base44 masz ustawione: <strong>SHOPIFY_CLIENT_ID</strong>, <strong>SHOPIFY_CLIENT_SECRET</strong> i <strong>SHOPIFY_SHOP_DOMAIN</strong>.
+              </AlertDescription>
+            </Alert>
+            <Button onClick={handleConnect} disabled={connecting} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2">
+              {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
+              Połącz ze Shopify (OAuth)
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
-        <TabsContent value="modeB">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Konfiguracja przez Client ID i Client Secret</CardTitle>
-              <CardDescription>Używaj tego trybu jeśli stworzyłeś aplikację w Shopify Dev Dashboard.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5 col-span-2">
-                  <Label>Domena sklepu Shopify *</Label>
-                  <Input
-                    placeholder="moj-sklep.myshopify.com"
-                    value={domain}
-                    onChange={e => setDomain(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">Bez https://, tylko domena np. vintrix-market.myshopify.com</p>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Client ID *</Label>
-                  <Input placeholder="Client ID z Dev Dashboard" value={clientId} onChange={e => setClientId(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Client Secret *</Label>
-                  <Input type="password" placeholder="Client Secret (zamaskowany)" value={clientSecret} onChange={e => setClientSecret(e.target.value)} />
-                </div>
-                <div className="space-y-1.5 col-span-2">
-                  <Label>Wersja API Shopify</Label>
-                  <Input placeholder="2026-04" value={apiVersion} onChange={e => setApiVersion(e.target.value)} />
-                </div>
-              </div>
+      {/* Loading state */}
+      {loadingStatus && (
+        <Card className="border-slate-200">
+          <CardContent className="pt-5 flex items-center gap-3 text-muted-foreground">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Sprawdzanie statusu połączenia...</span>
+          </CardContent>
+        </Card>
+      )}
 
-              <div className="flex flex-wrap gap-2 pt-2">
-                <Button onClick={handleSave} disabled={saving || !domain} className="bg-slate-800 hover:bg-slate-700">
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Zapisz ustawienia
-                </Button>
-                <Button onClick={handleGenerateToken} disabled={generatingToken} variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
-                  {generatingToken ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                  Wygeneruj / Odśwież token
-                </Button>
-                <Button onClick={handleTest} disabled={testing} variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50">
-                  {testing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plug className="w-4 h-4 mr-2" />}
-                  Testuj połączenie
-                </Button>
-              </div>
-
-              <div className="text-xs text-muted-foreground bg-slate-50 rounded-lg p-3 space-y-1">
-                <p className="font-medium text-slate-700">Wymagane zakresy dostępu Shopify (ustaw w Dev Dashboard → App scopes):</p>
-                <p className="font-mono">read_products, write_products, read_inventory, write_inventory, read_locations, read_orders</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="modeA">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Legacy Admin API Token</CardTitle>
-              <CardDescription>Jeśli masz klasyczny token zaczynający się od shpat_ (dostępny tylko w starszych aplikacjach).</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1.5">
-                <Label>Domena sklepu Shopify *</Label>
-                <Input placeholder="moj-sklep.myshopify.com" value={domain} onChange={e => setDomain(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Admin API Access Token (shpat_...)</Label>
-                <Input type="password" placeholder="shpat_xxxxxxxx (zamaskowany)" value={legacyToken} onChange={e => setLegacyToken(e.target.value)} />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleSave} disabled={saving || !domain || !legacyToken} className="bg-slate-800 hover:bg-slate-700">
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Zapisz token
-                </Button>
-                <Button onClick={handleTest} disabled={testing} variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50">
-                  {testing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plug className="w-4 h-4 mr-2" />}
-                  Testuj połączenie
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Status info */}
+      {/* Error */}
       {lastError && (
         <Alert className="border-red-200 bg-red-50">
           <XCircle className="w-4 h-4 text-red-600" />
@@ -218,55 +142,21 @@ export default function ShopifySettings() {
         </Alert>
       )}
 
-      {shopInfo?.connected && (
-        <Card className="border-emerald-200 bg-emerald-50">
-          <CardContent className="pt-4 space-y-1">
-            <p className="text-emerald-800 font-medium flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Połączono z Shopify</p>
-            <p className="text-sm text-emerald-700">Sklep: <strong>{shopInfo.shop_name}</strong> ({shopInfo.shop_domain})</p>
-            <p className="text-sm text-emerald-700">Plan: {shopInfo.plan} | API: {shopInfo.api_version} | Tryb: {shopInfo.auth_mode}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {lastTested && <p className="text-xs text-muted-foreground">Ostatni test: {new Date(lastTested).toLocaleString("pl-PL")}</p>}
-      {lastTokenRefresh && <p className="text-xs text-muted-foreground">Ostatnie odświeżenie tokenu: {new Date(lastTokenRefresh).toLocaleString("pl-PL")}</p>}
-
-      {/* Diagnostic panel */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Diagnostyka</CardTitle>
-          <CardDescription>Sprawdź status konfiguracji Shopify.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button variant="outline" size="sm" onClick={handleDiagnostic} disabled={loadingDiag}>
-            {loadingDiag ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-            Odśwież diagnostykę
-          </Button>
-          {diagnostic && (
-            <div className="space-y-2 text-sm">
-              <DiagRow label="Shopify domain skonfigurowany" value={diagnostic.shop_domain || (diagnostic.connected ? "TAK" : "NIE")} ok={diagnostic.connected} />
-              <DiagRow label="Połączenie z API" ok={diagnostic.connected} value={diagnostic.connected ? "TAK" : "NIE"} />
-              <DiagRow label="Sklep" ok={diagnostic.connected} value={diagnostic.shop_name || "—"} />
-              <DiagRow label="Plan" ok={diagnostic.connected} value={diagnostic.plan || "—"} />
-              <DiagRow label="Tryb autoryzacji" ok={!!diagnostic.auth_mode} value={diagnostic.auth_mode || "—"} />
-              <DiagRow label="Ostatni test API" ok={!!diagnostic.tested_at} value={diagnostic.tested_at ? new Date(diagnostic.tested_at).toLocaleString("pl-PL") : "—"} />
-              {diagnostic.error && <DiagRow label="Ostatni błąd" ok={false} value={diagnostic.error} />}
-            </div>
-          )}
+      {/* Info box */}
+      <Card className="border-slate-200 bg-slate-50">
+        <CardContent className="pt-4 text-sm text-slate-600 space-y-2">
+          <p className="font-medium text-slate-700">Wymagane sekrety w Base44:</p>
+          <ul className="list-disc list-inside space-y-1 font-mono text-xs">
+            <li>SHOPIFY_CLIENT_ID</li>
+            <li>SHOPIFY_CLIENT_SECRET</li>
+            <li>SHOPIFY_SHOP_DOMAIN (np. moj-sklep.myshopify.com)</li>
+            <li>SHOPIFY_API_VERSION (np. 2026-04)</li>
+          </ul>
+          <p className="text-xs text-muted-foreground pt-1">
+            Token dostępu jest przechowywany automatycznie po autoryzacji OAuth — nie musisz go kopiować ręcznie.
+          </p>
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-function DiagRow({ label, value, ok }) {
-  return (
-    <div className="flex items-center justify-between py-1 border-b border-slate-100 last:border-0">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={`flex items-center gap-1 font-medium ${ok ? "text-emerald-700" : "text-red-600"}`}>
-        {ok ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-        {value}
-      </span>
     </div>
   );
 }

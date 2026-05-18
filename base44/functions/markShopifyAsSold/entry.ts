@@ -1,9 +1,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-async function getValidToken() {
-  const accessToken = Deno.env.get("SHOPIFY_ACCESS_TOKEN");
-  if (accessToken) return accessToken;
-  throw new Error("No valid Shopify credentials configured. Set SHOPIFY_ACCESS_TOKEN in secrets.");
+async function getShopifyConfig(base44) {
+  const shopDomain = Deno.env.get("SHOPIFY_SHOP_DOMAIN");
+  if (!shopDomain) throw new Error("Brak SHOPIFY_SHOP_DOMAIN w sekretach.");
+
+  const connections = await base44.asServiceRole.entities.ShopifyConnection.filter({ shop_domain: shopDomain });
+  if (!connections || connections.length === 0) {
+    throw new Error("Brak połączenia z Shopify. Zaauthoryzuj aplikację na stronie Ustawienia Shopify.");
+  }
+  const token = connections[0].access_token;
+  const apiVersion = Deno.env.get("SHOPIFY_API_VERSION") || "2026-04";
+  return { domain: shopDomain, token, apiVersion, baseUrl: `https://${shopDomain}/admin/api/${apiVersion}` };
 }
 
 Deno.serve(async (req) => {
@@ -15,10 +22,7 @@ Deno.serve(async (req) => {
     const { listing_id } = await req.json();
     if (!listing_id) return Response.json({ error: "listing_id is required" }, { status: 400 });
 
-    const DOMAIN = Deno.env.get("SHOPIFY_SHOP_DOMAIN") || Deno.env.get("SHOPIFY_STORE_DOMAIN");
-    const API_VERSION = Deno.env.get("SHOPIFY_API_VERSION") || "2026-04";
-    const BASE_URL = `https://${DOMAIN}/admin/api/${API_VERSION}`;
-    const TOKEN = await getValidToken();
+    const { baseUrl, token } = await getShopifyConfig(base44);
 
     const listing = await base44.entities.Listing.get(listing_id);
     const product = await base44.entities.Product.get(listing.product_id);
@@ -26,9 +30,9 @@ Deno.serve(async (req) => {
     const shopifyProductId = product.shopify_product_id;
     if (!shopifyProductId) return Response.json({ error: "No Shopify product ID found" }, { status: 400 });
 
-    const res = await fetch(`${BASE_URL}/products/${shopifyProductId}.json`, {
+    const res = await fetch(`${baseUrl}/products/${shopifyProductId}.json`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": TOKEN },
+      headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": token },
       body: JSON.stringify({ product: { id: shopifyProductId, status: "draft" } }),
     });
 

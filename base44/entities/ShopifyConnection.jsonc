@@ -1,0 +1,30 @@
+{
+  "name": "ShopifyConnection",
+  "type": "object",
+  "properties": {
+    "shop_domain": {
+      "type": "string",
+      "description": "Domena sklepu Shopify (np. my-store.myshopify.com)"
+    },
+    "access_token": {
+      "type": "string",
+      "description": "Token dost\u0119pu Admin API dla tego sklepu"
+    },
+    "scopes": {
+      "type": "string",
+      "description": "Zakresy dost\u0119pu uzyskane podczas autoryzacji"
+    },
+    "installed_by": {
+      "type": "string",
+      "description": "Email u\u017cytkownika Base44, kt\u00f3ry zainstalowa\u0142 po\u0142\u0105czenie"
+    },
+    "connected_at": {
+      "type": "string",
+      "description": "Data i czas nawi\u0105zania po\u0142\u0105czenia (ISO)"
+    }
+  },
+  "required": [
+    "shop_domain",
+    "access_token"
+  ]
+}
