@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Package, Tag, DollarSign, Zap, 
-  Menu, X, ChevronRight, Layers, BookOpen
+  Menu, X, ChevronRight, Layers, BookOpen, ShoppingBag
 } from "lucide-react";
 
 const navItems = [
@@ -13,6 +13,7 @@ const navItems = [
   { path: "/Listings", label: "Listings", icon: Tag },
   { path: "/Sales", label: "Sales", icon: DollarSign },
   { path: "/QuickAdd", label: "Quick Add", icon: Zap },
+  { path: "/ShopifySettings", label: "Shopify", icon: ShoppingBag },
 ];
 
 export default function Sidebar() {

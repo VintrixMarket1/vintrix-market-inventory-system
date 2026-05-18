@@ -15,6 +15,7 @@ import QuickAdd from './pages/QuickAdd';
 import Pallets from './pages/Pallets';
 import AddProduct from './pages/AddProduct';
 import ProductModels from './pages/ProductModels';
+import ShopifySettings from './pages/ShopifySettings';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -48,6 +49,7 @@ const AuthenticatedApp = () => {
         <Route path="/QuickAdd" element={<QuickAdd />} />
         <Route path="/AddProduct" element={<AddProduct />} />
         <Route path="/ProductModels" element={<ProductModels />} />
+        <Route path="/ShopifySettings" element={<ShopifySettings />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
