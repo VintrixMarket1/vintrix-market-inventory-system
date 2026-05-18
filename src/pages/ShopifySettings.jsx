@@ -66,16 +66,21 @@ export default function ShopifySettings() {
     setTesting(true);
     setLastError(null);
     setShopInfo(null);
-    const res = await base44.functions.invoke("testShopifyConnection", {});
-    setTesting(false);
-    if (res.data?.connected) {
-      setStatus("connected");
-      setShopInfo(res.data);
-      setLastTested(res.data.tested_at || new Date().toISOString());
-    } else {
-      setLastError(res.data?.error || "Connection test failed");
+    try {
+      const res = await base44.functions.invoke("testShopifyConnection", {});
+      if (res.data?.connected) {
+        setStatus("connected");
+        setShopInfo(res.data);
+        setLastTested(res.data.tested_at || new Date().toISOString());
+      } else {
+        setLastError(res.data?.error || "Connection test failed");
+        setStatus("error");
+      }
+    } catch (err) {
+      setLastError(err?.response?.data?.error || err.message || "Nieznany błąd połączenia");
       setStatus("error");
     }
+    setTesting(false);
   };
 
   const handleDiagnostic = async () => {
