@@ -1,25 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 async function getValidToken() {
-  const legacyToken = Deno.env.get("SHOPIFY_ACCESS_TOKEN");
-  const expiresAt = Deno.env.get("SHOPIFY_ACCESS_TOKEN_EXPIRES_AT");
-  const clientId = Deno.env.get("SHOPIFY_CLIENT_ID");
-  const clientSecret = Deno.env.get("SHOPIFY_CLIENT_SECRET");
-  const shopDomain = Deno.env.get("SHOPIFY_SHOP_DOMAIN") || Deno.env.get("SHOPIFY_STORE_DOMAIN");
-
-  if (legacyToken && legacyToken.startsWith("shpat_")) return legacyToken;
-  if (legacyToken && expiresAt && Date.now() < new Date(expiresAt).getTime() - 5 * 60 * 1000) return legacyToken;
-  if (clientId && clientSecret && shopDomain) {
-    const res = await fetch(`https://${shopDomain}/admin/oauth/access_token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, grant_type: "client_credentials" }),
-    });
-    const data = await res.json();
-    if (res.ok && data.access_token) return data.access_token;
-    throw new Error(`Token refresh failed: ${data.error_description || data.error}`);
-  }
-  throw new Error("No valid Shopify credentials configured.");
+  const accessToken = Deno.env.get("SHOPIFY_ACCESS_TOKEN");
+  if (accessToken) return accessToken;
+  throw new Error("No valid Shopify credentials configured. Set SHOPIFY_ACCESS_TOKEN in secrets.");
 }
 
 Deno.serve(async (req) => {
