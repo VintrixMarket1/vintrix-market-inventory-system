@@ -51,15 +51,20 @@ export default function ShopifySettings() {
   const handleGenerateToken = async () => {
     setGeneratingToken(true);
     setLastError(null);
-    const res = await base44.functions.invoke("getShopifyAccessToken", {});
-    setGeneratingToken(false);
-    if (res.data?.success) {
-      setLastTokenRefresh(new Date().toISOString());
-      setStatus("token_generated");
-    } else {
-      setLastError(res.data?.error || "Token generation failed");
+    try {
+      const res = await base44.functions.invoke("getShopifyAccessToken", {});
+      if (res.data?.success) {
+        setLastTokenRefresh(new Date().toISOString());
+        setStatus("token_generated");
+      } else {
+        setLastError(res.data?.error || "Token generation failed");
+        setStatus("error");
+      }
+    } catch (err) {
+      setLastError(err?.response?.data?.error || err.message || "Błąd generowania tokenu");
       setStatus("error");
     }
+    setGeneratingToken(false);
   };
 
   const handleTest = async () => {
