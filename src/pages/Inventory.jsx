@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plus, Download } from "lucide-react";
 import ProductCard from "../components/inventory/ProductCard";
@@ -12,6 +13,7 @@ import CsvImport from "../components/inventory/CsvImport";
 
 export default function Inventory() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
   const [listingProduct, setListingProduct] = useState(null);
@@ -78,7 +80,7 @@ export default function Inventory() {
           <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
             <Download className="w-4 h-4" /> Export
           </Button>
-          <Button size="sm" onClick={() => { setEditProduct(null); setShowForm(true); }} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
+          <Button size="sm" onClick={() => navigate("/AddProduct")} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
             <Plus className="w-4 h-4" /> Add Product
           </Button>
         </div>
@@ -93,7 +95,7 @@ export default function Inventory() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-slate-400">No products found</p>
-          <Button size="sm" onClick={() => setShowForm(true)} className="mt-4 bg-emerald-600 hover:bg-emerald-700">
+          <Button size="sm" onClick={() => navigate("/AddProduct")} className="mt-4 bg-emerald-600 hover:bg-emerald-700">
             Add your first product
           </Button>
         </div>
