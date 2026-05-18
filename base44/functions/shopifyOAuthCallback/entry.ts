@@ -3,8 +3,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const { code, shop } = await req.json();
     if (!code || !shop) return Response.json({ error: "Missing code or shop" }, { status: 400 });
@@ -27,13 +25,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: tokenData.error_description || tokenData.error || "Failed to exchange code for token" }, { status: 400 });
     }
 
-    // Save or update connection in ShopifyConnection entity
+    // Save or update connection in ShopifyConnection entity (service role — no user auth required)
     const existing = await base44.asServiceRole.entities.ShopifyConnection.filter({ shop_domain: shop });
     const connectionData = {
       shop_domain: shop,
       access_token: tokenData.access_token,
       scopes: tokenData.scope || "",
-      installed_by: user.email,
       connected_at: new Date().toISOString(),
     };
 
