@@ -46,7 +46,7 @@ export default function ShopifySettings() {
       const currentUrl = window.location.origin + "/ShopifyCallback";
       const res = await base44.functions.invoke("getShopifyAuthUrl", { redirect_uri: currentUrl });
       if (res.data?.auth_url) {
-        window.location.href = res.data.auth_url;
+        window.open(res.data.auth_url, "_blank");
       } else {
         setLastError(res.data?.error || "Nie udało się wygenerować URL autoryzacji");
         setConnecting(false);
