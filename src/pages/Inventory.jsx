@@ -19,7 +19,7 @@ export default function Inventory() {
   const [listingProduct, setListingProduct] = useState(null);
   const [saleProduct, setSaleProduct] = useState(null);
   const [showCsvImport, setShowCsvImport] = useState(false);
-  const [filters, setFilters] = useState({ search: "", category: "all", status: "all" });
+  const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "all" });
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products"],
@@ -34,8 +34,9 @@ export default function Inventory() {
   const filtered = products.filter(p => {
     const searchMatch = !filters.search || p.product_name?.toLowerCase().includes(filters.search.toLowerCase()) || p.internal_code?.toLowerCase().includes(filters.search.toLowerCase());
     const categoryMatch = filters.category === "all" || p.category === filters.category;
+    const subcategoryMatch = !filters.subcategory || filters.subcategory === "all" || p.subcategory === filters.subcategory;
     const statusMatch = filters.status === "all" || (p.status || "in_stock") === filters.status;
-    return searchMatch && categoryMatch && statusMatch;
+    return searchMatch && categoryMatch && subcategoryMatch && statusMatch;
   });
 
   const handleDelete = async (product) => {

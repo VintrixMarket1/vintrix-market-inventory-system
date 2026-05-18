@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, BookOpen } from "lucide-react";
+import { SUBCATEGORIES } from "@/lib/subcategories";
 
 const categories = ["all", "clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
 const genders = ["all", "men", "women", "unisex", "kids", "none"];
@@ -30,6 +31,7 @@ const statusColors = {
 export default function ProductModels() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
+  const [subcategory, setSubcategory] = useState("all");
   const [gender, setGender] = useState("all");
 
   const { data: products = [], isLoading } = useQuery({
@@ -43,8 +45,9 @@ export default function ProductModels() {
       p.brand?.toLowerCase().includes(search.toLowerCase()) ||
       p.internal_code?.toLowerCase().includes(search.toLowerCase());
     const categoryMatch = category === "all" || p.category === category;
+    const subcategoryMatch = subcategory === "all" || p.subcategory === subcategory;
     const genderMatch = gender === "all" || (p.gender || "none") === gender;
-    return searchMatch && categoryMatch && genderMatch;
+    return searchMatch && categoryMatch && subcategoryMatch && genderMatch;
   });
 
   return (
@@ -65,16 +68,29 @@ export default function ProductModels() {
             className="pl-9"
           />
         </div>
-        <Select value={category} onValueChange={setCategory}>
+        <Select value={category} onValueChange={v => { setCategory(v); setSubcategory("all"); }}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
             {categories.map(c => (
-              <SelectItem key={c} value={c}>{c === "all" ? "All categories" : c}</SelectItem>
+              <SelectItem key={c} value={c}>{c === "all" ? "All categories" : c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
+        {category !== "all" && (SUBCATEGORIES[category] || []).length > 0 && (
+          <Select value={subcategory} onValueChange={setSubcategory}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="Subcategory" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All subcategories</SelectItem>
+              {(SUBCATEGORIES[category] || []).map(s => (
+                <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Select value={gender} onValueChange={setGender}>
           <SelectTrigger className="w-36">
             <SelectValue placeholder="Gender" />
@@ -113,10 +129,15 @@ export default function ProductModels() {
                 <p className="font-semibold text-slate-900 text-sm leading-tight line-clamp-2">{product.product_name}</p>
                 {product.brand && <p className="text-xs text-slate-500 truncate">{product.brand}</p>}
                 <p className="text-[10px] text-slate-400 font-mono">{product.internal_code}</p>
-                <div className="flex items-center justify-between gap-1 flex-wrap">
+                <div className="flex items-center gap-1 flex-wrap">
                   <Badge className={`text-[10px] px-1.5 ${categoryColors[product.category] || "bg-slate-100 text-slate-600"}`}>
                     {product.category}
                   </Badge>
+                  {product.subcategory && (
+                    <Badge className="text-[10px] px-1.5 bg-slate-100 text-slate-500">
+                      {product.subcategory}
+                    </Badge>
+                  )}
                   <Badge className={`text-[10px] px-1.5 ${statusColors[product.status || "in_stock"]}`}>
                     {product.status || "in_stock"}
                   </Badge>

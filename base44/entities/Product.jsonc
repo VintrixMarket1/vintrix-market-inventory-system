@@ -33,6 +33,10 @@
       ],
       "description": "Kategoria produktu"
     },
+    "subcategory": {
+      "type": "string",
+      "description": "Podkategoria produktu"
+    },
     "gender": {
       "type": "string",
       "enum": [

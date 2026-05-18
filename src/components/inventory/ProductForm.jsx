@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { base44 } from "@/api/base44Client";
 import { Upload, X, Loader2, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { SUBCATEGORIES } from "@/lib/subcategories";
 
 const categories = ["clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
 
@@ -45,6 +46,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
   const [form, setForm] = useState(product || {
     product_name: "",
     category: "clothing",
+    subcategory: "",
     condition: "like_new",
     purchase_price: "",
     suggested_sale_price: "",
@@ -65,9 +67,9 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
   const handleChange = (field, value) => {
     setForm(prev => {
       const updated = { ...prev, [field]: value };
-      // Auto-regenerate SKU when category changes (only for new products)
       if (field === "category" && !isEdit) {
         updated.internal_code = generateSKU(value);
+        updated.subcategory = "";
       }
       return updated;
     });
@@ -146,6 +148,17 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
               </Select>
             </div>
             <div className="space-y-1.5">
+              <Label>Subcategory</Label>
+              <Select value={form.subcategory || ""} onValueChange={v => handleChange("subcategory", v)}>
+                <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                <SelectContent>
+                  {(SUBCATEGORIES[form.category] || []).map(s => (
+                    <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
               <Label>Condition *</Label>
               <Select value={form.condition} onValueChange={v => handleChange("condition", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -158,6 +171,8 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
               <Label>Size</Label>
               <Input value={form.size} onChange={e => handleChange("size", e.target.value)} placeholder="e.g. M, 42" />
             </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-1.5">
               <Label>Quantity</Label>
               <Input type="number" value={form.quantity} onChange={e => handleChange("quantity", e.target.value)} min={1} />

@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, CheckCircle, ArrowLeft, Save } from "lucide-react";
 import AiConfidenceBadge from "./AiConfidenceBadge";
+import { SUBCATEGORIES } from "@/lib/subcategories";
 
 const CATEGORIES = ["clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
 const CONDITIONS = ["new", "like_new", "used"];
@@ -27,6 +28,7 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
     product_name: "",
     brand: "",
     category: "other",
+    subcategory: "",
     gender: "none",
     condition: "like_new",
     size: "",
@@ -51,6 +53,7 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
         product_name: aiData.product_name || "",
         brand: aiData.brand || "",
         category: aiData.category || "other",
+        subcategory: aiData.subcategory || "",
         gender: aiData.gender || "none",
         condition: aiData.condition || "like_new",
         size: aiData.size || "",
@@ -116,16 +119,29 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label>Kategoria *</Label>
-            <Select value={form.category} onValueChange={(v) => set("category", v)}>
+            <Select value={form.category} onValueChange={(v) => { set("category", v); set("subcategory", ""); }}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1.5">
+            <Label>Podkategoria</Label>
+            <Select value={form.subcategory || ""} onValueChange={(v) => set("subcategory", v)}>
+              <SelectTrigger><SelectValue placeholder="Wybierz..." /></SelectTrigger>
+              <SelectContent>
+                {(SUBCATEGORIES[form.category] || []).map((s) => (
+                  <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label>Przeznaczenie</Label>
             <Select value={form.gender} onValueChange={(v) => set("gender", v)}>
