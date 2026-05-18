@@ -21,31 +21,29 @@ const categoryColors = {
   other: "bg-slate-100 text-slate-600",
 };
 
+const statusColors = {
+  in_stock: "bg-blue-100 text-blue-700",
+  listed: "bg-emerald-100 text-emerald-700",
+  sold: "bg-amber-100 text-amber-700",
+};
+
 export default function ProductModels() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [gender, setGender] = useState("all");
 
-  const { data: models = [], isLoading } = useQuery({
-    queryKey: ["productModels"],
-    queryFn: () => base44.entities.ProductModel.list("-created_date"),
-  });
-
-  const { data: products = [] } = useQuery({
+  const { data: products = [], isLoading } = useQuery({
     queryKey: ["products"],
-    queryFn: () => base44.entities.Product.list(),
+    queryFn: () => base44.entities.Product.list("-created_date"),
   });
 
-  // Count products per model
-  const countByModel = products.reduce((acc, p) => {
-    if (p.product_model_id) acc[p.product_model_id] = (acc[p.product_model_id] || 0) + 1;
-    return acc;
-  }, {});
-
-  const filtered = models.filter(m => {
-    const searchMatch = !search || m.name?.toLowerCase().includes(search.toLowerCase()) || m.brand?.toLowerCase().includes(search.toLowerCase());
-    const categoryMatch = category === "all" || m.category === category;
-    const genderMatch = gender === "all" || m.gender === gender;
+  const filtered = products.filter(p => {
+    const searchMatch = !search ||
+      p.product_name?.toLowerCase().includes(search.toLowerCase()) ||
+      p.brand?.toLowerCase().includes(search.toLowerCase()) ||
+      p.internal_code?.toLowerCase().includes(search.toLowerCase());
+    const categoryMatch = category === "all" || p.category === category;
+    const genderMatch = gender === "all" || (p.gender || "none") === gender;
     return searchMatch && categoryMatch && genderMatch;
   });
 
@@ -53,7 +51,7 @@ export default function ProductModels() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Product Catalog</h1>
-        <p className="text-sm text-slate-500 mt-1">{filtered.length} model types</p>
+        <p className="text-sm text-slate-500 mt-1">{filtered.length} products</p>
       </div>
 
       {/* Filters */}
@@ -61,7 +59,7 @@ export default function ProductModels() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
-            placeholder="Search by name or brand..."
+            placeholder="Search by name, brand or code..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="pl-9"
@@ -96,38 +94,34 @@ export default function ProductModels() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
           <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-400">No product models found</p>
+          <p className="text-slate-400">No products found</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {filtered.map(model => (
-            <div key={model.id} className="bg-white rounded-xl border border-slate-200/60 overflow-hidden hover:shadow-md transition-shadow">
+          {filtered.map(product => (
+            <div key={product.id} className="bg-white rounded-xl border border-slate-200/60 overflow-hidden hover:shadow-md transition-shadow">
               {/* Image */}
               <div className="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
-                {model.reference_images?.[0] ? (
-                  <img src={model.reference_images[0]} alt={model.name} className="w-full h-full object-cover" />
+                {product.images?.[0] ? (
+                  <img src={product.images[0]} alt={product.product_name} className="w-full h-full object-cover" />
                 ) : (
                   <BookOpen className="w-10 h-10 text-slate-300" />
                 )}
               </div>
               {/* Info */}
               <div className="p-3 space-y-1.5">
-                <p className="font-semibold text-slate-900 text-sm truncate">{model.name}</p>
-                {model.brand && <p className="text-xs text-slate-500 truncate">{model.brand}</p>}
+                <p className="font-semibold text-slate-900 text-sm leading-tight line-clamp-2">{product.product_name}</p>
+                {product.brand && <p className="text-xs text-slate-500 truncate">{product.brand}</p>}
+                <p className="text-[10px] text-slate-400 font-mono">{product.internal_code}</p>
                 <div className="flex items-center justify-between gap-1 flex-wrap">
-                  <Badge className={`text-[10px] px-1.5 ${categoryColors[model.category] || "bg-slate-100 text-slate-600"}`}>
-                    {model.category}
+                  <Badge className={`text-[10px] px-1.5 ${categoryColors[product.category] || "bg-slate-100 text-slate-600"}`}>
+                    {product.category}
                   </Badge>
-                  {model.gender && model.gender !== "none" && (
-                    <span className="text-[10px] text-slate-400 font-medium">{model.gender}</span>
-                  )}
+                  <Badge className={`text-[10px] px-1.5 ${statusColors[product.status || "in_stock"]}`}>
+                    {product.status || "in_stock"}
+                  </Badge>
                 </div>
-                <p className="text-xs text-emerald-600 font-medium">
-                  {countByModel[model.id] || 0} items in stock
-                </p>
-                {model.notes && (
-                  <p className="text-[10px] text-slate-400 truncate">{model.notes}</p>
-                )}
+                <p className="text-xs font-semibold text-slate-700">{product.purchase_price} PLN</p>
               </div>
             </div>
           ))}
