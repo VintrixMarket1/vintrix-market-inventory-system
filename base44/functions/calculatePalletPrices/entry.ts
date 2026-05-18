@@ -1,0 +1,60 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { pallet_id } = await req.json();
+    if (!pallet_id) {
+      return Response.json({ error: 'pallet_id is required' }, { status: 400 });
+    }
+
+    // Fetch pallet
+    const pallets = await base44.asServiceRole.entities.Pallet.filter({ id: pallet_id });
+    if (!pallets || pallets.length === 0) {
+      return Response.json({ error: 'Pallet not found' }, { status: 404 });
+    }
+    const pallet = pallets[0];
+
+    if (!pallet.total_cost || pallet.total_cost <= 0) {
+      return Response.json({ error: 'Pallet has no valid total_cost' }, { status: 400 });
+    }
+
+    // Fetch all products assigned to this pallet
+    const products = await base44.asServiceRole.entities.Product.filter({ pallet_id });
+
+    if (!products || products.length === 0) {
+      return Response.json({ error: 'No products found for this pallet' }, { status: 400 });
+    }
+
+    const unitPrice = parseFloat((pallet.total_cost / products.length).toFixed(2));
+
+    // Update each product's purchase_price
+    const updates = products.map(p =>
+      base44.asServiceRole.entities.Product.update(p.id, { purchase_price: unitPrice })
+    );
+    await Promise.all(updates);
+
+    // Update pallet with calculated values and set status to processed
+    await base44.asServiceRole.entities.Pallet.update(pallet_id, {
+      product_count: products.length,
+      calculated_unit_price: unitPrice,
+      status: 'processed',
+    });
+
+    return Response.json({
+      success: true,
+      pallet_code: pallet.pallet_code,
+      total_cost: pallet.total_cost,
+      product_count: products.length,
+      calculated_unit_price: unitPrice,
+    });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});

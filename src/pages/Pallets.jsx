@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit2, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Edit2, Trash2, ChevronDown, ChevronUp, Calculator, Loader2 } from "lucide-react";
 import PalletForm from "../components/pallets/PalletForm";
 import PalletStats from "../components/pallets/PalletStats";
 import { format } from "date-fns";
@@ -19,6 +19,7 @@ export default function Pallets() {
   const [showForm, setShowForm] = useState(false);
   const [editPallet, setEditPallet] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+  const [calculatingId, setCalculatingId] = useState(null);
 
   const { data: pallets = [], isLoading } = useQuery({
     queryKey: ["pallets"],
@@ -39,7 +40,23 @@ export default function Pallets() {
     queryClient.invalidateQueries({ queryKey: ["pallets"] });
   };
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["pallets"] });
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["pallets"] });
+    queryClient.invalidateQueries({ queryKey: ["products"] });
+  };
+
+  const handleCalculatePrices = async (pallet) => {
+    if (!confirm(`Czy obliczyć ceny jednostkowe dla palety ${pallet.pallet_code}?\n\nKoszt: ${pallet.total_cost} PLN zostanie podzielony równo pomiędzy wszystkie produkty tej palety.`)) return;
+    setCalculatingId(pallet.id);
+    const response = await base44.functions.invoke("calculatePalletPrices", { pallet_id: pallet.id });
+    setCalculatingId(null);
+    if (response.data?.success) {
+      alert(`✅ Obliczono!\nLiczba produktów: ${response.data.product_count}\nCena jednostkowa: ${response.data.calculated_unit_price} PLN`);
+      refresh();
+    } else {
+      alert(`Błąd: ${response.data?.error || "Nieznany błąd"}`);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -88,6 +105,26 @@ export default function Pallets() {
                     </p>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
+                    {pallet.status !== 'processed' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1.5 text-xs text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                        onClick={() => handleCalculatePrices(pallet)}
+                        disabled={calculatingId === pallet.id}
+                      >
+                        {calculatingId === pallet.id
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <Calculator className="w-3.5 h-3.5" />
+                        }
+                        Kalkuluj ceny
+                      </Button>
+                    )}
+                    {pallet.status === 'processed' && (
+                      <span className="text-xs text-emerald-600 font-medium px-2">
+                        ✓ {pallet.calculated_unit_price} PLN/szt.
+                      </span>
+                    )}
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditPallet(pallet); setShowForm(true); }}>
                       <Edit2 className="w-3.5 h-3.5" />
                     </Button>
