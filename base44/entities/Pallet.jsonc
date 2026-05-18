@@ -1,0 +1,50 @@
+{
+  "name": "Pallet",
+  "type": "object",
+  "properties": {
+    "pallet_code": {
+      "type": "string",
+      "description": "Unikalny identyfikator palety np. PAL-001"
+    },
+    "investor_name": {
+      "type": "string",
+      "description": "Nazwa inwestora finansuj\u0105cego palet\u0119"
+    },
+    "purchase_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data zakupu palety"
+    },
+    "total_cost": {
+      "type": "number",
+      "description": "Ca\u0142kowity koszt palety (PLN)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "processing",
+        "processed"
+      ],
+      "default": "active",
+      "description": "Status palety: active = nowa, processing = w trakcie rozpakowywania, processed = zako\u0144czona (ceny obliczone)"
+    },
+    "product_count": {
+      "type": "number",
+      "description": "Liczba produkt\u00f3w na palecie (uzupe\u0142niana automatycznie po przetworzeniu)"
+    },
+    "calculated_unit_price": {
+      "type": "number",
+      "description": "Obliczona cena jednostkowa (total_cost / product_count)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Dodatkowe notatki"
+    }
+  },
+  "required": [
+    "pallet_code",
+    "investor_name",
+    "total_cost"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "name": "ProductModel",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nazwa produktu / modelu"
+    },
+    "brand": {
+      "type": "string",
+      "description": "Marka produktu"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "clothing",
+        "shoes",
+        "accessories",
+        "electronics",
+        "home",
+        "toys",
+        "sports",
+        "books",
+        "other"
+      ],
+      "description": "Kategoria produktu"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "men",
+        "women",
+        "unisex",
+        "kids",
+        "none"
+      ],
+      "description": "Przeznaczenie p\u0142ciowe"
+    },
+    "description": {
+      "type": "string",
+      "description": "Og\u00f3lny opis modelu produktu"
+    },
+    "reference_images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Zdj\u0119cia referencyjne dla tego modelu (do ponownego u\u017cycia)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Dodatkowe notatki"
+    }
+  },
+  "required": [
+    "name",
+    "category"
+  ]
+}

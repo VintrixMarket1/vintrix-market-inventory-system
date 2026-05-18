@@ -1,0 +1,151 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "product_model_id": {
+      "type": "string",
+      "description": "Referencja do modelu produktu (ProductModel)"
+    },
+    "internal_code": {
+      "type": "string",
+      "description": "Wewn\u0119trzny kod egzemplarza (SKU)"
+    },
+    "product_name": {
+      "type": "string",
+      "description": "Nazwa produktu (egzemplarz)"
+    },
+    "brand": {
+      "type": "string",
+      "description": "Marka produktu"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "clothing",
+        "shoes",
+        "accessories",
+        "electronics",
+        "home",
+        "toys",
+        "sports",
+        "books",
+        "other"
+      ],
+      "description": "Kategoria produktu"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "men",
+        "women",
+        "unisex",
+        "kids",
+        "none"
+      ],
+      "description": "Przeznaczenie p\u0142ciowe"
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "new",
+        "like_new",
+        "used"
+      ],
+      "default": "like_new",
+      "description": "Stan produktu"
+    },
+    "size": {
+      "type": "string",
+      "description": "Rozmiar (dla odzie\u017cy/but\u00f3w)"
+    },
+    "color": {
+      "type": "string",
+      "description": "Kolor produktu"
+    },
+    "purchase_price": {
+      "type": "number",
+      "description": "Cena zakupu w PLN (obliczana z kosztu palety)"
+    },
+    "suggested_sale_price": {
+      "type": "number",
+      "description": "Sugerowana cena sprzeda\u017cy"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Dodatkowe notatki"
+    },
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Zdj\u0119cia tego konkretnego egzemplarza"
+    },
+    "barcode": {
+      "type": "string",
+      "description": "Kod kreskowy lub kod r\u0119czny"
+    },
+    "warehouse_zone": {
+      "type": "string",
+      "description": "Strefa magazynowa"
+    },
+    "shelf": {
+      "type": "string",
+      "description": "Rega\u0142 / miejsce na p\u00f3\u0142ce"
+    },
+    "box_number": {
+      "type": "string",
+      "description": "Numer pude\u0142ka"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "in_stock",
+        "listed",
+        "sold"
+      ],
+      "default": "in_stock",
+      "description": "Status produktu"
+    },
+    "pallet_id": {
+      "type": "string",
+      "description": "Referencja do palety z kt\u00f3rej pochodzi produkt"
+    },
+    "ai_analyzed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Czy produkt zosta\u0142 przeanalizowany przez AI"
+    },
+    "ai_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Czy dane AI zosta\u0142y zweryfikowane przez operatora"
+    },
+    "shopify_product_id": {
+      "type": "string",
+      "description": "ID produktu w Shopify"
+    },
+    "olx_listing_id": {
+      "type": "string",
+      "description": "ID og\u0142oszenia na OLX"
+    },
+    "allegro_listing_id": {
+      "type": "string",
+      "description": "ID aukcji na Allegro"
+    },
+    "vinted_listing_id": {
+      "type": "string",
+      "description": "ID og\u0142oszenia na Vinted"
+    },
+    "ebay_listing_id": {
+      "type": "string",
+      "description": "ID aukcji na eBay"
+    }
+  },
+  "required": [
+    "product_name",
+    "category",
+    "condition",
+    "purchase_price"
+  ]
+}
