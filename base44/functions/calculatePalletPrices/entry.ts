@@ -34,11 +34,10 @@ Deno.serve(async (req) => {
 
     const unitPrice = parseFloat((pallet.total_cost / products.length).toFixed(2));
 
-    // Update each product's purchase_price
-    const updates = products.map(p =>
-      base44.asServiceRole.entities.Product.update(p.id, { purchase_price: unitPrice })
-    );
-    await Promise.all(updates);
+    // Update each product's purchase_price sequentially to avoid rate limits
+    for (const p of products) {
+      await base44.asServiceRole.entities.Product.update(p.id, { purchase_price: unitPrice });
+    }
 
     // Update pallet with calculated values and set status to processed
     await base44.asServiceRole.entities.Pallet.update(pallet_id, {
