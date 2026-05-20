@@ -13,7 +13,6 @@ Deno.serve(async (req) => {
       response_type: "code",
       client_id: clientId,
       redirect_uri: redirectUri,
-      scope: "allegro:api:profile:read allegro:api:offers:write allegro:api:offers:read allegro:api:orders:read allegro:api:sale:offers:read allegro:api:sale:offers:write",
     });
 
     const authUrl = `https://allegro.pl/auth/oauth/authorize?${params.toString()}`;
