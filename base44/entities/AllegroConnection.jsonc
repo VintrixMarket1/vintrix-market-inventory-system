@@ -1,0 +1,30 @@
+{
+  "name": "AllegroConnection",
+  "type": "object",
+  "properties": {
+    "access_token": {
+      "type": "string",
+      "description": "Token dost\u0119powy Allegro"
+    },
+    "refresh_token": {
+      "type": "string",
+      "description": "Token od\u015bwie\u017cania Allegro"
+    },
+    "token_expires_at": {
+      "type": "string",
+      "description": "Data i czas wyga\u015bni\u0119cia tokenu dost\u0119powego (ISO)"
+    },
+    "installed_by": {
+      "type": "string",
+      "description": "Email u\u017cytkownika, kt\u00f3ry autoryzowa\u0142 po\u0142\u0105czenie"
+    },
+    "connected_at": {
+      "type": "string",
+      "description": "Data i czas nawi\u0105zania po\u0142\u0105czenia (ISO)"
+    }
+  },
+  "required": [
+    "access_token",
+    "refresh_token"
+  ]
+}
