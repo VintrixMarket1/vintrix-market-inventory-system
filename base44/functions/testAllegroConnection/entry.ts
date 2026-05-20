@@ -34,18 +34,20 @@ Deno.serve(async (req) => {
         }),
       });
 
+      const refreshData = await refreshRes.json();
+      console.log("Allegro refresh status:", refreshRes.status, JSON.stringify(refreshData));
+
       if (refreshRes.ok) {
-        const tokenData = await refreshRes.json();
-        const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
+        const newExpiry = new Date(Date.now() + refreshData.expires_in * 1000).toISOString();
         const updated = {
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token,
-          token_expires_at: expiresAt,
+          access_token: refreshData.access_token,
+          refresh_token: refreshData.refresh_token,
+          token_expires_at: newExpiry,
         };
         await base44.asServiceRole.entities.AllegroConnection.update(conn.id, updated);
         conn = { ...conn, ...updated };
       } else {
-        return Response.json({ connected: false, error: "Token wygasł i nie można go odświeżyć. Połącz ponownie." });
+        return Response.json({ connected: false, error: `Token wygasł. Błąd odświeżania: ${refreshData.error_description || refreshData.error || "nieznany błąd"}. Połącz ponownie.` });
       }
     }
 
@@ -57,7 +59,9 @@ Deno.serve(async (req) => {
     });
 
     if (!meRes.ok) {
-      return Response.json({ connected: false, error: "Token nieważny lub wygasł" });
+      const meErr = await meRes.json().catch(() => ({}));
+      console.log("Allegro /me error:", meRes.status, JSON.stringify(meErr));
+      return Response.json({ connected: false, error: `Token nieważny (${meRes.status}): ${meErr.errors?.[0]?.message || "nieznany błąd"}` });
     }
 
     const me = await meRes.json();
