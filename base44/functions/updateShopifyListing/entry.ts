@@ -1,13 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 async function getShopifyConfig(base44) {
-  const shopDomain = Deno.env.get("SHOPIFY_SHOP_DOMAIN");
-  if (!shopDomain) throw new Error("Brak SHOPIFY_SHOP_DOMAIN w sekretach.");
-
-  const connections = await base44.asServiceRole.entities.ShopifyConnection.filter({ shop_domain: shopDomain });
-  if (!connections || connections.length === 0) {
+  const connections = await base44.asServiceRole.entities.ShopifyConnection.list("-connected_at", 1);
+  if (!connections || connections.length === 0 || !connections[0].access_token) {
     throw new Error("Brak połączenia z Shopify. Zaauthoryzuj aplikację na stronie Ustawienia Shopify.");
   }
+  const shopDomain = connections[0].shop_domain;
   const token = connections[0].access_token;
   const apiVersion = Deno.env.get("SHOPIFY_API_VERSION") || "2026-04";
   return { domain: shopDomain, token, apiVersion, baseUrl: `https://${shopDomain}/admin/api/${apiVersion}` };

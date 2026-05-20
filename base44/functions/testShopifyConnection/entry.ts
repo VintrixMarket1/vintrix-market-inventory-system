@@ -6,21 +6,19 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-    const shopDomain = Deno.env.get("SHOPIFY_SHOP_DOMAIN");
     const apiVersion = Deno.env.get("SHOPIFY_API_VERSION") || "2026-04";
 
-    if (!shopDomain) {
-      return Response.json({ error: "Brak SHOPIFY_SHOP_DOMAIN w sekretach.", connected: false }, { status: 400 });
-    }
-
-    const connections = await base44.asServiceRole.entities.ShopifyConnection.filter({ shop_domain: shopDomain });
-    if (!connections || connections.length === 0) {
+    // Get the most recently saved connection (don't rely on SHOPIFY_SHOP_DOMAIN matching exactly)
+    const connections = await base44.asServiceRole.entities.ShopifyConnection.list("-connected_at", 1);
+    if (!connections || connections.length === 0 || !connections[0].access_token) {
       return Response.json({
         connected: false,
         error: "Brak tokena dostępu. Kliknij 'Połącz ze Shopify', aby zaauthoryzować aplikację.",
         hint: "oauth_required"
       }, { status: 400 });
     }
+
+    const shopDomain = connections[0].shop_domain;
 
     const accessToken = connections[0].access_token;
     const query = `query { shop { name myshopifyDomain plan { displayName } } }`;
