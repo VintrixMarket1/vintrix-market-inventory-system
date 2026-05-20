@@ -19,9 +19,18 @@ export default function AllegroSettings() {
 
   const handleConnect = async () => {
     setConnecting(true);
-    const res = await base44.functions.invoke("getAllegroAuthUrl", {});
-    const url = res.data?.url ?? res.url;
-    window.location.href = url;
+    try {
+      const res = await base44.functions.invoke("getAllegroAuthUrl", {});
+      const url = res.data?.url ?? res.url;
+      if (url) {
+        window.location.href = url;
+      } else {
+        alert("Nie udało się pobrać URL autoryzacji: " + JSON.stringify(res.data ?? res));
+      }
+    } catch (e) {
+      alert("Błąd: " + (e?.response?.data?.error || e.message));
+    }
+    setConnecting(false);
   };
 
   useEffect(() => {
