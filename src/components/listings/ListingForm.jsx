@@ -18,12 +18,13 @@ const platforms = [
 ];
 
 export default function ListingForm({ open, onClose, product, listing, onSaved }) {
+  const [savedListing, setSavedListing] = useState(listing || null);
   const isEdit = !!listing;
   const [form, setForm] = useState(listing || {
     product_id: product?.id || "",
     listing_title: product?.listing_title || product?.product_name || "",
     listing_description: product?.listing_description || "",
-    platform: "vinted",
+    platform: "shopify",
     listing_price: product?.suggested_sale_price || "",
     listing_status: "draft",
   });
@@ -74,17 +75,21 @@ Keep it concise, friendly, and optimized for quick sales. Write in English.`;
   const handleSubmit = async () => {
     setSaving(true);
     const data = { ...form, listing_price: parseFloat(form.listing_price) || 0, selected_images: selectedImages };
-    if (isEdit) {
-      await base44.entities.Listing.update(listing.id, data);
+    if (isEdit || savedListing) {
+      const id = savedListing?.id || listing?.id;
+      await base44.entities.Listing.update(id, data);
+      setSaving(false);
+      onSaved();
+      onClose();
     } else {
-      await base44.entities.Listing.create(data);
+      const created = await base44.entities.Listing.create(data);
       if (product && product.status === "in_stock") {
         await base44.entities.Product.update(product.id, { status: "listed" });
       }
+      setSaving(false);
+      onSaved();
+      setSavedListing(created);
     }
-    setSaving(false);
-    onSaved();
-    onClose();
   };
 
   return (
@@ -167,14 +172,14 @@ Keep it concise, friendly, and optimized for quick sales. Write in English.`;
               </SelectContent>
             </Select>
           </div>
-          {isEdit && (
-            <ShopifyActions listing={listing} product={product} onRefresh={onSaved} />
+          {(isEdit || savedListing) && form.platform === "shopify" && (
+            <ShopifyActions listing={savedListing || listing} product={product} onRefresh={onSaved} />
           )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={handleSubmit} disabled={saving || !form.listing_title} className="bg-emerald-600 hover:bg-emerald-700">
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              {isEdit ? "Update" : "Create Listing"}
+              {isEdit || savedListing ? "Update" : "Create Listing"}
             </Button>
           </div>
         </div>
