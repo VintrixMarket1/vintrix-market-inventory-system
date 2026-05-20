@@ -13,14 +13,15 @@ export default function AllegroSettings() {
   const checkConnection = async () => {
     setLoading(true);
     const res = await base44.functions.invoke("testAllegroConnection", {});
-    setStatus(res.data);
+    setStatus(res.data ?? res);
     setLoading(false);
   };
 
   const handleConnect = async () => {
     setConnecting(true);
     const res = await base44.functions.invoke("getAllegroAuthUrl", {});
-    window.location.href = res.data.url;
+    const url = res.data?.url ?? res.url;
+    window.location.href = url;
   };
 
   useEffect(() => {

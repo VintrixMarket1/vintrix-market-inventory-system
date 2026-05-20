@@ -19,7 +19,15 @@ export default function AllegroCallback() {
     }
 
     base44.functions.invoke("allegroOAuthCallback", { code })
-      .then(() => setStatus("success"))
+      .then((res) => {
+        const data = res.data ?? res;
+        if (data?.error) {
+          setError(data.error);
+          setStatus("error");
+        } else {
+          setStatus("success");
+        }
+      })
       .catch(e => {
         setError(e.message);
         setStatus("error");
