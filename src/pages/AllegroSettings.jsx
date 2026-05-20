@@ -23,7 +23,7 @@ export default function AllegroSettings() {
       const res = await base44.functions.invoke("getAllegroAuthUrl", {});
       const url = res.data?.url ?? res.url;
       if (url) {
-        window.location.href = url;
+        window.open(url, "_blank");
       } else {
         alert("Nie udało się pobrać URL autoryzacji: " + JSON.stringify(res.data ?? res));
       }
