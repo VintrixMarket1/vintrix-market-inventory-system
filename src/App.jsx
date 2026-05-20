@@ -21,15 +21,6 @@ import ShopifyCallback from './pages/ShopifyCallback';
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
-  // Allow ShopifyCallback to render without auth — Shopify redirects here with code+shop params
-  if (window.location.pathname === '/ShopifyCallback') {
-    return (
-      <Routes>
-        <Route path="/ShopifyCallback" element={<ShopifyCallback />} />
-      </Routes>
-    );
-  }
-
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -50,7 +41,6 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/Dashboard" replace />} />
-      <Route path="/ShopifyCallback" element={<ShopifyCallback />} />
       <Route element={<AppLayout />}>
         <Route path="/Dashboard" element={<Dashboard />} />
         <Route path="/Inventory" element={<Inventory />} />
@@ -72,7 +62,10 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <AuthenticatedApp />
+          <Routes>
+            <Route path="/ShopifyCallback" element={<ShopifyCallback />} />
+            <Route path="/*" element={<AuthenticatedApp />} />
+          </Routes>
         </Router>
         <Toaster />
       </QueryClientProvider>
