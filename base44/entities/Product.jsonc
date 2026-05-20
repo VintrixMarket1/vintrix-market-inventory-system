@@ -78,6 +78,14 @@
       "type": "string",
       "description": "Dodatkowe notatki"
     },
+    "listing_title": {
+      "type": "string",
+      "description": "Tytu\u0142 og\u0142oszenia wygenerowany przez AI"
+    },
+    "listing_description": {
+      "type": "string",
+      "description": "Opis og\u0142oszenia wygenerowany przez AI"
+    },
     "images": {
       "type": "array",
       "items": {
@@ -148,11 +156,11 @@
     "is_multi_item": {
       "type": "boolean",
       "default": false,
-      "description": "Czy produkt jest wielosztuk\u0105 (wiele sztuk tego samego egzemplarza)"
+      "description": "Czy produkt jest wielosztuk\u0119 (wiele sztuk tego samego egzemplarza)"
     },
     "stock_quantity": {
       "type": "number",
-      "description": "Stan magazynowy (liczba sztuk) \u2014 tylko dla wielosztuk\u00f3w"
+      "description": "Stan magazynowy (liczba sztuk) \u2014 tylko dla wielosztuk\u00f3\u00f3w"
     }
   },
   "required": [

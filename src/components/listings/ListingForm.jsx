@@ -21,8 +21,8 @@ export default function ListingForm({ open, onClose, product, listing, onSaved }
   const isEdit = !!listing;
   const [form, setForm] = useState(listing || {
     product_id: product?.id || "",
-    listing_title: product?.product_name || "",
-    listing_description: "",
+    listing_title: product?.listing_title || product?.product_name || "",
+    listing_description: product?.listing_description || "",
     platform: "vinted",
     listing_price: product?.suggested_sale_price || "",
     listing_status: "draft",

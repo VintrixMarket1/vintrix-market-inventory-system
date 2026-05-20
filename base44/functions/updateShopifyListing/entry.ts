@@ -24,8 +24,13 @@ Deno.serve(async (req) => {
 
     const { baseUrl, token } = await getShopifyConfig(base44);
 
-    const listing = await base44.entities.Listing.get(listing_id);
-    const product = await base44.entities.Product.get(listing.product_id);
+    const listings = await base44.asServiceRole.entities.Listing.filter({ id: listing_id });
+    if (!listings || listings.length === 0) return Response.json({ error: "Listing nie istnieje" }, { status: 404 });
+    const listing = listings[0];
+
+    const products = await base44.asServiceRole.entities.Product.filter({ id: listing.product_id });
+    if (!products || products.length === 0) return Response.json({ error: "Produkt nie istnieje" }, { status: 404 });
+    const product = products[0];
 
     const shopifyProductId = product.shopify_product_id;
     if (!shopifyProductId) return Response.json({ error: "No Shopify product ID — publish first" }, { status: 400 });
