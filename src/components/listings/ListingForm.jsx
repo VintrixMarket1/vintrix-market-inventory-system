@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { base44 } from "@/api/base44Client";
 import { Loader2, Sparkles, CheckSquare, Square } from "lucide-react";
 import ShopifyActions from "./ShopifyActions";
+import AllegroActions from "./AllegroActions";
 
 const platforms = [
   { value: "shopify", label: "Shopify" },
@@ -174,6 +175,9 @@ Keep it concise, friendly, and optimized for quick sales. Write in English.`;
           </div>
           {(isEdit || savedListing) && form.platform === "shopify" && (
             <ShopifyActions listing={savedListing || listing} product={product} onRefresh={onSaved} />
+          )}
+          {(isEdit || savedListing) && form.platform === "allegro" && (
+            <AllegroActions listing={savedListing || listing} product={product} onRefresh={onSaved} />
           )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
