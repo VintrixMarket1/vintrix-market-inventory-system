@@ -1,6 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-// Helper: get valid Allegro access token (refresh if needed)
 async function getAllegroToken(base44) {
   const connections = await base44.asServiceRole.entities.AllegroConnection.list("-connected_at", 1);
   if (!connections || connections.length === 0) throw new Error("Brak połączenia z Allegro. Połącz konto w ustawieniach.");
@@ -13,7 +12,6 @@ async function getAllegroToken(base44) {
     const clientId = Deno.env.get("ALLEGRO_CLIENT_ID");
     const clientSecret = Deno.env.get("ALLEGRO_CLIENT_SECRET");
     const credentials = btoa(`${clientId}:${clientSecret}`);
-
     const refreshRes = await fetch("https://allegro.pl/auth/oauth/token", {
       method: "POST",
       headers: { "Authorization": `Basic ${credentials}`, "Content-Type": "application/x-www-form-urlencoded" },
@@ -21,7 +19,6 @@ async function getAllegroToken(base44) {
     });
     const refreshData = await refreshRes.json();
     if (!refreshRes.ok) throw new Error(`Token wygasł: ${refreshData.error_description || "Połącz ponownie w ustawieniach."}`);
-
     const updated = {
       access_token: refreshData.access_token,
       refresh_token: refreshData.refresh_token,
@@ -30,7 +27,6 @@ async function getAllegroToken(base44) {
     await base44.asServiceRole.entities.AllegroConnection.update(conn.id, updated);
     conn = { ...conn, ...updated };
   }
-
   return conn.access_token;
 }
 
@@ -45,7 +41,6 @@ Deno.serve(async (req) => {
 
     const accessToken = await getAllegroToken(base44);
 
-    // Fetch listing and product
     const listings = await base44.entities.Listing.filter({ id: listing_id });
     const listing = listings[0];
     if (!listing) return Response.json({ error: "Listing not found" }, { status: 404 });
@@ -54,36 +49,62 @@ Deno.serve(async (req) => {
     const product = products[0];
     if (!product) return Response.json({ error: "Product not found" }, { status: 404 });
 
-    // Map condition
-    const conditionMap = { new: "NEW", like_new: "USED", used: "USED" };
-    const allegroCondition = conditionMap[product.condition] || "USED";
+    // Map condition to Allegro parameter value
+    // Stan: 11323 (parametr), wartości: "11323_1" = nowy, "11323_2" = używany
+    const isNew = product.condition === "new";
+    const conditionValueId = isNew ? "11323_1" : "11323_2";
 
-    // Upload images to Allegro
+    // Images to use
     const imagesToUse = listing.selected_images?.length > 0 ? listing.selected_images : product.images || [];
-    const uploadedImageIds = [];
 
-    for (const imageUrl of imagesToUse.slice(0, 8)) {
-      const uploadRes = await fetch("https://upload.allegro.pl/sale/images", {
-        method: "POST",
+    // If updating existing offer
+    if (listing.allegro_listing_id) {
+      const updateRes = await fetch(`https://api.allegro.pl/sale/product-offers/${listing.allegro_listing_id}`, {
+        method: "PATCH",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
-          "Content-Type": "application/vnd.allegro.public.v1+json",
           "Accept": "application/vnd.allegro.public.v1+json",
+          "Content-Type": "application/vnd.allegro.public.v1+json",
         },
-        body: JSON.stringify({ url: imageUrl }),
+        body: JSON.stringify({
+          name: listing.listing_title,
+          sellingMode: {
+            format: "BUY_NOW",
+            price: { amount: listing.listing_price.toFixed(2), currency: "PLN" },
+          },
+          stock: { available: product.stock_quantity || 1, unit: "UNIT" },
+          publication: { status: "ACTIVE" },
+        }),
       });
-      if (uploadRes.ok) {
-        const imgData = await uploadRes.json();
-        if (imgData.imageId) uploadedImageIds.push(imgData.imageId);
-      } else {
-        const err = await uploadRes.text();
-        console.log("Image upload warning:", uploadRes.status, err);
+      if (!updateRes.ok) {
+        const err = await updateRes.json().catch(() => ({}));
+        return Response.json({ error: `Błąd aktualizacji: ${JSON.stringify(err.errors || err)}` }, { status: 400 });
       }
+      await base44.entities.Listing.update(listing.id, { listing_status: "listed" });
+      await base44.entities.Product.update(product.id, { status: "listed" });
+      return Response.json({ success: true, allegro_listing_id: listing.allegro_listing_id, updated: true });
     }
 
-    // Build offer payload (simple fixed-price offer)
+    // Build new product-offer payload using /sale/product-offers
+    // We create a "new product" inline (no Catalog match needed)
     const offerPayload = {
       name: listing.listing_title,
+      productSet: [
+        {
+          product: {
+            name: listing.listing_title,
+            category: { id: "257517" }, // "Inne" - fallback kategoria
+            parameters: [
+              {
+                id: "11323",
+                valuesIds: [conditionValueId],
+              },
+            ],
+            images: imagesToUse.slice(0, 8),
+          },
+          quantity: { value: 1 },
+        },
+      ],
       description: {
         sections: [
           {
@@ -91,19 +112,15 @@ Deno.serve(async (req) => {
               {
                 type: "TEXT",
                 content: listing.listing_description || listing.listing_title,
-              }
-            ]
-          }
-        ]
+              },
+            ],
+          },
+        ],
       },
-      category: { id: "257517" }, // Inne - odzież używana, generic fallback
-      parameters: [
-        { id: "11323", values: [allegroCondition === "NEW" ? "11323_1" : "11323_2"] }, // Stan
-      ],
       sellingMode: {
         format: "BUY_NOW",
         price: {
-          amount: String(listing.listing_price.toFixed(2)),
+          amount: listing.listing_price.toFixed(2),
           currency: "PLN",
         },
       },
@@ -111,13 +128,12 @@ Deno.serve(async (req) => {
         available: product.stock_quantity || 1,
         unit: "UNIT",
       },
-      images: uploadedImageIds.map(id => ({ imageId: id })),
       payments: {
         invoice: "NO_INVOICE",
       },
       delivery: {
-        shippingRates: { id: null },
         handlingTime: "PT24H",
+        shippingRates: null,
       },
       location: {
         countryCode: "PL",
@@ -127,34 +143,7 @@ Deno.serve(async (req) => {
       },
     };
 
-    // Check if already published (update) or new
-    if (listing.allegro_listing_id) {
-      // Update existing offer
-      const updateRes = await fetch(`https://api.allegro.pl/sale/product-offers/${listing.allegro_listing_id}`, {
-        method: "PATCH",
-        headers: {
-          "Authorization": `Bearer ${accessToken}`,
-          "Accept": "application/vnd.allegro.public.v1+json",
-          "Content-Type": "application/vnd.allegro.public.v1+json",
-        },
-        body: JSON.stringify({
-          name: offerPayload.name,
-          sellingMode: offerPayload.sellingMode,
-          stock: offerPayload.stock,
-          publication: { status: "ACTIVE" },
-        }),
-      });
-      if (!updateRes.ok) {
-        const err = await updateRes.json().catch(() => ({}));
-        return Response.json({ error: `Błąd aktualizacji oferty: ${JSON.stringify(err.errors || err)}` }, { status: 400 });
-      }
-      await base44.entities.Listing.update(listing.id, { listing_status: "listed" });
-      await base44.entities.Product.update(product.id, { status: "listed", allegro_listing_id: listing.allegro_listing_id });
-      return Response.json({ success: true, allegro_listing_id: listing.allegro_listing_id, updated: true });
-    }
-
-    // Create new offer
-    const createRes = await fetch("https://api.allegro.pl/sale/offers", {
+    const createRes = await fetch("https://api.allegro.pl/sale/product-offers", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
@@ -165,15 +154,15 @@ Deno.serve(async (req) => {
     });
 
     const createData = await createRes.json();
-    console.log("Allegro create offer response:", createRes.status, JSON.stringify(createData).slice(0, 500));
+    console.log("Allegro product-offers response:", createRes.status, JSON.stringify(createData).slice(0, 1000));
 
     if (!createRes.ok) {
-      return Response.json({ error: `Błąd tworzenia oferty Allegro: ${JSON.stringify(createData.errors || createData)}` }, { status: 400 });
+      const errMsg = createData.errors?.map(e => e.message || e.code).join("; ") || JSON.stringify(createData);
+      return Response.json({ error: `Błąd Allegro: ${errMsg}` }, { status: 400 });
     }
 
     const allegroOfferId = createData.id;
 
-    // Save allegro_listing_id to listing and product
     await Promise.all([
       base44.entities.Listing.update(listing.id, { listing_status: "listed", allegro_listing_id: allegroOfferId }),
       base44.entities.Product.update(product.id, { status: "listed", allegro_listing_id: allegroOfferId }),
