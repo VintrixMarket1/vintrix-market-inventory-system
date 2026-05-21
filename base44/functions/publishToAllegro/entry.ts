@@ -162,7 +162,6 @@ Deno.serve(async (req) => {
       },
       delivery: {
         handlingTime: "PT24H",
-        shippingRates: null,
       },
       location: {
         countryCode: "PL",
