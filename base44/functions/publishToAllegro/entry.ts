@@ -1,5 +1,25 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+// --- Vintrix Market account settings ---
+const SHIPPING_RATES = {
+  small: "6e05d239-b12a-4941-ab01-5b59fa69256a",
+  large: "d9dc3989-31ae-4bfa-ae2f-e3076521375b",
+};
+const RETURN_POLICY_ID = "5339f3cf-6e5e-4903-87f4-922892772c40";
+const IMPLIED_WARRANTY_ID = "5e43a3fd-2f9e-4ff9-9b66-65392a75e916";
+
+const CATEGORY_MAP = {
+  clothing: "5",
+  shoes: "110778",
+  accessories: "4",
+  electronics: "88",
+  home: "14",
+  toys: "6",
+  sports: "94",
+  books: "7",
+  other: "257517",
+};
+
 async function uploadImageToAllegro(imageUrl, accessToken) {
   const fetchRes = await fetch(imageUrl);
   if (!fetchRes.ok) throw new Error(`Nie udało się pobrać zdjęcia: ${imageUrl}`);
@@ -48,25 +68,14 @@ async function getAllegroToken(base44) {
   return conn.access_token;
 }
 
-const CATEGORY_MAP = {
-  clothing: "5",
-  shoes: "110778",
-  accessories: "4",
-  electronics: "88",
-  home: "14",
-  toys: "6",
-  sports: "94",
-  books: "7",
-  other: "257517",
-};
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { listing_id } = await req.json();
+    const body = await req.json();
+    const { listing_id, shipping_rate_id } = body;
     if (!listing_id) return Response.json({ error: "listing_id is required" }, { status: 400 });
 
     const accessToken = await getAllegroToken(base44);
@@ -122,11 +131,8 @@ Deno.serve(async (req) => {
 
     const categoryId = CATEGORY_MAP[product.category] || "257517";
 
-    // Build description
-    const descriptionText = listing.listing_description
-      ? listing.listing_description
-      : `<p>${listing.listing_title}</p>`;
-
+    // Build Allegro-format description
+    const descriptionText = listing.listing_description || `<p>${listing.listing_title}</p>`;
     const descriptionSections = [
       { items: [{ type: "TEXT", content: descriptionText }] },
     ];
@@ -134,8 +140,14 @@ Deno.serve(async (req) => {
       descriptionSections.push({ items: [{ type: "IMAGE", url: imgUrl }] });
     });
 
-    // --- STEP 1: Create INACTIVE draft (bypasses mandatory parameter validation) ---
-    const draftPayload = {
+    // Shipping rate: use frontend choice or auto-detect by category
+    const heavyCategories = ["home", "electronics", "sports", "toys"];
+    const shippingRateId = shipping_rate_id || (
+      heavyCategories.includes(product.category) ? SHIPPING_RATES.large : SHIPPING_RATES.small
+    );
+
+    // Build offer payload - NO parameters in productSet (Stan is not allowed there)
+    const offerPayload = {
       name: listing.listing_title,
       category: { id: categoryId },
       images: allegroImageUrls,
@@ -145,31 +157,43 @@ Deno.serve(async (req) => {
         price: { amount: listing.listing_price.toFixed(2), currency: "PLN" },
       },
       stock: { available: product.stock_quantity || 1, unit: "UNIT" },
-      payments: { invoice: "NO_INVOICE" },
-      delivery: { handlingTime: "PT24H" },
-      location: { countryCode: "PL" },
+      payments: { invoice: "VAT" },
+      delivery: {
+        handlingTime: "PT24H",
+        shippingRates: { id: shippingRateId },
+      },
+      location: { countryCode: "PL", city: "Zgierz", postCode: "95-100" },
+      afterSalesServices: {
+        impliedWarranty: { id: IMPLIED_WARRANTY_ID },
+        returnPolicy: { id: RETURN_POLICY_ID },
+      },
       publication: { status: "INACTIVE" },
     };
 
-    console.log("Creating draft:", JSON.stringify(draftPayload));
-
-    const draftRes = await fetch("https://api.allegro.pl/sale/product-offers", {
-      method: "POST",
-      headers,
-      body: JSON.stringify(draftPayload),
-    });
-
-    const draftData = await draftRes.json();
-    console.log("Draft status:", draftRes.status, JSON.stringify(draftData));
-
-    if (!draftRes.ok) {
-      const errParts = draftData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
-      return Response.json({ error: `Błąd Allegro: ${errParts.join(" | ") || JSON.stringify(draftData)}` }, { status: 400 });
+    // External SKU
+    if (product.internal_code) {
+      offerPayload.external = { id: product.internal_code.substring(0, 50) };
     }
 
-    const allegroOfferId = draftData.id;
+    console.log("Creating offer:", JSON.stringify(offerPayload));
 
-    // --- STEP 2: Activate the offer ---
+    const createRes = await fetch("https://api.allegro.pl/sale/product-offers", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(offerPayload),
+    });
+
+    const createData = await createRes.json();
+    console.log("Create status:", createRes.status, JSON.stringify(createData));
+
+    if (!createRes.ok) {
+      const errParts = createData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
+      return Response.json({ error: `Błąd Allegro: ${errParts.join(" | ") || JSON.stringify(createData)}` }, { status: 400 });
+    }
+
+    const allegroOfferId = createData.id;
+
+    // --- Activate offer ---
     const activateRes = await fetch(`https://api.allegro.pl/sale/product-offers/${allegroOfferId}`, {
       method: "PATCH",
       headers,
@@ -179,7 +203,6 @@ Deno.serve(async (req) => {
     const activateData = await activateRes.json();
     console.log("Activate status:", activateRes.status, JSON.stringify(activateData));
 
-    // Even if activation has warnings, save the offer ID
     const finalStatus = activateRes.ok ? "listed" : "draft";
 
     await Promise.all([
@@ -190,7 +213,7 @@ Deno.serve(async (req) => {
     if (!activateRes.ok) {
       const errParts = activateData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
       return Response.json({
-        warning: `Oferta utworzona (ID: ${allegroOfferId}), ale nie udało się aktywować: ${errParts.join(" | ")}`,
+        warning: `Oferta zapisana jako szkic (ID: ${allegroOfferId}). Dokończ w panelu Allegro: ${errParts.join(" | ")}`,
         allegro_listing_id: allegroOfferId,
       });
     }
