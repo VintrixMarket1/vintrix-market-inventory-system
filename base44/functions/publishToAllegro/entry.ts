@@ -16,7 +16,7 @@ async function uploadImageToAllegro(imageUrl, accessToken) {
   });
   const uploadData = await uploadRes.json();
   if (!uploadRes.ok) throw new Error(`Błąd uploadu zdjęcia: ${JSON.stringify(uploadData)}`);
-  return uploadData.location; // returns URL hosted on Allegro CDN
+  return uploadData.location;
 }
 
 async function getAllegroToken(base44) {
@@ -68,22 +68,17 @@ Deno.serve(async (req) => {
     const product = products[0];
     if (!product) return Response.json({ error: "Product not found" }, { status: 404 });
 
-    // Images to use
-    const imagesToUse = listing.selected_images?.length > 0 ? listing.selected_images : product.images || [];
-
     // If updating existing offer
     if (listing.allegro_listing_id) {
-      const updateRes = await fetch(`https://api.allegro.pl/sale/offers/${listing.allegro_listing_id}`, {
-        method: "PUT",
+      const updateRes = await fetch(`https://api.allegro.pl/sale/product-offers/${listing.allegro_listing_id}`, {
+        method: "PATCH",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
           "Accept": "application/vnd.allegro.public.v1+json",
           "Content-Type": "application/vnd.allegro.public.v1+json",
         },
         body: JSON.stringify({
-          name: listing.listing_title,
           sellingMode: {
-            format: "BUY_NOW",
             price: { amount: listing.listing_price.toFixed(2), currency: "PLN" },
           },
           stock: { available: product.stock_quantity || 1, unit: "UNIT" },
@@ -100,9 +95,9 @@ Deno.serve(async (req) => {
     }
 
     // Upload images to Allegro CDN first (max 8)
-    const imagesToUpload = imagesToUse.slice(0, 8);
+    const imagesToUse = listing.selected_images?.length > 0 ? listing.selected_images : product.images || [];
     const allegroImageUrls = [];
-    for (const imgUrl of imagesToUpload) {
+    for (const imgUrl of imagesToUse.slice(0, 8)) {
       try {
         const allegroUrl = await uploadImageToAllegro(imgUrl, accessToken);
         allegroImageUrls.push(allegroUrl);
@@ -111,7 +106,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Build description sections: text + image sections
+    // Map category
+    const categoryMap = {
+      clothing: "5",
+      shoes: "110778",
+      accessories: "4",
+      electronics: "88",
+      home: "14",
+      toys: "6",
+      sports: "94",
+      books: "7",
+      other: "257517",
+    };
+    const categoryId = categoryMap[product.category] || "257517";
+
+    // Build description
     const descriptionText = listing.listing_description
       ? listing.listing_description
       : `<p>${listing.listing_title}</p>`;
@@ -119,30 +128,15 @@ Deno.serve(async (req) => {
     const descriptionSections = [
       { items: [{ type: "TEXT", content: descriptionText }] },
     ];
-
     allegroImageUrls.forEach((imgUrl) => {
       descriptionSections.push({ items: [{ type: "IMAGE", url: imgUrl }] });
     });
 
-    // Map category
-    const categoryMap = {
-      clothing: "5",      // Odzież
-      shoes: "110778",    // Obuwie
-      accessories: "4",   // Akcesoria
-      electronics: "88",  // Elektronika
-      home: "14",         // Dom i ogród
-      toys: "6",          // Zabawki
-      sports: "94",       // Sport i turystyka
-      books: "7",         // Książki
-      other: "257517",    // Inne
-    };
-    const categoryId = categoryMap[product.category] || "257517";
-
-    // Build /sale/offers payload (no productSet, no mandatory parameters)
+    // Build /sale/product-offers payload — minimal, no mandatory parameters beyond required fields
     const offerPayload = {
       name: listing.listing_title,
       category: { id: categoryId },
-      images: allegroImageUrls.map(url => ({ url })),
+      images: allegroImageUrls,
       description: {
         sections: descriptionSections,
       },
@@ -171,7 +165,9 @@ Deno.serve(async (req) => {
       },
     };
 
-    const createRes = await fetch("https://api.allegro.pl/sale/offers", {
+    console.log("Sending to Allegro product-offers:", JSON.stringify(offerPayload));
+
+    const createRes = await fetch("https://api.allegro.pl/sale/product-offers", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
@@ -182,8 +178,8 @@ Deno.serve(async (req) => {
     });
 
     const createData = await createRes.json();
-    console.log("Allegro sale/offers status:", createRes.status);
-    console.log("Allegro sale/offers response:", JSON.stringify(createData));
+    console.log("Allegro product-offers status:", createRes.status);
+    console.log("Allegro product-offers response:", JSON.stringify(createData));
 
     if (!createRes.ok) {
       const errParts = createData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
