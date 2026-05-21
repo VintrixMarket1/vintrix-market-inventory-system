@@ -85,8 +85,26 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, allegro_listing_id: listing.allegro_listing_id, updated: true });
     }
 
+    // Build description sections: text + image sections
+    const descriptionText = listing.listing_description
+      ? listing.listing_description
+      : `<p>${listing.listing_title}</p>`;
+
+    // Build sections: first section = text, then one section per image
+    const descriptionSections = [
+      {
+        items: [{ type: "TEXT", content: descriptionText }],
+      },
+    ];
+
+    // Add image sections (max 8 images, one per section)
+    imagesToUse.slice(0, 8).forEach((imgUrl) => {
+      descriptionSections.push({
+        items: [{ type: "IMAGE", url: imgUrl }],
+      });
+    });
+
     // Build new product-offer payload using /sale/product-offers
-    // We create a "new product" inline (no Catalog match needed)
     const offerPayload = {
       name: listing.listing_title,
       productSet: [
@@ -106,16 +124,7 @@ Deno.serve(async (req) => {
         },
       ],
       description: {
-        sections: [
-          {
-            items: [
-              {
-                type: "TEXT",
-                content: `<p>${(listing.listing_description || listing.listing_title).replace(/\n/g, "</p><p>")}</p>`,
-              },
-            ],
-          },
-        ],
+        sections: descriptionSections,
       },
       sellingMode: {
         format: "BUY_NOW",

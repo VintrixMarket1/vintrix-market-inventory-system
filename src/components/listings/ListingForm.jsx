@@ -9,6 +9,7 @@ import { base44 } from "@/api/base44Client";
 import { Loader2, Sparkles, CheckSquare, Square } from "lucide-react";
 import ShopifyActions from "./ShopifyActions";
 import AllegroActions from "./AllegroActions";
+import AllegroDescriptionEditor from "./AllegroDescriptionEditor";
 
 const platforms = [
   { value: "shopify", label: "Shopify" },
@@ -43,10 +44,35 @@ export default function ListingForm({ open, onClose, product, listing, onSaved }
 
   const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
+  const isAllegro = form.platform === "allegro";
+
   const generateDescription = async () => {
     setGenerating(true);
-    const conditionMap = { new: "Brand new with tags", like_new: "Like new, excellent condition", used: "Used, good condition" };
-    const prompt = `Generate a short, attractive marketplace listing description for Vinted/OLX for the following product:
+    const conditionMap = { new: "Nowy", like_new: "Jak nowy, stan bardzo dobry", used: "Używany, stan dobry" };
+
+    let prompt;
+    if (isAllegro) {
+      prompt = `Wygeneruj profesjonalny opis oferty na Allegro w formacie HTML dla produktu:
+- Nazwa: ${product?.product_name || form.listing_title}
+- Marka: ${product?.brand || "brak"}
+- Kategoria: ${product?.category || "inne"}
+- Stan: ${conditionMap[product?.condition] || "dobry"}
+- Rozmiar: ${product?.size || "brak"}
+- Kolor: ${product?.color || "brak"}
+- Cena: ${form.listing_price || ""} PLN
+
+Wymagania:
+- Używaj TYLKO tych tagów HTML: h1, h2, p, ul, ol, li, b
+- Struktura:
+  1. <h1> z tytułem oferty (chwytliwy, zawiera markę i stan)
+  2. <h2>Opis produktu</h2> + <p> z 2-3 zdaniami zachęcającymi
+  3. <h2>Cechy</h2> + <ul><li> z listą najważniejszych cech (stan, rozmiar, kolor, marka)
+  4. <h2>Dostawa</h2> + <p> z info o szybkiej wysyłce 1-2 dni robocze
+  5. <h2>Dlaczego warto?</h2> + <ul><li> z 3 korzyściami dla kupującego
+- Pisz po polsku, stylem sprzedażowym, pozytywnie
+- NIE dodawaj żadnego CSS, klas, atrybutów w tagach`;
+    } else {
+      prompt = `Generate a short, attractive marketplace listing description for Vinted/OLX:
 - Name: ${product?.product_name || form.listing_title}
 - Category: ${product?.category || "general"}
 - Condition: ${conditionMap[product?.condition] || "good condition"}
@@ -56,11 +82,12 @@ export default function ListingForm({ open, onClose, product, listing, onSaved }
 Structure:
 1. Condition statement
 2. Size (if clothing/shoes)
-3. Short marketing description (2-3 sentences, friendly tone)
+3. Short marketing description (2-3 sentences)
 4. Shipping: "Fast shipping within 1-2 business days"
 5. Internal code reference
 
-Keep it concise, friendly, and optimized for quick sales. Write in English.`;
+Keep it concise. Write in Polish.`;
+    }
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
@@ -120,21 +147,47 @@ Keep it concise, friendly, and optimized for quick sales. Write in English.`;
             </div>
           </div>
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label>Description</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={generateDescription}
-                disabled={generating}
-                className="text-xs h-7 gap-1.5 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-              >
-                {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                Generate Vinted Description
-              </Button>
-            </div>
-            <Textarea value={form.listing_description} onChange={e => handleChange("listing_description", e.target.value)} rows={6} placeholder="Write or generate a description..." />
+            {!isAllegro && (
+              <>
+                <div className="flex items-center justify-between">
+                  <Label>Opis</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={generateDescription}
+                    disabled={generating}
+                    className="text-xs h-7 gap-1.5 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                  >
+                    {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    Generuj opis
+                  </Button>
+                </div>
+                <Textarea value={form.listing_description} onChange={e => handleChange("listing_description", e.target.value)} rows={6} placeholder="Napisz lub wygeneruj opis..." />
+              </>
+            )}
+            {isAllegro && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-700">Opis Allegro</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={generateDescription}
+                    disabled={generating}
+                    className="text-xs h-7 gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50"
+                  >
+                    {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    Generuj opis Allegro (AI)
+                  </Button>
+                </div>
+                <AllegroDescriptionEditor
+                  value={form.listing_description}
+                  onChange={(v) => handleChange("listing_description", v)}
+                />
+              </div>
+            )}
           </div>
           {productImages.length > 0 && (
             <div className="space-y-1.5">
