@@ -8,17 +8,19 @@ const SHIPPING_RATES = {
 const RETURN_POLICY_ID = "5339f3cf-6e5e-4903-87f4-922892772c40";
 const IMPLIED_WARRANTY_ID = "5e43a3fd-2f9e-4ff9-9b66-65392a75e916";
 
-// Allegro category IDs — verified via API /sale/categories
+// Allegro category IDs — verified leaf nodes via /sale/categories
+// Priority: categories where Marka is optional or not required (to avoid catalog product requirement)
+// 102864 = Sport > Turystyka > Akcesoria — only Stan required, Marka optional (SAFE CATEGORY)
 const CATEGORY_MAP = {
-  clothing: "1454",                                     // Moda > Odzież, Obuwie, Dodatki
-  shoes: "1469",                                        // Moda > Obuwie
-  accessories: "1487",                                  // Moda > Galanteria i dodatki
-  electronics: "42540aec-367a-4e5e-b411-17c09b08e41f", // Elektronika
-  home: "5",                                            // Dom i Ogród
-  toys: "11763",                                        // Dziecko
-  sports: "3919",                                       // Sport i turystyka
-  books: "38d588fd-7e9c-4c42-a4ae-6831775eca45",       // Kultura i rozrywka
-  other: "1454",                                        // fallback: Odzież, Obuwie, Dodatki (brak ogólnej "inne")
+  clothing: "535",     // Moda > Odzież męska > Pozostałe
+  shoes: "5544",       // Moda > Obuwie > Damskie > Pozostałe
+  accessories: "1489", // Moda > Galanteria > Paski
+  electronics: "102864", // safe fallback (electronics often needs catalog product)
+  home: "128",         // Dom i Ogród > Wyposażenie > Pozostałe
+  toys: "11842",       // Dziecko > Zabawki > Pozostałe
+  sports: "102864",    // Sport > Turystyka > Akcesoria (Marka optional)
+  books: "102864",     // safe fallback
+  other: "102864",     // safe fallback — Stan only required, Marka optional
 };
 
 async function uploadImageToAllegro(imageUrl, accessToken) {
@@ -67,6 +69,95 @@ async function getAllegroToken(base44) {
     conn = { ...conn, ...updated };
   }
   return conn.access_token;
+}
+
+// Resolve parameters for a category — only include non-catalog params
+// Catalog params (like Marka 248811) that are "required" must go through productSet,
+// but if Marka is optional we can include it in offer.parameters safely
+async function resolveCategoryParams(categoryId, resolvedCondition, product, accessToken) {
+  const params = [];
+  try {
+    const paramRes = await fetch(`https://api.allegro.pl/sale/categories/${categoryId}/parameters`, {
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Accept": "application/vnd.allegro.public.v1+json",
+      },
+    });
+    const paramData = await paramRes.json();
+    const parameters = paramData.parameters || [];
+
+    // Stan (condition) — id 11323, always include
+    const stanParam = parameters.find(p => p.id === "11323");
+    if (stanParam?.dictionary?.length > 0) {
+      const vals = stanParam.dictionary;
+      const conditionMap = {
+        new: ["nowy"],
+        like_new: ["po zwrocie", "outlet", "nowy bez", "powystawowy"],
+        used: ["używany", "uzywany"],
+      };
+      const keywords = conditionMap[resolvedCondition] || conditionMap.used;
+      let matched = null;
+      for (const kw of keywords) {
+        matched = vals.find(v => v.name?.toLowerCase().includes(kw));
+        if (matched) break;
+      }
+      if (!matched) matched = vals.find(v => v.name?.toLowerCase().includes("używany"));
+      if (!matched) matched = vals[0];
+      if (matched) params.push({ id: "11323", valuesIds: [matched.id] });
+    }
+
+    // Marka — ONLY include if NOT required (optional). Required Marka needs productSet (catalog product)
+    const markaParam = parameters.find(p => p.id === "248811");
+    if (markaParam && !markaParam.required && markaParam.dictionary?.length > 0) {
+      const brandName = (product.brand || "").toLowerCase().trim();
+      const vals = markaParam.dictionary;
+      let matched = null;
+      if (brandName) {
+        matched = vals.find(v => v.name?.toLowerCase() === brandName);
+        if (!matched) matched = vals.find(v => v.name?.toLowerCase().includes(brandName));
+      }
+      if (!matched) matched = vals.find(v => v.name?.toLowerCase() === "bez marki");
+      if (matched) params.push({ id: "248811", valuesIds: [matched.id] });
+    }
+
+    // Płeć (gender) — id 15851, optional, include when available
+    const plecParam = parameters.find(p => p.id === "15851");
+    if (plecParam?.dictionary?.length > 0) {
+      const genderMap = {
+        men: ["mężczyzna"],
+        women: ["kobieta"],
+        kids: ["dziecko"],
+        unisex: ["uniseks", "unisex"],
+      };
+      const gender = product.gender || "unisex";
+      const keywords = genderMap[gender] || genderMap.unisex;
+      const vals = plecParam.dictionary;
+      let matched = null;
+      for (const kw of keywords) {
+        matched = vals.find(v => v.name?.toLowerCase().includes(kw));
+        if (matched) break;
+      }
+      if (matched) params.push({ id: "15851", valuesIds: [matched.id] });
+    }
+
+    // Kod producenta (string) — include if required
+    const kpParam = parameters.find(p => p.id === "224017" && p.required);
+    if (kpParam) {
+      const sku = product.internal_code || product.barcode || "BRAK";
+      params.push({ id: "224017", values: [sku.substring(0, 50)] });
+    }
+
+    // Wiek dziecka — id 3475 (toys), use "0 +" as safe default
+    const wiekParam = parameters.find(p => p.id === "3475" && p.required);
+    if (wiekParam?.dictionary?.length > 0) {
+      const defaultAge = wiekParam.dictionary.find(v => v.name === "0 +") || wiekParam.dictionary[0];
+      if (defaultAge) params.push({ id: "3475", valuesIds: [defaultAge.id] });
+    }
+
+  } catch (e) {
+    console.log("Nie udało się pobrać parametrów kategorii:", e.message);
+  }
+  return params;
 }
 
 Deno.serve(async (req) => {
@@ -141,9 +232,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    const categoryId = CATEGORY_MAP[product.category] || "257517";
+    const productCategory = category || product.category || "other";
+    const resolvedCategoryId = CATEGORY_MAP[productCategory] || "102864";
+    const resolvedQuantity = quantity || product.stock_quantity || 1;
+    const resolvedHandlingTime = handling_time || "PT24H";
+    const resolvedCity = location_city || "Zgierz";
+    const resolvedPostCode = location_post_code || "95-100";
+    const resolvedInvoice = invoice || "VAT";
+    const resolvedCondition = condition || product.condition || "used";
+    const heavyCategories = ["home", "electronics", "sports", "toys"];
+    const shippingRateId = shipping_rate_id || (
+      heavyCategories.includes(productCategory) ? SHIPPING_RATES.large : SHIPPING_RATES.small
+    );
 
-    // Build Allegro-format description
+    // Build description
     const descriptionText = listing.listing_description || `<p>${listing.listing_title}</p>`;
     const descriptionSections = [
       { items: [{ type: "TEXT", content: descriptionText }] },
@@ -152,53 +254,9 @@ Deno.serve(async (req) => {
       descriptionSections.push({ items: [{ type: "IMAGE", url: imgUrl }] });
     });
 
-    // Use params from form (force_active flow) or fallback to product defaults
-    const heavyCategories = ["home", "electronics", "sports", "toys"];
-    const shippingRateId = shipping_rate_id || (
-      heavyCategories.includes(product.category) ? SHIPPING_RATES.large : SHIPPING_RATES.small
-    );
-    const resolvedCategoryId = category ? (CATEGORY_MAP[category] || "257517") : categoryId;
-    const resolvedQuantity = quantity || product.stock_quantity || 1;
-    const resolvedHandlingTime = handling_time || "PT24H";
-    const resolvedCity = location_city || "Zgierz";
-    const resolvedPostCode = location_post_code || "95-100";
-    const resolvedInvoice = invoice || "VAT";
-    const publicationStatus = force_active ? "ACTIVE" : "INACTIVE";
+    // Resolve category parameters dynamically
+    const resolvedParams = await resolveCategoryParams(resolvedCategoryId, resolvedCondition, product, accessToken);
 
-    // Dynamically fetch category parameters to find valid condition ("Stan") value IDs
-    const resolvedCondition = condition || product.condition || "used";
-    let conditionParam = null;
-    try {
-      const paramRes = await fetch(`https://api.allegro.pl/sale/categories/${resolvedCategoryId}/parameters`, {
-        headers: {
-          "Authorization": `Bearer ${accessToken}`,
-          "Accept": "application/vnd.allegro.public.v1+json",
-        },
-      });
-      const paramData = await paramRes.json();
-      const stanParam = (paramData.parameters || []).find(p => p.id === "11323");
-      if (stanParam && stanParam.dictionary?.length > 0) {
-        const vals = stanParam.dictionary;
-        // Map our condition to the best matching Allegro value
-        const conditionKeywords = {
-          new: ["nowy"],
-          like_new: ["outlet", "zwrot", "nowy", "nowe"],
-          used: ["używany", "uzywany"],
-        };
-        const keywords = conditionKeywords[resolvedCondition] || conditionKeywords.used;
-        let matched = null;
-        for (const kw of keywords) {
-          matched = vals.find(v => v.value?.toLowerCase().includes(kw));
-          if (matched) break;
-        }
-        if (!matched) matched = vals[0]; // fallback to first value
-        if (matched) conditionParam = { id: "11323", valuesIds: [matched.id] };
-      }
-    } catch (e) {
-      console.log("Nie udało się pobrać parametrów kategorii:", e.message);
-    }
-
-    // Build offer payload
     const offerPayload = {
       name: listing.listing_title,
       category: { id: resolvedCategoryId },
@@ -214,16 +272,15 @@ Deno.serve(async (req) => {
         handlingTime: resolvedHandlingTime,
         shippingRates: { id: shippingRateId },
       },
-      ...(conditionParam ? { parameters: [conditionParam] } : {}),
+      ...(resolvedParams.length > 0 ? { parameters: resolvedParams } : {}),
       location: { countryCode: "PL", province: "LODZKIE", city: resolvedCity, postCode: resolvedPostCode },
       afterSalesServices: {
         impliedWarranty: { id: IMPLIED_WARRANTY_ID },
         returnPolicy: { id: RETURN_POLICY_ID },
       },
-      publication: { status: publicationStatus },
+      publication: { status: force_active ? "ACTIVE" : "INACTIVE" },
     };
 
-    // External SKU
     if (product.internal_code) {
       offerPayload.external = { id: product.internal_code.substring(0, 50) };
     }
@@ -245,56 +302,24 @@ Deno.serve(async (req) => {
     }
 
     const allegroOfferId = createData.id;
+    const hasErrors = createData.errors?.length > 0;
 
-    // If force_active=true, offer was already created as ACTIVE — no need for extra PATCH
-    if (force_active) {
-      // Check if creation succeeded with ACTIVE status (warnings are OK)
-      const isActive = createData.publication?.status === "ACTIVE" || createData.validation?.errors?.length === 0;
-      const hasErrors = createData.errors?.length > 0;
-
-      if (hasErrors) {
-        const errParts = createData.errors.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`);
-        await Promise.all([
-          base44.entities.Listing.update(listing.id, { allegro_listing_id: allegroOfferId }),
-          base44.entities.Product.update(product.id, { allegro_listing_id: allegroOfferId }),
-        ]);
-        return Response.json({
-          warning: `Oferta zapisana jako szkic (ID: ${allegroOfferId}). Błędy walidacji: ${errParts.join(" | ")}`,
-          allegro_listing_id: allegroOfferId,
-        });
-      }
-
+    if (hasErrors) {
+      const errParts = createData.errors.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`);
       await Promise.all([
-        base44.entities.Listing.update(listing.id, { listing_status: "listed", allegro_listing_id: allegroOfferId }),
-        base44.entities.Product.update(product.id, { status: "listed", allegro_listing_id: allegroOfferId }),
+        base44.entities.Listing.update(listing.id, { allegro_listing_id: allegroOfferId }),
+        base44.entities.Product.update(product.id, { allegro_listing_id: allegroOfferId }),
       ]);
-      return Response.json({ success: true, allegro_listing_id: allegroOfferId });
-    }
-
-    // Default flow: try to activate INACTIVE draft
-    const activateRes = await fetch(`https://api.allegro.pl/sale/product-offers/${allegroOfferId}`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify({ publication: { status: "ACTIVE" } }),
-    });
-
-    const activateData = await activateRes.json();
-    console.log("Activate status:", activateRes.status, JSON.stringify(activateData));
-
-    const finalStatus = activateRes.ok ? "listed" : "draft";
-
-    await Promise.all([
-      base44.entities.Listing.update(listing.id, { listing_status: finalStatus, allegro_listing_id: allegroOfferId }),
-      base44.entities.Product.update(product.id, { status: finalStatus === "listed" ? "listed" : "in_stock", allegro_listing_id: allegroOfferId }),
-    ]);
-
-    if (!activateRes.ok) {
-      const errParts = activateData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
       return Response.json({
-        warning: `Oferta zapisana jako szkic (ID: ${allegroOfferId}). Dokończ w panelu Allegro: ${errParts.join(" | ")}`,
+        warning: `Oferta zapisana jako szkic (ID: ${allegroOfferId}). Dokończ w panelu Allegro. Błędy: ${errParts.join(" | ")}`,
         allegro_listing_id: allegroOfferId,
       });
     }
+
+    await Promise.all([
+      base44.entities.Listing.update(listing.id, { listing_status: "listed", allegro_listing_id: allegroOfferId }),
+      base44.entities.Product.update(product.id, { status: "listed", allegro_listing_id: allegroOfferId }),
+    ]);
 
     return Response.json({ success: true, allegro_listing_id: allegroOfferId });
   } catch (error) {
