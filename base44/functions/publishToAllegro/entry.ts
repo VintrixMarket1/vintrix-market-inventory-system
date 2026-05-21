@@ -206,6 +206,17 @@ Deno.serve(async (req) => {
       offerPayload.productSet = [{
         product: { id: allegro_product_id },
         quantity: { value: resolvedQuantity },
+        // EU regulation: responsible producer required for all product offers
+        responsibleProducer: {
+          name: product.brand || "Producent",
+          address: {
+            street: "ul. Przykładowa 1",
+            city: resolvedCity,
+            zipCode: resolvedPostCode,
+            countryCode: "PL",
+          },
+        },
+        safetyInformation: { type: "ROLE_FULFILLED_BY_MARKETPLACE" },
       }];
     } else if (conditionParams.length > 0) {
       // No catalog product — include only Stan param (safe for most categories)
@@ -227,9 +238,26 @@ Deno.serve(async (req) => {
     const createData = await createRes.json();
     console.log("Create status:", createRes.status, JSON.stringify(createData));
 
-    if (!createRes.ok) {
+    if (!createRes.ok && createRes.status !== 422) {
       const errParts = createData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
       return Response.json({ error: `Błąd Allegro: ${errParts.join(" | ") || JSON.stringify(createData)}` }, { status: 400 });
+    }
+
+    // 422 = offer created but with validation errors (saved as draft)
+    if (createRes.status === 422) {
+      const errParts = (createData.errors || []).map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`);
+      const offerId = createData.id;
+      if (offerId) {
+        await Promise.all([
+          base44.entities.Listing.update(listing.id, { allegro_listing_id: offerId }),
+          base44.entities.Product.update(product.id, { allegro_listing_id: offerId }),
+        ]);
+        return Response.json({
+          warning: `Oferta zapisana jako szkic (ID: ${offerId}). Dokończ w panelu Allegro. Błędy: ${errParts.join(" | ")}`,
+          allegro_listing_id: offerId,
+        });
+      }
+      return Response.json({ error: `Błąd walidacji Allegro: ${errParts.join(" | ") || JSON.stringify(createData)}` }, { status: 400 });
     }
 
     const allegroOfferId = createData.id;
