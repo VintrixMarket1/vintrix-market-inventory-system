@@ -8,16 +8,17 @@ const SHIPPING_RATES = {
 const RETURN_POLICY_ID = "5339f3cf-6e5e-4903-87f4-922892772c40";
 const IMPLIED_WARRANTY_ID = "5e43a3fd-2f9e-4ff9-9b66-65392a75e916";
 
+// Allegro category IDs — verified via API /sale/categories
 const CATEGORY_MAP = {
-  clothing: "5",
-  shoes: "110778",
-  accessories: "4",
-  electronics: "88",
-  home: "14",
-  toys: "6",
-  sports: "94",
-  books: "7",
-  other: "257517",
+  clothing: "1454",                                     // Moda > Odzież, Obuwie, Dodatki
+  shoes: "1469",                                        // Moda > Obuwie
+  accessories: "1487",                                  // Moda > Galanteria i dodatki
+  electronics: "42540aec-367a-4e5e-b411-17c09b08e41f", // Elektronika
+  home: "5",                                            // Dom i Ogród
+  toys: "11763",                                        // Dziecko
+  sports: "3919",                                       // Sport i turystyka
+  books: "38d588fd-7e9c-4c42-a4ae-6831775eca45",       // Kultura i rozrywka
+  other: "1454",                                        // fallback: Odzież, Obuwie, Dodatki (brak ogólnej "inne")
 };
 
 async function uploadImageToAllegro(imageUrl, accessToken) {
@@ -164,6 +165,39 @@ Deno.serve(async (req) => {
     const resolvedInvoice = invoice || "VAT";
     const publicationStatus = force_active ? "ACTIVE" : "INACTIVE";
 
+    // Dynamically fetch category parameters to find valid condition ("Stan") value IDs
+    const resolvedCondition = condition || product.condition || "used";
+    let conditionParam = null;
+    try {
+      const paramRes = await fetch(`https://api.allegro.pl/sale/categories/${resolvedCategoryId}/parameters`, {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Accept": "application/vnd.allegro.public.v1+json",
+        },
+      });
+      const paramData = await paramRes.json();
+      const stanParam = (paramData.parameters || []).find(p => p.id === "11323");
+      if (stanParam && stanParam.dictionary?.length > 0) {
+        const vals = stanParam.dictionary;
+        // Map our condition to the best matching Allegro value
+        const conditionKeywords = {
+          new: ["nowy"],
+          like_new: ["outlet", "zwrot", "nowy", "nowe"],
+          used: ["używany", "uzywany"],
+        };
+        const keywords = conditionKeywords[resolvedCondition] || conditionKeywords.used;
+        let matched = null;
+        for (const kw of keywords) {
+          matched = vals.find(v => v.value?.toLowerCase().includes(kw));
+          if (matched) break;
+        }
+        if (!matched) matched = vals[0]; // fallback to first value
+        if (matched) conditionParam = { id: "11323", valuesIds: [matched.id] };
+      }
+    } catch (e) {
+      console.log("Nie udało się pobrać parametrów kategorii:", e.message);
+    }
+
     // Build offer payload
     const offerPayload = {
       name: listing.listing_title,
@@ -180,7 +214,8 @@ Deno.serve(async (req) => {
         handlingTime: resolvedHandlingTime,
         shippingRates: { id: shippingRateId },
       },
-      location: { countryCode: "PL", city: resolvedCity, postCode: resolvedPostCode },
+      ...(conditionParam ? { parameters: [conditionParam] } : {}),
+      location: { countryCode: "PL", province: "LODZKIE", city: resolvedCity, postCode: resolvedPostCode },
       afterSalesServices: {
         impliedWarranty: { id: IMPLIED_WARRANTY_ID },
         returnPolicy: { id: RETURN_POLICY_ID },
