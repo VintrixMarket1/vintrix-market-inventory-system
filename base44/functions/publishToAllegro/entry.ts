@@ -1,6 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-// Upload image to Allegro by fetching it first, then sending as binary
 async function uploadImageToAllegro(imageUrl, accessToken) {
   const fetchRes = await fetch(imageUrl);
   if (!fetchRes.ok) throw new Error(`Nie udało się pobrać zdjęcia: ${imageUrl}`);
@@ -49,6 +48,18 @@ async function getAllegroToken(base44) {
   return conn.access_token;
 }
 
+const CATEGORY_MAP = {
+  clothing: "5",
+  shoes: "110778",
+  accessories: "4",
+  electronics: "88",
+  home: "14",
+  toys: "6",
+  sports: "94",
+  books: "7",
+  other: "257517",
+};
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -68,22 +79,25 @@ Deno.serve(async (req) => {
     const product = products[0];
     if (!product) return Response.json({ error: "Product not found" }, { status: 404 });
 
-    // If updating existing offer
+    const headers = {
+      "Authorization": `Bearer ${accessToken}`,
+      "Accept": "application/vnd.allegro.public.v1+json",
+      "Content-Type": "application/vnd.allegro.public.v1+json",
+    };
+
+    // --- UPDATE existing offer ---
     if (listing.allegro_listing_id) {
+      const updatePayload = {
+        sellingMode: {
+          price: { amount: listing.listing_price.toFixed(2), currency: "PLN" },
+        },
+        stock: { available: product.stock_quantity || 1, unit: "UNIT" },
+        publication: { status: "ACTIVE" },
+      };
       const updateRes = await fetch(`https://api.allegro.pl/sale/product-offers/${listing.allegro_listing_id}`, {
         method: "PATCH",
-        headers: {
-          "Authorization": `Bearer ${accessToken}`,
-          "Accept": "application/vnd.allegro.public.v1+json",
-          "Content-Type": "application/vnd.allegro.public.v1+json",
-        },
-        body: JSON.stringify({
-          sellingMode: {
-            price: { amount: listing.listing_price.toFixed(2), currency: "PLN" },
-          },
-          stock: { available: product.stock_quantity || 1, unit: "UNIT" },
-          publication: { status: "ACTIVE" },
-        }),
+        headers,
+        body: JSON.stringify(updatePayload),
       });
       if (!updateRes.ok) {
         const err = await updateRes.json().catch(() => ({}));
@@ -94,7 +108,7 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, allegro_listing_id: listing.allegro_listing_id, updated: true });
     }
 
-    // Upload images to Allegro CDN first (max 8)
+    // --- Upload images ---
     const imagesToUse = listing.selected_images?.length > 0 ? listing.selected_images : product.images || [];
     const allegroImageUrls = [];
     for (const imgUrl of imagesToUse.slice(0, 8)) {
@@ -106,19 +120,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Map category
-    const categoryMap = {
-      clothing: "5",
-      shoes: "110778",
-      accessories: "4",
-      electronics: "88",
-      home: "14",
-      toys: "6",
-      sports: "94",
-      books: "7",
-      other: "257517",
-    };
-    const categoryId = categoryMap[product.category] || "257517";
+    const categoryId = CATEGORY_MAP[product.category] || "257517";
 
     // Build description
     const descriptionText = listing.listing_description
@@ -132,67 +134,66 @@ Deno.serve(async (req) => {
       descriptionSections.push({ items: [{ type: "IMAGE", url: imgUrl }] });
     });
 
-    // Build /sale/product-offers payload — minimal, no mandatory parameters beyond required fields
-    const offerPayload = {
+    // --- STEP 1: Create INACTIVE draft (bypasses mandatory parameter validation) ---
+    const draftPayload = {
       name: listing.listing_title,
       category: { id: categoryId },
       images: allegroImageUrls,
-      description: {
-        sections: descriptionSections,
-      },
+      description: { sections: descriptionSections },
       sellingMode: {
         format: "BUY_NOW",
-        price: {
-          amount: listing.listing_price.toFixed(2),
-          currency: "PLN",
-        },
+        price: { amount: listing.listing_price.toFixed(2), currency: "PLN" },
       },
-      stock: {
-        available: product.stock_quantity || 1,
-        unit: "UNIT",
-      },
-      payments: {
-        invoice: "NO_INVOICE",
-      },
-      delivery: {
-        handlingTime: "PT24H",
-      },
-      location: {
-        countryCode: "PL",
-      },
-      publication: {
-        status: "ACTIVE",
-      },
+      stock: { available: product.stock_quantity || 1, unit: "UNIT" },
+      payments: { invoice: "NO_INVOICE" },
+      delivery: { handlingTime: "PT24H" },
+      location: { countryCode: "PL" },
+      publication: { status: "INACTIVE" },
     };
 
-    console.log("Sending to Allegro product-offers:", JSON.stringify(offerPayload));
+    console.log("Creating draft:", JSON.stringify(draftPayload));
 
-    const createRes = await fetch("https://api.allegro.pl/sale/product-offers", {
+    const draftRes = await fetch("https://api.allegro.pl/sale/product-offers", {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Accept": "application/vnd.allegro.public.v1+json",
-        "Content-Type": "application/vnd.allegro.public.v1+json",
-      },
-      body: JSON.stringify(offerPayload),
+      headers,
+      body: JSON.stringify(draftPayload),
     });
 
-    const createData = await createRes.json();
-    console.log("Allegro product-offers status:", createRes.status);
-    console.log("Allegro product-offers response:", JSON.stringify(createData));
+    const draftData = await draftRes.json();
+    console.log("Draft status:", draftRes.status, JSON.stringify(draftData));
 
-    if (!createRes.ok) {
-      const errParts = createData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
-      const errMsg = errParts.length > 0 ? errParts.join(" | ") : JSON.stringify(createData);
-      return Response.json({ error: `Błąd Allegro: ${errMsg}` }, { status: 400 });
+    if (!draftRes.ok) {
+      const errParts = draftData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
+      return Response.json({ error: `Błąd Allegro: ${errParts.join(" | ") || JSON.stringify(draftData)}` }, { status: 400 });
     }
 
-    const allegroOfferId = createData.id;
+    const allegroOfferId = draftData.id;
+
+    // --- STEP 2: Activate the offer ---
+    const activateRes = await fetch(`https://api.allegro.pl/sale/product-offers/${allegroOfferId}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ publication: { status: "ACTIVE" } }),
+    });
+
+    const activateData = await activateRes.json();
+    console.log("Activate status:", activateRes.status, JSON.stringify(activateData));
+
+    // Even if activation has warnings, save the offer ID
+    const finalStatus = activateRes.ok ? "listed" : "draft";
 
     await Promise.all([
-      base44.entities.Listing.update(listing.id, { listing_status: "listed", allegro_listing_id: allegroOfferId }),
-      base44.entities.Product.update(product.id, { status: "listed", allegro_listing_id: allegroOfferId }),
+      base44.entities.Listing.update(listing.id, { listing_status: finalStatus, allegro_listing_id: allegroOfferId }),
+      base44.entities.Product.update(product.id, { status: finalStatus === "listed" ? "listed" : "in_stock", allegro_listing_id: allegroOfferId }),
     ]);
+
+    if (!activateRes.ok) {
+      const errParts = activateData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
+      return Response.json({
+        warning: `Oferta utworzona (ID: ${allegroOfferId}), ale nie udało się aktywować: ${errParts.join(" | ")}`,
+        allegro_listing_id: allegroOfferId,
+      });
+    }
 
     return Response.json({ success: true, allegro_listing_id: allegroOfferId });
   } catch (error) {
