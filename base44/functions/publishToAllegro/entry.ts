@@ -73,8 +73,8 @@ Deno.serve(async (req) => {
 
     // If updating existing offer
     if (listing.allegro_listing_id) {
-      const updateRes = await fetch(`https://api.allegro.pl/sale/product-offers/${listing.allegro_listing_id}`, {
-        method: "PATCH",
+      const updateRes = await fetch(`https://api.allegro.pl/sale/offers/${listing.allegro_listing_id}`, {
+        method: "PUT",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
           "Accept": "application/vnd.allegro.public.v1+json",
@@ -124,19 +124,25 @@ Deno.serve(async (req) => {
       descriptionSections.push({ items: [{ type: "IMAGE", url: imgUrl }] });
     });
 
-    // Build new product-offer payload using /sale/product-offers
+    // Map category
+    const categoryMap = {
+      clothing: "5",      // Odzież
+      shoes: "110778",    // Obuwie
+      accessories: "4",   // Akcesoria
+      electronics: "88",  // Elektronika
+      home: "14",         // Dom i ogród
+      toys: "6",          // Zabawki
+      sports: "94",       // Sport i turystyka
+      books: "7",         // Książki
+      other: "257517",    // Inne
+    };
+    const categoryId = categoryMap[product.category] || "257517";
+
+    // Build /sale/offers payload (no productSet, no mandatory parameters)
     const offerPayload = {
       name: listing.listing_title,
-      productSet: [
-        {
-          product: {
-            name: listing.listing_title,
-            category: { id: "257517" }, // "Inne" - fallback kategoria
-            images: allegroImageUrls,
-          },
-          quantity: { value: 1 },
-        },
-      ],
+      category: { id: categoryId },
+      images: allegroImageUrls,
       description: {
         sections: descriptionSections,
       },
@@ -166,7 +172,7 @@ Deno.serve(async (req) => {
       },
     };
 
-    const createRes = await fetch("https://api.allegro.pl/sale/product-offers", {
+    const createRes = await fetch("https://api.allegro.pl/sale/offers", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
@@ -177,8 +183,8 @@ Deno.serve(async (req) => {
     });
 
     const createData = await createRes.json();
-    console.log("Allegro product-offers status:", createRes.status);
-    console.log("Allegro product-offers response:", JSON.stringify(createData));
+    console.log("Allegro sale/offers status:", createRes.status);
+    console.log("Allegro sale/offers response:", JSON.stringify(createData));
 
     if (!createRes.ok) {
       const errParts = createData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
