@@ -1,5 +1,24 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+// Upload image to Allegro by fetching it first, then sending as binary
+async function uploadImageToAllegro(imageUrl, accessToken) {
+  const fetchRes = await fetch(imageUrl);
+  if (!fetchRes.ok) throw new Error(`Nie udało się pobrać zdjęcia: ${imageUrl}`);
+  const blob = await fetchRes.blob();
+  const uploadRes = await fetch("https://upload.allegro.pl/sale/images", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${accessToken}`,
+      "Accept": "application/vnd.allegro.public.v1+json",
+      "Content-Type": blob.type || "image/jpeg",
+    },
+    body: blob,
+  });
+  const uploadData = await uploadRes.json();
+  if (!uploadRes.ok) throw new Error(`Błąd uploadu zdjęcia: ${JSON.stringify(uploadData)}`);
+  return uploadData.location; // returns URL hosted on Allegro CDN
+}
+
 async function getAllegroToken(base44) {
   const connections = await base44.asServiceRole.entities.AllegroConnection.list("-connected_at", 1);
   if (!connections || connections.length === 0) throw new Error("Brak połączenia z Allegro. Połącz konto w ustawieniach.");
@@ -85,23 +104,29 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, allegro_listing_id: listing.allegro_listing_id, updated: true });
     }
 
+    // Upload images to Allegro CDN first (max 8)
+    const imagesToUpload = imagesToUse.slice(0, 8);
+    const allegroImageUrls = [];
+    for (const imgUrl of imagesToUpload) {
+      try {
+        const allegroUrl = await uploadImageToAllegro(imgUrl, accessToken);
+        allegroImageUrls.push(allegroUrl);
+      } catch (e) {
+        console.log("Pominięto zdjęcie:", imgUrl, e.message);
+      }
+    }
+
     // Build description sections: text + image sections
     const descriptionText = listing.listing_description
       ? listing.listing_description
       : `<p>${listing.listing_title}</p>`;
 
-    // Build sections: first section = text, then one section per image
     const descriptionSections = [
-      {
-        items: [{ type: "TEXT", content: descriptionText }],
-      },
+      { items: [{ type: "TEXT", content: descriptionText }] },
     ];
 
-    // Add image sections (max 8 images, one per section)
-    imagesToUse.slice(0, 8).forEach((imgUrl) => {
-      descriptionSections.push({
-        items: [{ type: "IMAGE", url: imgUrl }],
-      });
+    allegroImageUrls.forEach((imgUrl) => {
+      descriptionSections.push({ items: [{ type: "IMAGE", url: imgUrl }] });
     });
 
     // Build new product-offer payload using /sale/product-offers
@@ -118,7 +143,7 @@ Deno.serve(async (req) => {
                 valuesIds: [conditionValueId],
               },
             ],
-            images: imagesToUse.slice(0, 8),
+            images: allegroImageUrls,
           },
           quantity: { value: 1 },
         },
