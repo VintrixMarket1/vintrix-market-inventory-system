@@ -75,7 +75,18 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { listing_id, shipping_rate_id } = body;
+    const {
+      listing_id,
+      shipping_rate_id,
+      condition,
+      category,
+      quantity,
+      handling_time,
+      location_city,
+      location_post_code,
+      invoice,
+      force_active,
+    } = body;
     if (!listing_id) return Response.json({ error: "listing_id is required" }, { status: 400 });
 
     const accessToken = await getAllegroToken(base44);
@@ -140,34 +151,41 @@ Deno.serve(async (req) => {
       descriptionSections.push({ items: [{ type: "IMAGE", url: imgUrl }] });
     });
 
-    // Shipping rate: use frontend choice or auto-detect by category
+    // Use params from form (force_active flow) or fallback to product defaults
     const heavyCategories = ["home", "electronics", "sports", "toys"];
     const shippingRateId = shipping_rate_id || (
       heavyCategories.includes(product.category) ? SHIPPING_RATES.large : SHIPPING_RATES.small
     );
+    const resolvedCategoryId = category ? (CATEGORY_MAP[category] || "257517") : categoryId;
+    const resolvedQuantity = quantity || product.stock_quantity || 1;
+    const resolvedHandlingTime = handling_time || "PT24H";
+    const resolvedCity = location_city || "Zgierz";
+    const resolvedPostCode = location_post_code || "95-100";
+    const resolvedInvoice = invoice || "VAT";
+    const publicationStatus = force_active ? "ACTIVE" : "INACTIVE";
 
-    // Build offer payload - NO parameters in productSet (Stan is not allowed there)
+    // Build offer payload
     const offerPayload = {
       name: listing.listing_title,
-      category: { id: categoryId },
+      category: { id: resolvedCategoryId },
       images: allegroImageUrls,
       description: { sections: descriptionSections },
       sellingMode: {
         format: "BUY_NOW",
         price: { amount: listing.listing_price.toFixed(2), currency: "PLN" },
       },
-      stock: { available: product.stock_quantity || 1, unit: "UNIT" },
-      payments: { invoice: "VAT" },
+      stock: { available: resolvedQuantity, unit: "UNIT" },
+      payments: { invoice: resolvedInvoice },
       delivery: {
-        handlingTime: "PT24H",
+        handlingTime: resolvedHandlingTime,
         shippingRates: { id: shippingRateId },
       },
-      location: { countryCode: "PL", city: "Zgierz", postCode: "95-100" },
+      location: { countryCode: "PL", city: resolvedCity, postCode: resolvedPostCode },
       afterSalesServices: {
         impliedWarranty: { id: IMPLIED_WARRANTY_ID },
         returnPolicy: { id: RETURN_POLICY_ID },
       },
-      publication: { status: "INACTIVE" },
+      publication: { status: publicationStatus },
     };
 
     // External SKU
@@ -193,7 +211,32 @@ Deno.serve(async (req) => {
 
     const allegroOfferId = createData.id;
 
-    // --- Activate offer ---
+    // If force_active=true, offer was already created as ACTIVE — no need for extra PATCH
+    if (force_active) {
+      // Check if creation succeeded with ACTIVE status (warnings are OK)
+      const isActive = createData.publication?.status === "ACTIVE" || createData.validation?.errors?.length === 0;
+      const hasErrors = createData.errors?.length > 0;
+
+      if (hasErrors) {
+        const errParts = createData.errors.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`);
+        await Promise.all([
+          base44.entities.Listing.update(listing.id, { allegro_listing_id: allegroOfferId }),
+          base44.entities.Product.update(product.id, { allegro_listing_id: allegroOfferId }),
+        ]);
+        return Response.json({
+          warning: `Oferta zapisana jako szkic (ID: ${allegroOfferId}). Błędy walidacji: ${errParts.join(" | ")}`,
+          allegro_listing_id: allegroOfferId,
+        });
+      }
+
+      await Promise.all([
+        base44.entities.Listing.update(listing.id, { listing_status: "listed", allegro_listing_id: allegroOfferId }),
+        base44.entities.Product.update(product.id, { status: "listed", allegro_listing_id: allegroOfferId }),
+      ]);
+      return Response.json({ success: true, allegro_listing_id: allegroOfferId });
+    }
+
+    // Default flow: try to activate INACTIVE draft
     const activateRes = await fetch(`https://api.allegro.pl/sale/product-offers/${allegroOfferId}`, {
       method: "PATCH",
       headers,

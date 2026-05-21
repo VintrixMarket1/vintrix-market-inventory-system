@@ -1,34 +1,19 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Loader2, ExternalLink, Upload, XCircle } from "lucide-react";
+import { Loader2, ExternalLink, Upload, XCircle, Pencil } from "lucide-react";
 
 export default function AllegroActions({ listing, product, onRefresh }) {
-  const [publishing, setPublishing] = useState(false);
+  const navigate = useNavigate();
   const [unpublishing, setUnpublishing] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const isListed = listing?.listing_status === "listed" && listing?.allegro_listing_id;
 
-  const handlePublish = async () => {
-    setPublishing(true);
-    setError("");
-    setSuccess("");
-    try {
-      const res = await base44.functions.invoke("publishToAllegro", { listing_id: listing.id });
-      const data = res.data ?? res;
-      if (data?.error) {
-        setError(data.error);
-      } else {
-        setSuccess(data.updated ? "Oferta zaktualizowana na Allegro!" : "Opublikowano na Allegro!");
-        onRefresh?.();
-      }
-    } catch (e) {
-      const msg = e?.response?.data?.error || e?.message || "Nieznany błąd";
-      setError(msg);
-    }
-    setPublishing(false);
+  const handleOpenPublishForm = () => {
+    navigate(`/AllegroPublish?listing_id=${listing.id}`);
   };
 
   const handleUnpublish = async () => {
@@ -71,15 +56,14 @@ export default function AllegroActions({ listing, product, onRefresh }) {
       {error && <p className="text-xs text-red-600 bg-red-50 rounded p-1.5">{error}</p>}
       {success && <p className="text-xs text-emerald-700 bg-emerald-50 rounded p-1.5">{success}</p>}
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <Button
           size="sm"
-          onClick={handlePublish}
-          disabled={publishing}
+          onClick={handleOpenPublishForm}
           className="bg-orange-500 hover:bg-orange-600 text-white gap-1.5 text-xs h-8"
         >
-          {publishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-          {isListed ? "Aktualizuj" : "Opublikuj na Allegro"}
+          {isListed ? <Pencil className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5" />}
+          {isListed ? "Edytuj / Aktualizuj ofertę" : "Wypełnij i wystaw"}
         </Button>
 
         {isListed && (
