@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
             items: [
               {
                 type: "TEXT",
-                content: listing.listing_description || listing.listing_title,
+                content: `<p>${(listing.listing_description || listing.listing_title).replace(/\n/g, "</p><p>")}</p>`,
               },
             ],
           },
