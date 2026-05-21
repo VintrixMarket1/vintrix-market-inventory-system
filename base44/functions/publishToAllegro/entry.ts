@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
     const offerPayload = {
       name: listing.listing_title,
       category: { id: categoryId },
-      images: allegroImageUrls,
+      images: allegroImageUrls.map(url => ({ url })),
       description: {
         sections: descriptionSections,
       },
