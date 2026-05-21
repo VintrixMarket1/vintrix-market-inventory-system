@@ -68,11 +68,6 @@ Deno.serve(async (req) => {
     const product = products[0];
     if (!product) return Response.json({ error: "Product not found" }, { status: 404 });
 
-    // Map condition to Allegro parameter value
-    // Stan: 11323 (parametr), wartości: "11323_1" = nowy, "11323_2" = używany
-    const isNew = product.condition === "new";
-    const conditionValueId = isNew ? "11323_1" : "11323_2";
-
     // Images to use
     const imagesToUse = listing.selected_images?.length > 0 ? listing.selected_images : product.images || [];
 
@@ -137,12 +132,6 @@ Deno.serve(async (req) => {
           product: {
             name: listing.listing_title,
             category: { id: "257517" }, // "Inne" - fallback kategoria
-            parameters: [
-              {
-                id: "11323",
-                valuesIds: [conditionValueId],
-              },
-            ],
             images: allegroImageUrls,
           },
           quantity: { value: 1 },
