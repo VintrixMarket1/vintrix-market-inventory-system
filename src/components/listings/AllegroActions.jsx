@@ -15,13 +15,18 @@ export default function AllegroActions({ listing, product, onRefresh }) {
     setPublishing(true);
     setError("");
     setSuccess("");
-    const res = await base44.functions.invoke("publishToAllegro", { listing_id: listing.id });
-    const data = res.data ?? res;
-    if (data?.error) {
-      setError(data.error);
-    } else {
-      setSuccess(data.updated ? "Oferta zaktualizowana na Allegro!" : "Opublikowano na Allegro!");
-      onRefresh?.();
+    try {
+      const res = await base44.functions.invoke("publishToAllegro", { listing_id: listing.id });
+      const data = res.data ?? res;
+      if (data?.error) {
+        setError(data.error);
+      } else {
+        setSuccess(data.updated ? "Oferta zaktualizowana na Allegro!" : "Opublikowano na Allegro!");
+        onRefresh?.();
+      }
+    } catch (e) {
+      const msg = e?.response?.data?.error || e?.message || "Nieznany błąd";
+      setError(msg);
     }
     setPublishing(false);
   };
@@ -31,13 +36,18 @@ export default function AllegroActions({ listing, product, onRefresh }) {
     setUnpublishing(true);
     setError("");
     setSuccess("");
-    const res = await base44.functions.invoke("unpublishFromAllegro", { listing_id: listing.id });
-    const data = res.data ?? res;
-    if (data?.error) {
-      setError(data.error);
-    } else {
-      setSuccess("Oferta zakończona.");
-      onRefresh?.();
+    try {
+      const res = await base44.functions.invoke("unpublishFromAllegro", { listing_id: listing.id });
+      const data = res.data ?? res;
+      if (data?.error) {
+        setError(data.error);
+      } else {
+        setSuccess("Oferta zakończona.");
+        onRefresh?.();
+      }
+    } catch (e) {
+      const msg = e?.response?.data?.error || e?.message || "Nieznany błąd";
+      setError(msg);
     }
     setUnpublishing(false);
   };

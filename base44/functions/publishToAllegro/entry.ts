@@ -163,10 +163,12 @@ Deno.serve(async (req) => {
     });
 
     const createData = await createRes.json();
-    console.log("Allegro product-offers response:", createRes.status, JSON.stringify(createData).slice(0, 1000));
+    console.log("Allegro product-offers status:", createRes.status);
+    console.log("Allegro product-offers response:", JSON.stringify(createData));
 
     if (!createRes.ok) {
-      const errMsg = createData.errors?.map(e => e.message || e.code).join("; ") || JSON.stringify(createData);
+      const errParts = createData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
+      const errMsg = errParts.length > 0 ? errParts.join(" | ") : JSON.stringify(createData);
       return Response.json({ error: `Błąd Allegro: ${errMsg}` }, { status: 400 });
     }
 
