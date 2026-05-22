@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Download, TrendingUp, TrendingDown } from "lucide-react";
+import * as XLSX from "xlsx";
 import { format } from "date-fns";
 
 const platformColors = {
@@ -33,20 +34,21 @@ export default function Sales() {
   const totalRevenue = filtered.reduce((sum, s) => sum + (s.sale_price || 0), 0);
   const totalProfit = filtered.reduce((sum, s) => sum + ((s.sale_price || 0) - (s.purchase_price || 0)), 0);
 
-  const exportCSV = () => {
-    const headers = ["Product", "Platform", "Sale Price", "Purchase Price", "Profit", "Date"];
-    const rows = filtered.map(s => [
-      s.product_name, s.platform, s.sale_price, s.purchase_price,
-      ((s.sale_price || 0) - (s.purchase_price || 0)).toFixed(2),
-      s.sale_date,
-    ]);
-    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "sales.csv";
-    a.click();
+  const exportExcel = () => {
+    const rows = filtered.map(s => ({
+      "Data": s.sale_date || "",
+      "Produkt": s.product_name || "",
+      "Platforma": s.platform || "",
+      "Cena sprzedaży (PLN)": s.sale_price || 0,
+      "Cena zakupu (PLN)": s.purchase_price || 0,
+      "Zysk (PLN)": parseFloat(((s.sale_price || 0) - (s.purchase_price || 0)).toFixed(2)),
+      "Marża (%)": s.purchase_price > 0 ? parseFloat((((s.sale_price - s.purchase_price) / s.purchase_price) * 100).toFixed(2)) : "",
+      "ID sprzedaży": s.id,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sprzedaż");
+    XLSX.writeFile(wb, `sprzedaz_${new Date().toISOString().split("T")[0]}.xlsx`);
   };
 
   return (
@@ -56,8 +58,8 @@ export default function Sales() {
           <h1 className="text-2xl font-bold text-slate-900">Sales</h1>
           <p className="text-sm text-slate-500 mt-1">{filtered.length} sales recorded</p>
         </div>
-        <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
-          <Download className="w-4 h-4" /> Export CSV
+        <Button variant="outline" size="sm" onClick={exportExcel} className="gap-1.5">
+          <Download className="w-4 h-4" /> Eksportuj Excel
         </Button>
       </div>
 
