@@ -114,6 +114,7 @@ Deno.serve(async (req) => {
 
       // Build safetyInformation - Allegro requires this field when productSet is used
       const resolvedSafetyType = safety_type || "ROLE_FULFILLED_BY_MARKETPLACE";
+      // For DOCUMENT_URL, send object with role and documentUrl; for other types, send just the role string
       const safetyInformation = resolvedSafetyType === "DOCUMENT_URL" && safety_url
         ? { role: "DOCUMENT_URL", documentUrl: safety_url }
         : { role: resolvedSafetyType };
@@ -343,33 +344,15 @@ Deno.serve(async (req) => {
         console.log("Responsible producer error:", prodErr.message);
       }
 
-      // Only include safetyInfo if it's DOCUMENT_URL (not needed for ROLE_FULFILLED_BY_MARKETPLACE)
-      const productSetItem = {
+      offerPayload.productSet = [{
         product: { id: allegro_product_id },
         quantity: { value: resolvedQuantity },
         ...(producerId ? { responsibleProducer: { id: producerId } } : {}),
-      };
-      if (safetyInformation.role === "DOCUMENT_URL" && safetyInformation.documentUrl) {
-        productSetItem.safetyInfo = safetyInformation;
-      }
-      offerPayload.productSet = [productSetItem];
+        safetyInformation: safetyInformation,
+      }];
     } else if (conditionParams.length > 0) {
-      // No catalog product — include required parameters (EAN, Producer, Stan)
-      const additionalParams = [];
-      
-      // Add EAN if provided
-      if (ean && ean.length >= 8) {
-        additionalParams.push({ id: "225693", values: [ean] });
-      }
-      
-      // Add Producer if provided
-      if (producer_name && producer_name !== "null") {
-        additionalParams.push({ id: "248914", values: [producer_name] });
-      }
-      
-      // Add condition
-      additionalParams.push(...conditionParams);
-      
+      // No catalog product — include required parameters (only Stan, EAN/Producer only if category requires)
+      const additionalParams = [...conditionParams];
       offerPayload.parameters = additionalParams;
     }
 
