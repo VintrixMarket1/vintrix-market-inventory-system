@@ -21,11 +21,8 @@ export default function GoogleSheetsSettings() {
   // Check if user has an active connector connection
   const checkConnection = async () => {
     try {
-      // Try to get token via backend — if it throws "No active connection", we know
-      const res = await base44.functions.invoke("saveGoogleSheetsToken", {
-        spreadsheet_id: "check_only", sheet_name: "check", enabled: false
-      });
-      setConnected(!res?.data?.error);
+      const res = await base44.functions.invoke("getGoogleSheetsToken", {});
+      setConnected(!!res?.data?.access_token);
     } catch {
       setConnected(false);
     }
