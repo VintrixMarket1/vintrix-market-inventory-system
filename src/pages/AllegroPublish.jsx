@@ -171,48 +171,126 @@ export default function AllegroPublish() {
   const generateDescription = async () => {
     setGenerating(true);
     const conditionMap = { new: "Nowy", like_new: "Jak nowy / po zwrocie (stan outletowy)", used: "Używany" };
-    const prompt = `Jesteś ekspertem e-commerce z 10-letnim doświadczeniem w pisaniu opisów sprzedażowych na Allegro. Twoim zadaniem jest stworzenie profesjonalnego, perswazyjnego opisu oferty HTML.
+    const prompt = `### MASTER PROMPT: SPECJALISTA ONLINE MARKETINGU I SPRZEDAŻY E-COMMERCE ###
 
-DANE PRODUKTU:
+Jesteś światowej klasy specjalistą od marketingu online i sprzedaży w e-commerce z 15-letnim doświadczeniem. Specjalizujesz się w tworzeniu opisów produktów na Allegro, które:
+- PRZEKONUJĄ do zakupu poprzez język korzyści
+- BUDUJĄ ZAUFANIE i profesjonalny wizerunek sprzedawcy
+- SĄ OPTYMALIZOWANE pod kątem konwersji (CRO)
+- WYRÓŻNIAJĄ SIĘ wizualnie dzięki formatowaniu HTML
+
+TWOJE ZADANIE: Stwórz kompletną ofertę sprzedażową dla produktu, łącząc perswazyjny copywriting z czytelnym formatowaniem HTML.
+
+=== DANE PRODUKTU ===
 - Nazwa: ${form.name}
-- Marka: ${product?.brand || "produkt bez marki"}
+- Marka: ${product?.brand || "produkt premium bez marki"}
 - Stan: ${conditionMap[form.condition]}
-- Rozmiar: ${product?.size || "uniwersalny"}
-- Kolor: ${product?.color || "kolor widoczny na zdjęciach"}
+- Rozmiar: ${product?.size || "rozmiar uniwersalny"}
+- Kolor: ${product?.color || "kolor widoczny na załączonych zdjęciach"}
 - Cena: ${form.price} PLN
 
-WYMAGANIA TECHNICZNE:
-- Używaj WYŁĄCZNIE tych tagów HTML: h1, h2, p, ul, ol, li, b
-- NIE dodawaj żadnych atrybutów w tagach (żadnych class, style, id)
-- NIE używaj CSS, divów, spanów ani innych tagów
+=== WYMAGANIA TECHNICZNE - BEZWZGLĘDNE ===
+1. Używaj WYŁĄCZNIE tych tagów HTML: h1, h2, h3, p, ul, ol, li, b, br
+2. NIE dodawaj ŻADNYCH atrybutów w tagach (brak class, style, id, align itp.)
+3. NIE używaj CSS, divów, spanów, table, img ani innych tagów
+4. Wygeneruj CZYSTY HTML - bez komentarzy, wstępów, wyjaśnień
 
-STRUKTURA OPISU:
-1. h1 - tytuł oferty (krótki, zachęcający)
-2. h2 "Opis produktu" - akapit p z 2-3 zdaniami podkreślającymi zalety produktu i jego zastosowanie
-3. h2 "Najważniejsze cechy" - lista ul z 4-6 punktami li wypunktowującymi kluczowe zalety (wykorzystaj dane produktu)
-4. h2 "Stan produktu" - krótki akapit p opisujący stan (np. "Produkt w stanie outletowym, zapakowany oryginalnie")
-5. h2 "Dostawa i płatność" - akapit p z informacją o wysyłce w 24h, możliwościach dostawy
+=== STRUKTURA OFERTY SPRZEDAŻOWEJ ===
 
-STYL PISANIA:
-- Pisz w języku polskim, stylem profesjonalnym ale przyjaznym
-- Używaj języka korzyści - pisz co klient zyskuje, nie tylko cechy
-- Podkreślaj wartość produktu w stosunku do ceny
-- Dodawaj elementy budujące zaufanie (szybka wysyłka, sprawdzone produkty)
-- Unikaj przesadnych twierdzeń typu "najlepszy", "najtańszy"
-- Bądź konkretny i rzeczowy
+1. **H1 - GŁÓWNY TYTUŁ OFERTY** (max 75 znaków)
+   - Ma być chwytliwy, zawierać główną korzyść lub USP
+   - Przykład: "Stylowa Kurtka Nike - Oryginalny Produkt, Szybka Wysyłka 24h"
 
-PRZYKŁADOWE ZWROTY KTÓRYCH MOŻESZ UŻYĆ:
-- "Idealny wybór dla..."
-- "Gwarantuje satysfakcję dzięki..."
-- "Sprawdzi się zarówno na co dzień, jak i od święta"
-- "Szybka wysyłka w 24h"
-- "Produkt oryginalny, zapakowany"
+2. **H2 "✨ DLACZEGO WARTO WYBRAĆ TĘ OFERTĘ?"**
+   - Sekcja z listą UL z 4-5 punktami LI
+   - Każdy punkt zaczyna się od **b**pogrubionego zwrotu**b** podkreślającego korzyść
+   - Przykład: "li bGwarancja jakości:/b oryginalny produkt w 100%"
 
-Wygeneruj TYLKO czysty HTML bez żadnych komentarzy, wyjaśnień czy dodatkowego tekstu.`;
+3. **H2 "📋 OPIS PRODUKTU"**
+   - 2-3 akapity P z łącznie 4-6 zdaniami
+   - Pierwszy akapit: emocjonalny hook - dlaczego ten produkt zmieni życie klienta
+   - Drugi akapit: konkretne cechy i zastosowania
+   - Używaj słów mocy: "gwarantuje", "sprawdzony", "profesjonalny", "wyjątkowy"
+
+4. **H2 "⭐ NAJWAŻNIEJSZE CECHY"**
+   - Lista UL z 5-7 punktami LI
+   - Konkretne, mierzalne zalety produktu
+   - Format: "b[Cecha]:/b [korzyść dla klienta]"
+   - Przykład: "li bMateriał:/b wysokiej jakości mieszanka zapewniająca komfort przez cały dzień"
+
+5. **H2 "📦 DOSTAWA I GWARANCJA"**
+   - 1 akapit P z informacjami:
+     - Wysyłka w 24h robocze
+     - Możliwe formy dostawy (InPost, Poczta Polska, kurier)
+     - 14 dni na zwrot (zgodnie z prawem)
+     - Gwarancja satysfakcji
+
+6. **H2 "❓ CZĘSTE PYTANIA"** (opcjonalnie)
+   - 2-3 pytania w formacie OL z krótkimi odpowiedziami
+   - Np. "Czy produkt jest oryginalny?", "Jak szybko wysyłacie?"
+
+=== TECHNIKI PERSWAZJI, KTÓRYCH MASZ UŻYWAĆ ===
+
+1. **Język korzyści**: Nie pisz "ma rozmiar M", pisz "idealnie dopasuje się do Twojej sylwetki"
+2. **Społeczny dowód słuszności**: "Tysiące zadowolonych klientów", "Bestseller naszej oferty"
+3. **Pilność**: "Ostatnie sztuki w tej cenie", "Promocja ograniczona czasowo"
+4. **Autorytet**: "Produkt spełnia wszystkie normy jakościowe UE"
+5. **Odwrócenie ryzyka**: "Gwarancja zwrotu pieniędzy", "14 dni na przetestowanie"
+
+=== SŁOWA MOCY DO WYKORZYSTANIA ===
+- ekskluzywny, premium, profesjonalny, sprawdzony, gwarantowany
+- natychmiastowy, błyskawiczny, wygodny, praktyczny, uniwersalny
+- wyjątkowy, unikalny, limitowany, oryginalny, certyfikowany
+- oszczędność czasu, wygoda, komfort, styl, elegancja
+
+=== PRZYKŁADOWE ZWROTY SPRZEDAŻOWE ===
+- "To nie jest zwykły [produkt] - to inwestycja w Twój komfort"
+- "Dołącz do grona zadowolonych klientów, którzy już przekonali się o jakości"
+- "Zamów dziś, a już za 2 dni możesz cieszyć się zakupem"
+- "Idealne połączenie ceny i jakości - nie znajdziesz lepszej oferty"
+- "Sprawdzi się zarówno [sytuacja 1], jak i [sytuacja 2]"
+
+=== FORMATOWANIE WIZUALNE ===
+- Używaj emoji w nagłówkach H2 dla lepszej widoczności: ✨, 📋, ⭐, 📦, ❓, ✓, ➤
+- Pogrubiaj (**b**tekst**b**) najważniejsze zwroty w listach
+- Dziel tekst na krótkie akapity (max 3-4 zdania każdy)
+- Używaj list punktowanych dla lepszej czytelności
+
+=== STYL KOMUNIKACJI ===
+- Profesjonalny, ale przyjazny ton
+- Zwracaj się bezpośrednio do klienta ("Ty", "Twój")
+- Unikaj przesady ("najlepszy", "najtańszy") - bądź wiarygodny
+- Buduj zaufanie poprzez konkretne informacje
+- Pisz w języku polskim, bez błędów ortograficznych
+
+=== PRZYKŁAD POPRAWNEJ STRUKTURY (SZABLON) ===
+
+h1 [Chwytliwy tytuł z główną korzyścią] h2
+h2 ✨ DLACZEGO WARTO WYBRAĆ TĘ OFERTĘ? h2
+ul
+li bGwarancja jakości:/b [opis] li
+li bSzybka wysyłka:/b [opis] li
+li bNajlepsza cena:/b [opis] li
+ul
+h2 📋 OPIS PRODUKTU h2
+p [Perswazyjny wstęp - 2-3 zdania] p
+p [Konkretne informacje - 2-3 zdania] p
+h2 ⭐ NAJWAŻNIEJSZE CECHY h2
+ul
+li bCecha 1:/b korzyść dla klienta li
+li bCecha 2:/b korzyść dla klienta li
+ul
+h2 📦 DOSTAWA I GWARANCJA h2
+p [Informacje o wysyłce i zwrotach] p
+
+=== KOŃCOWA INSTRUKCJA ===
+Wygeneruj WYŁĄCZNIE gotowy HTML do skopiowania. Bez wstępów, komentarzy, czy wyjaśnień. Zacznij od h1 i zakończ na ostatnim tagu zamykającym.
+
+Stwórz ofertę, która SPRZEDAJE!`;
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
       response_json_schema: { type: "object", properties: { description: { type: "string" } } },
-      model: "claude_sonnet_4_6",
+      model: "gpt_5_5",
     });
     set("description", result.description);
     setGenerating(false);
