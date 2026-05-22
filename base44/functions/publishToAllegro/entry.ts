@@ -163,7 +163,14 @@ Deno.serve(async (req) => {
           if (!producerId) {
             const createProdRes = await fetch("https://api.allegro.pl/sale/responsible-producers", {
               method: "POST", headers,
-              body: JSON.stringify({ name: resolvedProducerName, address: { street: resolvedStreet, city: resolvedProdCity, zipCode: resolvedProdZip, countryCode: "PL" } }),
+              body: JSON.stringify({
+                name: resolvedProducerName,
+                producerData: {
+                  tradeName: resolvedProducerName,
+                  address: { street: resolvedStreet, city: resolvedProdCity, postalCode: resolvedProdZip, countryCode: "PL" },
+                  contact: { formUrl: "https://vintrix.pl/kontakt" },
+                },
+              }),
             });
             const createProdData = await createProdRes.json();
             console.log("Create producer (update path):", createProdRes.status, JSON.stringify(createProdData));
@@ -214,6 +221,7 @@ Deno.serve(async (req) => {
 
     // --- Upload images ---
     const imagesToUse = listing.selected_images?.length > 0 ? listing.selected_images : product.images || [];
+    console.log("Uploading", imagesToUse.length, "images...");
     const allegroImageUrls = [];
     for (const imgUrl of imagesToUse.slice(0, 8)) {
       try {
@@ -223,6 +231,7 @@ Deno.serve(async (req) => {
         console.log("Pominięto zdjęcie:", e.message);
       }
     }
+    console.log("Uploaded", allegroImageUrls.length, "images");
 
     // Build description — escape & for Allegro HTML validator
     const rawDescription = listing.listing_description || `<p>${listing.listing_title}</p>`;
@@ -261,6 +270,7 @@ Deno.serve(async (req) => {
       publication: { status: force_active ? "ACTIVE" : "INACTIVE" },
     };
 
+    console.log("offerPayload built, allegro_product_id:", allegro_product_id);
     // If catalog product is linked — use productSet
     if (allegro_product_id) {
       // Allegro requires responsibleProducer to be a pre-registered entity from /sale/responsible-producers
@@ -275,10 +285,10 @@ Deno.serve(async (req) => {
       let producerId = null;
       try {
         const prodListRes = await fetch("https://api.allegro.pl/sale/responsible-producers", { headers });
-        console.log("Producer list status:", prodListRes.status);
+        const prodListText = await prodListRes.text();
+        console.log("Producer list status:", prodListRes.status, prodListText.substring(0, 300));
         if (prodListRes.ok) {
-          const prodListData = await prodListRes.json();
-          console.log("Producer list data:", JSON.stringify(prodListData).substring(0, 200));
+          const prodListData = JSON.parse(prodListText);
           const existing = (prodListData.responsibleProducers || []).find(p => p.name === resolvedProducerName);
           if (existing) producerId = existing.id;
         }
@@ -290,17 +300,23 @@ Deno.serve(async (req) => {
             headers,
             body: JSON.stringify({
               name: resolvedProducerName,
-              address: {
-                street: resolvedStreet,
-                city: resolvedProdCity,
-                zipCode: resolvedProdZip,
-                countryCode: "PL",
+              producerData: {
+                tradeName: resolvedProducerName,
+                address: {
+                  street: resolvedStreet,
+                  city: resolvedProdCity,
+                  postalCode: resolvedProdZip,
+                  countryCode: "PL",
+                },
+                contact: {
+                  formUrl: "https://vintrix.pl/kontakt",
+                },
               },
             }),
           });
-          const createProdData = await createProdRes.json();
-          console.log("Create responsible producer:", createProdRes.status, JSON.stringify(createProdData));
-          if (createProdRes.ok) producerId = createProdData.id;
+          const createProdText = await createProdRes.text();
+          console.log("Create responsible producer:", createProdRes.status, createProdText.substring(0, 300));
+          if (createProdRes.ok) producerId = JSON.parse(createProdText).id;
         }
         console.log("Resolved producerId:", producerId);
       } catch (prodErr) {
@@ -331,7 +347,7 @@ Deno.serve(async (req) => {
     });
 
     const createData = await createRes.json();
-    console.log("Create status:", createRes.status, JSON.stringify(createData));
+    console.log("Create status:", createRes.status, JSON.stringify(createData).substring(0, 500));
 
     if (!createRes.ok && createRes.status !== 422) {
       const errParts = createData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
