@@ -167,8 +167,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Build description
-    const descriptionText = listing.listing_description || `<p>${listing.listing_title}</p>`;
+    // Build description — escape & for Allegro HTML validator
+    const rawDescription = listing.listing_description || `<p>${listing.listing_title}</p>`;
+    const descriptionText = rawDescription.replace(/&(?!amp;|nbsp;|quot;|apos;|lt;|gt;|#\d+;)/g, "&amp;");
     const descriptionSections = [{ items: [{ type: "TEXT", content: descriptionText }] }];
     allegroImageUrls.forEach(imgUrl => {
       descriptionSections.push({ items: [{ type: "IMAGE", url: imgUrl }] });
