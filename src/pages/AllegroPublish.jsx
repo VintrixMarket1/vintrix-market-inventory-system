@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, Upload, CheckCircle, AlertCircle, Sparkles, CheckSquare, Square, ChevronDown, ChevronUp, BookTemplate, LayoutTemplate } from "lucide-react";
+import { Loader2, ArrowLeft, Upload, CheckCircle, AlertCircle, Sparkles, CheckSquare, Square, ChevronDown, ChevronUp, BookTemplate, LayoutTemplate, AlertTriangle } from "lucide-react";
 import AllegroDescriptionEditor from "@/components/listings/AllegroDescriptionEditor";
 import AllegroCategory from "@/components/listings/AllegroCategory";
 import AllegroProductSearch from "@/components/listings/AllegroProductSearch";
@@ -200,9 +200,6 @@ Wymagania:
       alert("Wybierz stan produktu przed wystawieniem.");
       return;
     }
-    if (!form.allegro_product && !window.confirm("Nie wybrano produktu z katalogu Allegro. Wiele kategorii wymaga powiązania z katalogiem — bez tego oferta zostanie odrzucona. Kontynuować?")) {
-      return;
-    }
     setPublishing(true);
     setResult(null);
 
@@ -359,10 +356,10 @@ Wymagania:
           <h2 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center font-bold">2</span>
             Produkt z katalogu Allegro
-            <span className="text-xs text-slate-400 font-normal">(zalecany — wymagany dla większości kategorii)</span>
+            <span className="text-xs text-slate-400 font-normal">(opcjonalny — zalecany dla lepszej widoczności)</span>
           </h2>
           <p className="text-xs text-slate-400 ml-7 mt-0.5">
-            Wyszukaj produkt w katalogu Allegro. Jeśli kategoria wymaga produktu, pominięcie spowoduje błąd.
+            Wyszukaj produkt w katalogu Allegro. Jeśli nie znajdziesz swojego produktu, możesz wystawić ofertę bez niego — uzupełnij wtedy EAN i producenta ręcznie w ustawieniach zaawansowanych.
           </p>
         </div>
         <AllegroProductSearch
@@ -375,6 +372,12 @@ Wymagania:
           }}
           selectedProduct={form.allegro_product}
         />
+        {form.allegro_product && (
+          <div className="text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded p-2 flex gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>Wybrano produkt: <b>{form.allegro_product.name}</b>. Jeśli oferta zostanie odrzucona z błędem produktu, wróć tutaj i wyszukaj inny produkt lub wystaw bez produktu z katalogu.</span>
+          </div>
+        )}
       </div>
 
       {/* Step 2b: Responsible Producer — only when catalog product selected */}
