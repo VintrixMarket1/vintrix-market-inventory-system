@@ -20,6 +20,7 @@ import ShopifyCallback from './pages/ShopifyCallback';
 import AllegroSettings from './pages/AllegroSettings';
 import AllegroCallback from './pages/AllegroCallback';
 import AllegroPublish from './pages/AllegroPublish';
+import AllegroTemplates from './pages/AllegroTemplates';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 
 const AuthenticatedApp = () => {
@@ -57,6 +58,7 @@ const AuthenticatedApp = () => {
         <Route path="/ShopifySettings" element={<ShopifySettings />} />
         <Route path="/AllegroSettings" element={<AllegroSettings />} />
         <Route path="/AllegroPublish" element={<AllegroPublish />} />
+        <Route path="/AllegroTemplates" element={<AllegroTemplates />} />
       </Route>
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="*" element={<PageNotFound />} />

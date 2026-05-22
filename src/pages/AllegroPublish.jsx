@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, Upload, CheckCircle, AlertCircle, Sparkles, CheckSquare, Square, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, ArrowLeft, Upload, CheckCircle, AlertCircle, Sparkles, CheckSquare, Square, ChevronDown, ChevronUp, BookTemplate, LayoutTemplate } from "lucide-react";
 import AllegroDescriptionEditor from "@/components/listings/AllegroDescriptionEditor";
 import AllegroCategory from "@/components/listings/AllegroCategory";
 import AllegroProductSearch from "@/components/listings/AllegroProductSearch";
+import { useQuery } from "@tanstack/react-query";
 
 const SHIPPING_OPTIONS = [
   { id: "6e05d239-b12a-4941-ab01-5b59fa69256a", label: "Małe paczki (InPost, Poczta)" },
@@ -34,6 +35,12 @@ export default function AllegroPublish() {
   const [generating, setGenerating] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ["allegro_templates"],
+    queryFn: () => base44.entities.AllegroTemplate.list("-created_date"),
+  });
 
   const [form, setForm] = useState({
     name: "",
@@ -54,6 +61,8 @@ export default function AllegroPublish() {
     producer_street: "ul. Przykładowa 1",
     producer_city: "Zgierz",
     producer_zip: "95-100",
+    safety_type: "ROLE_FULFILLED_BY_MARKETPLACE",
+    safety_url: "",
   });
 
   useEffect(() => {
@@ -92,6 +101,21 @@ export default function AllegroPublish() {
   };
 
   const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+
+  const applyTemplate = (t) => {
+    setForm(prev => ({
+      ...prev,
+      producer_name: t.producer_name || prev.producer_name,
+      producer_street: t.producer_street || prev.producer_street,
+      producer_city: t.producer_city || prev.producer_city,
+      producer_zip: t.producer_zip || prev.producer_zip,
+      invoice: t.invoice || prev.invoice,
+      handling_time: t.handling_time || prev.handling_time,
+      safety_type: t.safety_type || "ROLE_FULFILLED_BY_MARKETPLACE",
+      safety_url: t.safety_url || "",
+    }));
+    setShowTemplatePicker(false);
+  };
 
   const toggleImage = (url) => {
     setForm(prev => ({
@@ -160,6 +184,8 @@ Wymagania:
         producer_street: form.producer_street,
         producer_city: form.producer_city,
         producer_zip: form.producer_zip,
+        safety_type: form.safety_type,
+        safety_url: form.safety_url,
       });
       const data = res.data ?? res;
       // If error mentions product catalog requirement, append a hint
@@ -306,16 +332,56 @@ Wymagania:
       {/* Step 2b: Responsible Producer — only when catalog product selected */}
       {form.allegro_product && (
         <div className="bg-white border rounded-xl p-4 space-y-3">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-orange-400 text-white text-xs flex items-center justify-center font-bold">2b</span>
-              Producent odpowiedzialny
-              <span className="text-xs text-red-500 font-normal">(wymagany przez Allegro)</span>
-            </h2>
-            <p className="text-xs text-slate-400 ml-7 mt-0.5">
-              Dane producenta/importera odpowiedzialnego za produkt zgodnie z wymogami UE.
-            </p>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-orange-400 text-white text-xs flex items-center justify-center font-bold">2b</span>
+                Producent odpowiedzialny
+                <span className="text-xs text-red-500 font-normal">(wymagany przez Allegro)</span>
+              </h2>
+              <p className="text-xs text-slate-400 ml-7 mt-0.5">
+                Dane producenta/importera odpowiedzialnego za produkt zgodnie z wymogami UE.
+              </p>
+            </div>
+            <div className="relative shrink-0">
+              <Button
+                variant="outline" size="sm"
+                className="text-xs gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50"
+                onClick={() => setShowTemplatePicker(v => !v)}
+              >
+                <LayoutTemplate className="w-3.5 h-3.5" />
+                Szablon
+              </Button>
+              {showTemplatePicker && (
+                <div className="absolute right-0 top-9 z-50 bg-white border rounded-xl shadow-lg p-2 w-64 space-y-1">
+                  {templates.length === 0 ? (
+                    <div className="text-xs text-slate-400 text-center py-3">
+                      Brak szablonów.{" "}
+                      <button className="text-orange-500 underline" onClick={() => navigate("/AllegroTemplates")}>Utwórz</button>
+                    </div>
+                  ) : templates.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => applyTemplate(t)}
+                      className="w-full text-left rounded-lg px-3 py-2 hover:bg-orange-50 transition-colors"
+                    >
+                      <p className="text-xs font-semibold text-slate-700">{t.name}</p>
+                      <p className="text-[11px] text-slate-400">{t.producer_name}</p>
+                    </button>
+                  ))}
+                  <div className="border-t pt-1 mt-1">
+                    <button
+                      className="w-full text-left px-3 py-1.5 text-[11px] text-orange-500 hover:text-orange-600"
+                      onClick={() => navigate("/AllegroTemplates")}
+                    >
+                      + Zarządzaj szablonami →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1.5 md:col-span-2">
               <Label className="text-xs">Nazwa producenta *</Label>
@@ -349,6 +415,27 @@ Wymagania:
                 placeholder="00-000"
               />
             </div>
+            <div className="space-y-1.5 md:col-span-2">
+              <Label className="text-xs">Informacje o bezpieczeństwie</Label>
+              <Select value={form.safety_type} onValueChange={v => set("safety_type", v)}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ROLE_FULFILLED_BY_MARKETPLACE">Allegro odpowiada za bezpieczeństwo</SelectItem>
+                  <SelectItem value="NOT_APPLICABLE">Nie dotyczy</SelectItem>
+                  <SelectItem value="DOCUMENT_URL">Link do dokumentu bezpieczeństwa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {form.safety_type === "DOCUMENT_URL" && (
+              <div className="space-y-1.5 md:col-span-2">
+                <Label className="text-xs">URL dokumentu bezpieczeństwa</Label>
+                <Input
+                  value={form.safety_url}
+                  onChange={e => set("safety_url", e.target.value)}
+                  placeholder="https://..."
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

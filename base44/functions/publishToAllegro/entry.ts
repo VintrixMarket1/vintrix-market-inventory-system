@@ -106,7 +106,14 @@ Deno.serve(async (req) => {
       producer_street,
       producer_city,
       producer_zip,
-    } = body;
+      safety_type,
+      safety_url,
+      } = body;
+
+      const resolvedSafetyType = safety_type || "ROLE_FULFILLED_BY_MARKETPLACE";
+      const safetyInformation = resolvedSafetyType === "DOCUMENT_URL" && safety_url
+      ? { type: "DOCUMENT_URL", url: safety_url }
+      : { type: resolvedSafetyType };
 
     if (!listing_id) return Response.json({ error: "listing_id is required" }, { status: 400 });
     if (!allegro_category_id) return Response.json({ error: "allegro_category_id is required — wybierz kategorię z drzewa Allegro" }, { status: 400 });
@@ -181,7 +188,7 @@ Deno.serve(async (req) => {
           product: { id: allegro_product_id },
           quantity: { value: resolvedQuantity },
           ...(producerId ? { responsibleProducer: { id: producerId } } : {}),
-          safetyInformation: { type: "ROLE_FULFILLED_BY_MARKETPLACE" },
+          safetyInformation,
         }];
       }
 
@@ -327,7 +334,7 @@ Deno.serve(async (req) => {
         product: { id: allegro_product_id },
         quantity: { value: resolvedQuantity },
         ...(producerId ? { responsibleProducer: { id: producerId } } : {}),
-        safetyInformation: { type: "ROLE_FULFILLED_BY_MARKETPLACE" },
+        safetyInformation,
       }];
     } else if (conditionParams.length > 0) {
       // No catalog product — include only Stan param (safe for most categories)

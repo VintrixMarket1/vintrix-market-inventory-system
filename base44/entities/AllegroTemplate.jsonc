@@ -1,0 +1,63 @@
+{
+  "name": "AllegroTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nazwa szablonu (np. 'Odzie\u017c Nike', 'Elektronika Samsung')"
+    },
+    "producer_name": {
+      "type": "string",
+      "description": "Nazwa producenta odpowiedzialnego"
+    },
+    "producer_street": {
+      "type": "string",
+      "description": "Ulica i numer producenta"
+    },
+    "producer_city": {
+      "type": "string",
+      "description": "Miasto producenta"
+    },
+    "producer_zip": {
+      "type": "string",
+      "description": "Kod pocztowy producenta"
+    },
+    "safety_type": {
+      "type": "string",
+      "enum": [
+        "ROLE_FULFILLED_BY_MARKETPLACE",
+        "NOT_APPLICABLE",
+        "DOCUMENT_URL"
+      ],
+      "default": "ROLE_FULFILLED_BY_MARKETPLACE",
+      "description": "Typ informacji o bezpiecze\u0144stwie produktu"
+    },
+    "safety_url": {
+      "type": "string",
+      "description": "URL do dokumentu bezpiecze\u0144stwa (tylko gdy safety_type = DOCUMENT_URL)"
+    },
+    "invoice": {
+      "type": "string",
+      "enum": [
+        "VAT",
+        "NO_INVOICE",
+        "VAT_MARGIN"
+      ],
+      "default": "VAT",
+      "description": "Domy\u015blny typ faktury"
+    },
+    "handling_time": {
+      "type": "string",
+      "default": "PT24H",
+      "description": "Domy\u015blny czas obs\u0142ugi (ISO 8601 duration)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notatki do szablonu"
+    }
+  },
+  "required": [
+    "name",
+    "producer_name"
+  ]
+}
