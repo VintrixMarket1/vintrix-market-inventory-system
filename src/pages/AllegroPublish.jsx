@@ -133,8 +133,11 @@ export default function AllegroPublish() {
       quantity: prd?.stock_quantity || 1,
       selected_images: lst.selected_images || [],
       producer_name: prd?.brand || "",
+      producer_street: "ul. Przykładowa 1",
       producer_city: "Zgierz",
       producer_zip: "95-100",
+      safety_type: "ROLE_FULFILLED_BY_MARKETPLACE",
+      safety_url: "",
     }));
     setLoading(false);
   };
@@ -220,13 +223,13 @@ Wymagania:
         location_post_code: form.location_post_code,
         invoice: form.invoice,
         force_active: true,
-        ean: form.ean,
-        producer_name: form.producer_name,
-        producer_street: form.producer_street,
-        producer_city: form.producer_city,
-        producer_zip: form.producer_zip,
-        safety_type: form.safety_type,
-        safety_url: form.safety_url,
+        ean: form.ean || undefined,
+        producer_name: form.producer_name || undefined,
+        producer_street: form.producer_street || undefined,
+        producer_city: form.producer_city || undefined,
+        producer_zip: form.producer_zip || undefined,
+        safety_type: form.safety_type || "ROLE_FULFILLED_BY_MARKETPLACE",
+        safety_url: form.safety_url || undefined,
       });
       const data = res.data ?? res;
       // If error mentions product catalog requirement, append a hint
