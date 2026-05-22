@@ -60,17 +60,21 @@ Deno.serve(async (req) => {
     }
 
     const paramData = await paramRes.json();
+    console.log("Param data:", JSON.stringify(paramData, null, 2));
     const conditionParam = (paramData.parameters || []).find(p => p.id === "11323");
 
     if (!conditionParam) {
+      console.log("No condition param found");
       return Response.json({ conditions: [] });
     }
 
+    console.log("Condition param:", JSON.stringify(conditionParam, null, 2));
     const conditions = conditionParam.dictionary.map(item => ({
       id: item.id,
-      name: item.name,
+      name: item.name || item.value || `Stan ${item.id}`,
     }));
 
+    console.log("Conditions to return:", conditions);
     return Response.json({ conditions });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
