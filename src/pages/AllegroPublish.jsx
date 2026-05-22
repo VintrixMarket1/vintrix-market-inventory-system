@@ -105,15 +105,12 @@ export default function AllegroPublish() {
     const heavyCategories = ["home", "electronics", "sports", "toys"];
     const autoShipping = heavyCategories.includes(prd?.category) ? SHIPPING_OPTIONS[1].id : SHIPPING_OPTIONS[0].id;
 
-    // Map internal condition to Allegro condition ID
-    const conditionMap = { new: "11323_1", like_new: "11323_2", used: "11323_3" };
-
     setForm(prev => ({
       ...prev,
       name: lst.listing_title || prd?.product_name || "",
       price: lst.listing_price || prd?.suggested_sale_price || "",
       condition: prd?.condition || "like_new",
-      conditionId: conditionMap[prd?.condition || "like_new"],
+      // Don't set conditionId yet - wait for user to select category and fetch conditions
       shipping_rate_id: autoShipping,
       description: lst.listing_description || "",
       quantity: prd?.stock_quantity || 1,
@@ -491,7 +488,11 @@ Wymagania:
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Stan produktu *</Label>
-              {allegroConditions.length > 0 ? (
+              {!form.allegro_category_id ? (
+                <div className="text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded p-2">
+                  ⚠️ Najpierw wybierz kategorię Allegro, aby zobaczyć dostępne stany produktu
+                </div>
+              ) : allegroConditions.length > 0 ? (
                 <Select value={form.conditionId} onValueChange={v => {
                   set("conditionId", v);
                   // Map back to internal condition
@@ -506,12 +507,9 @@ Wymagania:
                   </SelectContent>
                 </Select>
               ) : (
-                <Select value={form.condition} onValueChange={v => set("condition", v)}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CONDITION_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <div className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded p-2">
+                  Ładowanie dostępnych stanów...
+                </div>
               )}
               {allegroConditions.length > 0 && (
                 <p className="text-[10px] text-slate-400">Wybierz stan zgodny z wymaganiami kategorii Allegro</p>
