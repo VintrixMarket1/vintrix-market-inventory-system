@@ -10,7 +10,7 @@ import { Loader2, ArrowLeft, Upload, CheckCircle, AlertCircle, Sparkles, CheckSq
 import AllegroDescriptionEditor from "@/components/listings/AllegroDescriptionEditor";
 import AllegroCategory from "@/components/listings/AllegroCategory";
 import AllegroProductSearch from "@/components/listings/AllegroProductSearch";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const SHIPPING_OPTIONS = [
   { id: "6e05d239-b12a-4941-ab01-5b59fa69256a", label: "Małe paczki (InPost, Poczta)" },
@@ -26,6 +26,7 @@ export default function AllegroPublish() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const listingId = urlParams.get("listing_id");
+  const queryClient = useQueryClient();
 
   const [listing, setListing] = useState(null);
   const [product, setProduct] = useState(null);
@@ -42,10 +43,21 @@ export default function AllegroPublish() {
     queryFn: () => base44.entities.AllegroTemplate.list("-created_date"),
   });
 
+  const { data: allegroConditions = [] } = useQuery({
+    queryKey: ["allegro_conditions", form.allegro_category_id],
+    queryFn: async () => {
+      if (!form.allegro_category_id) return [];
+      const res = await base44.functions.invoke("getAllegroConditions", { category_id: form.allegro_category_id });
+      return res.data?.conditions || [];
+    },
+    enabled: !!form.allegro_category_id,
+  });
+
   const [form, setForm] = useState({
     name: "",
     price: "",
     condition: "like_new",
+    conditionId: null, // Allegro condition ID
     shipping_rate_id: SHIPPING_OPTIONS[0].id,
     description: "",
     quantity: 1,
@@ -84,11 +96,15 @@ export default function AllegroPublish() {
     const heavyCategories = ["home", "electronics", "sports", "toys"];
     const autoShipping = heavyCategories.includes(prd?.category) ? SHIPPING_OPTIONS[1].id : SHIPPING_OPTIONS[0].id;
 
+    // Map internal condition to Allegro condition ID
+    const conditionMap = { new: "11323_1", like_new: "11323_2", used: "11323_3" };
+
     setForm(prev => ({
       ...prev,
       name: lst.listing_title || prd?.product_name || "",
       price: lst.listing_price || prd?.suggested_sale_price || "",
       condition: prd?.condition || "like_new",
+      conditionId: conditionMap[prd?.condition || "like_new"],
       shipping_rate_id: autoShipping,
       description: lst.listing_description || "",
       quantity: prd?.stock_quantity || 1,
@@ -101,6 +117,15 @@ export default function AllegroPublish() {
   };
 
   const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+
+  // When category changes, reset condition and fetch available conditions
+  useEffect(() => {
+    if (form.allegro_category_id) {
+      queryClient.invalidateQueries({ queryKey: ["allegro_conditions"] });
+      // Reset condition when category changes
+      set("conditionId", null);
+    }
+  }, [form.allegro_category_id]);
 
   const applyTemplate = (t) => {
     setForm(prev => ({
@@ -174,6 +199,7 @@ Wymagania:
         allegro_product_id: form.allegro_product?.id || null,
         shipping_rate_id: form.shipping_rate_id,
         condition: form.condition,
+        condition_id: form.conditionId, // Pass selected Allegro condition ID
         quantity: parseInt(form.quantity) || 1,
         handling_time: form.handling_time,
         location_city: form.location_city,
@@ -465,12 +491,31 @@ Wymagania:
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Stan produktu *</Label>
-              <Select value={form.condition} onValueChange={v => set("condition", v)}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CONDITION_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              {allegroConditions.length > 0 ? (
+                <Select value={form.conditionId} onValueChange={v => {
+                  set("conditionId", v);
+                  // Map back to internal condition
+                  const conditionMap = { "11323_1": "new", "11323_2": "like_new", "11323_3": "used" };
+                  set("condition", conditionMap[v] || "like_new");
+                }}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Wybierz stan" /></SelectTrigger>
+                  <SelectContent>
+                    {allegroConditions.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Select value={form.condition} onValueChange={v => set("condition", v)}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CONDITION_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
+              {allegroConditions.length > 0 && (
+                <p className="text-[10px] text-slate-400">Wybierz stan zgodny z wymaganiami kategorii Allegro</p>
+              )}
             </div>
           </div>
 

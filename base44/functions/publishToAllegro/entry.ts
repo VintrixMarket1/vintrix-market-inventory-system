@@ -96,6 +96,7 @@ Deno.serve(async (req) => {
       allegro_product_id,
       shipping_rate_id,
       condition,
+      condition_id,
       quantity,
       handling_time,
       location_city,
@@ -148,6 +149,8 @@ Deno.serve(async (req) => {
     const shippingRateId = shipping_rate_id || (
       heavyCategories.includes(product.category) ? SHIPPING_RATES.large : SHIPPING_RATES.small
     );
+    // Use condition_id if provided (user selected from Allegro), otherwise auto-resolve
+    const useProvidedConditionId = !!condition_id;
 
     // --- UPDATE existing offer ---
     if (listing.allegro_listing_id) {
@@ -250,9 +253,15 @@ Deno.serve(async (req) => {
     });
 
     console.log("About to resolve condition param...");
-    // Resolve Stan parameter
-    const conditionParams = await resolveConditionParam(allegro_category_id, resolvedCondition, accessToken);
-    console.log("conditionParams:", JSON.stringify(conditionParams));
+    // Resolve Stan parameter - use provided condition_id if available
+    let conditionParams = [];
+    if (useProvidedConditionId) {
+      conditionParams = [{ id: "11323", valuesIds: [condition_id] }];
+      console.log("Using provided condition_id:", condition_id);
+    } else {
+      conditionParams = await resolveConditionParam(allegro_category_id, resolvedCondition, accessToken);
+      console.log("Auto-resolved conditionParams:", JSON.stringify(conditionParams));
+    }
 
     // Build offer payload
     const offerPayload = {
