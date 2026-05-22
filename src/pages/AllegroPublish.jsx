@@ -514,20 +514,17 @@ Wymagania:
                   Ładowanie dostępnych stanów...
                 </div>
               ) : allegroConditions.length > 0 ? (
-                <div className="relative">
+                <div>
                   <select
                     value={form.conditionId || ""}
                     onChange={(e) => {
-                      console.log("Selected condition:", e.target.value);
                       set("conditionId", e.target.value);
-                      const conditionMap = { "11323_1": "new", "11323_2": "like_new", "11323_3": "used" };
-                      set("condition", conditionMap[e.target.value] || "like_new");
                     }}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-9 w-full rounded-md border border-input bg-white text-foreground px-3 py-1 text-sm shadow-sm"
                   >
-                    <option value="" disabled>Wybierz stan</option>
-                    {allegroConditions.map((c, idx) => (
-                      <option key={`${c.id}-${idx}`} value={c.id}>{c.name}</option>
+                    <option value="">Wybierz stan</option>
+                    {allegroConditions.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
