@@ -82,6 +82,15 @@ export default function AllegroPublish() {
     loadData();
   }, [listingId]);
 
+  // When category changes, reset condition and fetch available conditions
+  useEffect(() => {
+    if (form.allegro_category_id) {
+      queryClient.invalidateQueries({ queryKey: ["allegro_conditions"] });
+      // Reset condition when category changes
+      set("conditionId", null);
+    }
+  }, [form.allegro_category_id]);
+
   const loadData = async () => {
     setLoading(true);
     const listings = await base44.entities.Listing.filter({ id: listingId });
@@ -117,15 +126,6 @@ export default function AllegroPublish() {
   };
 
   const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
-
-  // When category changes, reset condition and fetch available conditions
-  useEffect(() => {
-    if (form.allegro_category_id) {
-      queryClient.invalidateQueries({ queryKey: ["allegro_conditions"] });
-      // Reset condition when category changes
-      set("conditionId", null);
-    }
-  }, [form.allegro_category_id]);
 
   const applyTemplate = (t) => {
     setForm(prev => ({
