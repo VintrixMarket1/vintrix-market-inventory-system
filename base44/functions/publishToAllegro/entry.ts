@@ -207,6 +207,15 @@ Deno.serve(async (req) => {
       offerPayload.productSet = [{
         product: { id: allegro_product_id },
         quantity: { value: resolvedQuantity },
+        responsibleProducer: {
+          name: product.brand || "Producent nieznany",
+          address: {
+            street: "ul. Przykładowa 1",
+            city: resolvedCity,
+            zipCode: resolvedPostCode,
+            countryCode: "PL",
+          },
+        },
       }];
     } else if (conditionParams.length > 0) {
       // No catalog product — include only Stan param (safe for most categories)
