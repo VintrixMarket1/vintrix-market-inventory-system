@@ -20,6 +20,7 @@ import ShopifyCallback from './pages/ShopifyCallback';
 import AllegroSettings from './pages/AllegroSettings';
 import AllegroCallback from './pages/AllegroCallback';
 import AllegroPublish from './pages/AllegroPublish';
+import GoogleSheetsSettings from './pages/GoogleSheetsSettings';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -56,6 +57,7 @@ const AuthenticatedApp = () => {
         <Route path="/ShopifySettings" element={<ShopifySettings />} />
         <Route path="/AllegroSettings" element={<AllegroSettings />} />
         <Route path="/AllegroPublish" element={<AllegroPublish />} />
+        <Route path="/GoogleSheetsSettings" element={<GoogleSheetsSettings />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

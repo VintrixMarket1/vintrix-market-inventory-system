@@ -1,0 +1,27 @@
+{
+  "name": "GoogleSheetsSettings",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email u\u017cytkownika, kt\u00f3rego ustawienia to s\u0105"
+    },
+    "spreadsheet_id": {
+      "type": "string",
+      "description": "ID arkusza Google Sheets (z URL: /spreadsheets/d/{ID}/)"
+    },
+    "sheet_name": {
+      "type": "string",
+      "description": "Nazwa zak\u0142adki w arkuszu (domy\u015blnie: Sprzeda\u017c)",
+      "default": "Sprzeda\u017c"
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Czy synchronizacja jest w\u0142\u0105czona",
+      "default": true
+    }
+  },
+  "required": [
+    "spreadsheet_id"
+  ]
+}
