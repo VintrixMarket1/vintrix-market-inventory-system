@@ -38,21 +38,6 @@ export default function AllegroPublish() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
 
-  const { data: templates = [] } = useQuery({
-    queryKey: ["allegro_templates"],
-    queryFn: () => base44.entities.AllegroTemplate.list("-created_date"),
-  });
-
-  const { data: allegroConditions = [] } = useQuery({
-    queryKey: ["allegro_conditions", form.allegro_category_id],
-    queryFn: async () => {
-      if (!form.allegro_category_id) return [];
-      const res = await base44.functions.invoke("getAllegroConditions", { category_id: form.allegro_category_id });
-      return res.data?.conditions || [];
-    },
-    enabled: !!form.allegro_category_id,
-  });
-
   const [form, setForm] = useState({
     name: "",
     price: "",
@@ -75,6 +60,21 @@ export default function AllegroPublish() {
     producer_zip: "95-100",
     safety_type: "ROLE_FULFILLED_BY_MARKETPLACE",
     safety_url: "",
+  });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ["allegro_templates"],
+    queryFn: () => base44.entities.AllegroTemplate.list("-created_date"),
+  });
+
+  const { data: allegroConditions = [] } = useQuery({
+    queryKey: ["allegro_conditions", form.allegro_category_id],
+    queryFn: async () => {
+      if (!form.allegro_category_id) return [];
+      const res = await base44.functions.invoke("getAllegroConditions", { category_id: form.allegro_category_id });
+      return res.data?.conditions || [];
+    },
+    enabled: !!form.allegro_category_id,
   });
 
   useEffect(() => {
