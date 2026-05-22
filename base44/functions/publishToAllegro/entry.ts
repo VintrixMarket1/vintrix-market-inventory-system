@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
       safety_type,
       safety_url,
       ean,
-      } = body;
+    } = body;
 
       // Build safetyInformation - Allegro requires this field when productSet is used
       const resolvedSafetyType = safety_type || "ROLE_FULFILLED_BY_MARKETPLACE";
