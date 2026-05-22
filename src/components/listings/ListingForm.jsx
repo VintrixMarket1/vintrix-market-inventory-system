@@ -52,41 +52,84 @@ export default function ListingForm({ open, onClose, product, listing, onSaved }
 
     let prompt;
     if (isAllegro) {
-      prompt = `Wygeneruj profesjonalny opis oferty na Allegro w formacie HTML dla produktu:
+      prompt = `### MASTER PROMPT: SPECJALISTA SPRZEDAŻY ALLEGRO ###
+
+Jesteś ekspertem Allegro z 10-letnim doświadczeniem. Tworzysz opisy, które:
+- SPRZEDAJĄ poprzez język korzyści i emocji
+- BUDUJĄ ZAUFANIE profesjonalnym wizerunkiem
+- KONWERTUJĄ dzięki perswazyjnej strukturze
+
+=== PRODUKT ===
 - Nazwa: ${product?.product_name || form.listing_title}
-- Marka: ${product?.brand || "brak"}
-- Kategoria: ${product?.category || "inne"}
-- Stan: ${conditionMap[product?.condition] || "dobry"}
-- Rozmiar: ${product?.size || "brak"}
-- Kolor: ${product?.color || "brak"}
-- Cena: ${form.listing_price || ""} PLN
+- Marka: ${product?.brand || "produkt premium"}
+- Kategoria: ${product?.category}
+- Stan: ${conditionMap[product?.condition] || "bardzo dobry"}
+- Rozmiar: ${product?.size || "dostępny"}
+- Kolor: ${product?.color || "klasyczny"}
+- Cena: ${form.listing_price || "atrakcyjna"} PLN
 
-Wymagania:
-- Używaj TYLKO tych tagów HTML: h1, h2, p, ul, ol, li, b
-- Struktura:
-  1. <h1> z tytułem oferty (chwytliwy, zawiera markę i stan)
-  2. <h2>Opis produktu</h2> + <p> z 2-3 zdaniami zachęcającymi
-  3. <h2>Cechy</h2> + <ul><li> z listą najważniejszych cech (stan, rozmiar, kolor, marka)
-  4. <h2>Dostawa</h2> + <p> z info o szybkiej wysyłce 1-2 dni robocze
-  5. <h2>Dlaczego warto?</h2> + <ul><li> z 3 korzyściami dla kupującego
-- Pisz po polsku, stylem sprzedażowym, pozytywnie
-- NIE dodawaj żadnego CSS, klas, atrybutów w tagach`;
+=== ZASADY ===
+1. Używaj WYŁĄCZNIE tagów: h1, h2, p, ul, ol, li, b, br
+2. ZERO atrybutów (brak class, style, id)
+3. ZERO CSS, divów, table, img
+4. CZYSTY HTML - bez komentarzy
+
+=== STRUKTURA ===
+1. **H1** - Tytuł (max 75 znaków, marka + stan + korzyść)
+2. **H2 "✨ DLACZEGO WARTO?"** - UL z 3-4 korzyściami
+3. **H2 "📋 OPIS"** - 2 akapity P z perswazyjnym tekstem
+4. **H2 "⭐ CECHY"** - UL z 5-6 zaletami (stan, rozmiar, kolor, marka)
+5. **H2 "📦 DOSTAWA"** - P o wysyłce 1-2 dni + zwroty
+
+=== TECHNIKI ===
+- Język korzyści: nie "ma rozmiar M", tylko "idealnie dopasuje się"
+- Społeczny dowód: "Wybierany przez tysiące klientów"
+- Pilność: "Ostatnie sztuki w tej cenie"
+- Odwrócenie ryzyka: "14 dni na zwrot, pełna gwarancja"
+
+=== SŁOWA MOCY ===
+ekskluzywny, premium, profesjonalny, sprawdzony, gwarantowany, wyjątkowy, oryginalny, limitowany
+
+=== FORMATOWANIE ===
+- Emoji w nagłówkach: ✨, 📋, ⭐, 📦, ❓
+- Pogrubienia: **b**ważne**b**
+- Krótkie akapity (max 3 zdania)
+
+Wygeneruj WYŁĄCZNIE gotowy HTML. Bez wstępów. Zacznij od h1.`;
     } else {
-      prompt = `Generate a short, attractive marketplace listing description for Vinted/OLX:
-- Name: ${product?.product_name || form.listing_title}
-- Category: ${product?.category || "general"}
-- Condition: ${conditionMap[product?.condition] || "good condition"}
-- Size: ${product?.size || "not specified"}
-- Internal code: ${product?.internal_code || "N/A"}
+      prompt = `### MASTER PROMPT: SPECJALISTA VINTED/OLX ###
 
-Structure:
-1. Condition statement
-2. Size (if clothing/shoes)
-3. Short marketing description (2-3 sentences)
-4. Shipping: "Fast shipping within 1-2 business days"
-5. Internal code reference
+Jesteś ekspertem marketplace'ów Vinted/OLX. Tworzysz opisy, które:
+- PRZECIĄGAJĄ wzrok w pierwszych 3 sekundach
+- BUDUJĄ ZAUFANIE autentycznością
+- SPRZEDAJĄ poprzez jasne korzyści
 
-Keep it concise. Write in Polish.`;
+=== PRODUKT ===
+- Nazwa: ${product?.product_name || form.listing_title}
+- Kategoria: ${product?.category}
+- Stan: ${conditionMap[product?.condition] || "bardzo dobry"}
+- Rozmiar: ${product?.size || "uniwersalny"}
+- Kod: ${product?.internal_code || "N/A"}
+
+=== ZASADY ===
+1. Pisz po polsku, stylem LUZ ale PROFESJONALNYM
+2. Krótko i konkretnie (max 150 słów)
+3. Używaj emoji strategicznie: ✨, 📦, ✅, 🏷️
+4. Formatowanie: myślniki, krótkie akapity
+
+=== STRUKTURA ===
+1. **STAN** - 1 zdanie o stanie (np. "Stan bardzo dobry, bez wad")
+2. **ROZMIAR** - jeśli odzież/buty (np. "Rozmiar M, tabela na zdjęciu")
+3. **OPIS** - 2-3 zdania z językiem korzyści
+4. **WYSYŁKA** - "Wysyłka 1-2 dni robocze 📦"
+5. **KOD** - "Kod: ${product?.internal_code || "N/A"}"
+
+=== TECHNIKI ===
+- Autentyczność: "Zapraszam do kontaktu"
+- Pilność: "Szybka wysyłka"
+- Zaufanie: "Możliwy odbiór osobisty"
+
+Wygeneruj opis. Bez wstępów.`;
     }
 
     const result = await base44.integrations.Core.InvokeLLM({
@@ -95,6 +138,7 @@ Keep it concise. Write in Polish.`;
         type: "object",
         properties: { description: { type: "string" } },
       },
+      model: "gpt_5_5",
     });
     handleChange("listing_description", result.description);
     setGenerating(false);
