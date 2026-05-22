@@ -40,18 +40,32 @@ Deno.serve(async (req) => {
     }
 
     const accessToken = await getAllegroToken(base44);
-    const params = new URLSearchParams({ language, pageSize: "10" });
-    if (phrase) params.set("phrase", phrase);
-    if (category_id) params.set("category.id", category_id);
+    
+    // Build URL with query params
+    const url = new URL("https://api.allegro.pl/sale/products");
+    url.searchParams.set("language", language);
+    url.searchParams.set("pageSize", "10");
+    if (phrase) url.searchParams.set("phrase", phrase);
+    if (category_id) url.searchParams.set("category.id", category_id);
 
-    const res = await fetch(`https://api.allegro.pl/sale/products?${params}`, {
+    console.log("Searching Allegro products:", { phrase, category_id, url: url.toString() });
+
+    const res = await fetch(url.toString(), {
       headers: {
         "Authorization": `Bearer ${accessToken}`,
         "Accept": "application/vnd.allegro.public.v1+json",
       },
     });
+    
+    console.log("Allegro response status:", res.status);
+    
     const data = await res.json();
-    if (!res.ok) return Response.json({ error: JSON.stringify(data) }, { status: res.status });
+    console.log("Allegro response data:", JSON.stringify(data, null, 2));
+    
+    if (!res.ok) {
+      console.error("Allegro API error:", data);
+      return Response.json({ error: JSON.stringify(data) }, { status: res.status });
+    }
 
     const products = (data.products || []).map(p => ({
       id: p.id,
