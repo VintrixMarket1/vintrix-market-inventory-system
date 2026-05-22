@@ -92,8 +92,8 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const {
       listing_id,
-      allegro_category_id,    // leaf category ID from Allegro tree
-      allegro_product_id,     // optional: product from Allegro catalog
+      allegro_category_id,
+      allegro_product_id,
       shipping_rate_id,
       condition,
       quantity,
@@ -102,6 +102,10 @@ Deno.serve(async (req) => {
       location_post_code,
       invoice,
       force_active,
+      producer_name,
+      producer_street,
+      producer_city,
+      producer_zip,
     } = body;
 
     if (!listing_id) return Response.json({ error: "listing_id is required" }, { status: 400 });
@@ -209,13 +213,13 @@ Deno.serve(async (req) => {
         quantity: { value: resolvedQuantity },
         responsibleProducer: {
           contacts: [{
-            name: product.brand || "Producent nieznany",
+            name: producer_name || product.brand || "Producent nieznany",
             phones: [],
             emails: [],
             address: {
-              street: "ul. Przykładowa 1",
-              city: resolvedCity,
-              zipCode: resolvedPostCode,
+              street: producer_street || "ul. Przykładowa 1",
+              city: producer_city || resolvedCity,
+              zipCode: producer_zip || resolvedPostCode,
               countryCode: "PL",
             },
           }],

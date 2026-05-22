@@ -49,7 +49,11 @@ export default function AllegroPublish() {
     selected_images: [],
     allegro_category_id: null,
     allegro_category_name: null,
-    allegro_product: null, // full product object from catalog
+    allegro_product: null,
+    producer_name: "",
+    producer_street: "ul. Przykładowa 1",
+    producer_city: "Zgierz",
+    producer_zip: "95-100",
   });
 
   useEffect(() => {
@@ -80,6 +84,9 @@ export default function AllegroPublish() {
       description: lst.listing_description || "",
       quantity: prd?.stock_quantity || 1,
       selected_images: lst.selected_images || [],
+      producer_name: prd?.brand || "",
+      producer_city: "Zgierz",
+      producer_zip: "95-100",
     }));
     setLoading(false);
   };
@@ -146,6 +153,10 @@ Wymagania:
         location_post_code: form.location_post_code,
         invoice: form.invoice,
         force_active: true,
+        producer_name: form.producer_name,
+        producer_street: form.producer_street,
+        producer_city: form.producer_city,
+        producer_zip: form.producer_zip,
       });
       const data = res.data ?? res;
       setResult(data);
@@ -278,6 +289,56 @@ Wymagania:
           selectedProduct={form.allegro_product}
         />
       </div>
+
+      {/* Step 2b: Responsible Producer — only when catalog product selected */}
+      {form.allegro_product && (
+        <div className="bg-white border rounded-xl p-4 space-y-3">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-orange-400 text-white text-xs flex items-center justify-center font-bold">2b</span>
+              Producent odpowiedzialny
+              <span className="text-xs text-red-500 font-normal">(wymagany przez Allegro)</span>
+            </h2>
+            <p className="text-xs text-slate-400 ml-7 mt-0.5">
+              Dane producenta/importera odpowiedzialnego za produkt zgodnie z wymogami UE.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1.5 md:col-span-2">
+              <Label className="text-xs">Nazwa producenta *</Label>
+              <Input
+                value={form.producer_name}
+                onChange={e => set("producer_name", e.target.value)}
+                placeholder="np. Nike Inc., Adidas AG..."
+              />
+            </div>
+            <div className="space-y-1.5 md:col-span-2">
+              <Label className="text-xs">Ulica i numer</Label>
+              <Input
+                value={form.producer_street}
+                onChange={e => set("producer_street", e.target.value)}
+                placeholder="ul. Przykładowa 1"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Miasto</Label>
+              <Input
+                value={form.producer_city}
+                onChange={e => set("producer_city", e.target.value)}
+                placeholder="Warszawa"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Kod pocztowy</Label>
+              <Input
+                value={form.producer_zip}
+                onChange={e => set("producer_zip", e.target.value)}
+                placeholder="00-000"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left column */}
