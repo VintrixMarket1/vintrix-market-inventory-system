@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Download, TrendingUp, TrendingDown } from "lucide-react";
+import { Search, Download, TrendingUp, TrendingDown, Calendar } from "lucide-react";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
 
@@ -19,6 +19,8 @@ const platformColors = {
 export default function Sales() {
   const [search, setSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ["sales"],
@@ -28,7 +30,10 @@ export default function Sales() {
   const filtered = sales.filter(s => {
     const searchMatch = !search || s.product_name?.toLowerCase().includes(search.toLowerCase());
     const platformMatch = platformFilter === "all" || s.platform === platformFilter;
-    return searchMatch && platformMatch;
+    const saleDate = s.sale_date ? new Date(s.sale_date) : null;
+    const fromMatch = !dateFrom || (saleDate && saleDate >= new Date(dateFrom));
+    const toMatch = !dateTo || (saleDate && saleDate <= new Date(dateTo));
+    return searchMatch && platformMatch && fromMatch && toMatch;
   });
 
   const totalRevenue = filtered.reduce((sum, s) => sum + (s.sale_price || 0), 0);
@@ -48,7 +53,8 @@ export default function Sales() {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sprzedaż");
-    XLSX.writeFile(wb, `sprzedaz_${new Date().toISOString().split("T")[0]}.xlsx`);
+    const dateRange = dateFrom && dateTo ? `_${format(new Date(dateFrom), "yyyy-MM-dd")}-${format(new Date(dateTo), "yyyy-MM-dd")}` : "";
+    XLSX.writeFile(wb, `sprzedaz${dateRange}_${new Date().toISOString().split("T")[0]}.xlsx`);
   };
 
   return (
@@ -92,6 +98,26 @@ export default function Sales() {
             <SelectItem value="ebay">eBay</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-slate-400" />
+          <Input
+            type="date"
+            className="w-36 h-9 text-sm"
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+            placeholder="Od"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-400">-</span>
+          <Input
+            type="date"
+            className="w-36 h-9 text-sm"
+            value={dateTo}
+            onChange={e => setDateTo(e.target.value)}
+            placeholder="Do"
+          />
+        </div>
       </div>
 
       {isLoading ? (
