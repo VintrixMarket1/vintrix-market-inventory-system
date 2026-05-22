@@ -67,15 +67,30 @@ export default function AllegroPublish() {
     queryFn: () => base44.entities.AllegroTemplate.list("-created_date"),
   });
 
-  const { data: allegroConditions = [] } = useQuery({
-    queryKey: ["allegro_conditions", form.allegro_category_id],
-    queryFn: async () => {
-      if (!form.allegro_category_id) return [];
-      const res = await base44.functions.invoke("getAllegroConditions", { category_id: form.allegro_category_id });
-      return res.data?.conditions || [];
-    },
-    enabled: !!form.allegro_category_id,
-  });
+  const [allegroConditions, setAllegroConditions] = useState([]);
+  const [loadingConditions, setLoadingConditions] = useState(false);
+
+  useEffect(() => {
+    if (!form.allegro_category_id) {
+      setAllegroConditions([]);
+      return;
+    }
+
+    const loadConditions = async () => {
+      setLoadingConditions(true);
+      try {
+        const res = await base44.functions.invoke("getAllegroConditions", { category_id: form.allegro_category_id });
+        setAllegroConditions(res.data?.conditions || []);
+      } catch (err) {
+        console.error("Failed to load conditions:", err);
+        setAllegroConditions([]);
+      } finally {
+        setLoadingConditions(false);
+      }
+    };
+
+    loadConditions();
+  }, [form.allegro_category_id]);
 
   useEffect(() => {
     if (!listingId) { navigate("/Listings"); return; }
@@ -492,6 +507,11 @@ Wymagania:
                 <div className="text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded p-2">
                   ⚠️ Najpierw wybierz kategorię Allegro, aby zobaczyć dostępne stany produktu
                 </div>
+              ) : loadingConditions ? (
+                <div className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded p-2 flex items-center gap-2">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Ładowanie dostępnych stanów...
+                </div>
               ) : allegroConditions.length > 0 ? (
                 <Select value={form.conditionId} onValueChange={v => {
                   set("conditionId", v);
@@ -507,8 +527,8 @@ Wymagania:
                   </SelectContent>
                 </Select>
               ) : (
-                <div className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded p-2">
-                  Ładowanie dostępnych stanów...
+                <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2">
+                  Nie udało się załadować stanów produktu. Spróbuj ponownie.
                 </div>
               )}
               {allegroConditions.length > 0 && (
