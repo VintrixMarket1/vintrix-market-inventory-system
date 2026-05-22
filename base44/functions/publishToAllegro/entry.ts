@@ -150,12 +150,25 @@ Deno.serve(async (req) => {
         headers,
         body: JSON.stringify(updatePayload),
       });
+      const updateData = await updateRes.json().catch(() => ({}));
+      console.log("Update status:", updateRes.status, JSON.stringify(updateData));
       if (!updateRes.ok) {
-        const err = await updateRes.json().catch(() => ({}));
-        return Response.json({ error: `Błąd aktualizacji: ${JSON.stringify(err.errors || err)}` }, { status: 400 });
+        const errParts = updateData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
+        return Response.json({ error: `Błąd aktualizacji: ${errParts.join(" | ") || JSON.stringify(updateData)}` }, { status: 400 });
       }
-      await base44.entities.Listing.update(listing.id, { listing_status: "listed" });
-      await base44.entities.Product.update(product.id, { status: "listed" });
+      const updateErrors = updateData.errors || [];
+      const isActive = updateData.publication?.status === "ACTIVE";
+      await Promise.all([
+        base44.entities.Listing.update(listing.id, { listing_status: isActive ? "listed" : "draft" }),
+        base44.entities.Product.update(product.id, { status: isActive ? "listed" : "in_stock" }),
+      ]);
+      if (updateErrors.length > 0) {
+        const errParts = updateErrors.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`);
+        return Response.json({
+          warning: `Oferta nadal jako szkic (ID: ${listing.allegro_listing_id}). Błędy: ${errParts.join(" | ")}`,
+          allegro_listing_id: listing.allegro_listing_id,
+        });
+      }
       return Response.json({ success: true, allegro_listing_id: listing.allegro_listing_id, updated: true });
     }
 
