@@ -54,6 +54,7 @@ export default function AllegroPublish() {
     allegro_category_id: null,
     allegro_category_name: null,
     allegro_product: null,
+    ean: "",
     producer_name: "",
     producer_street: "ul. Przykładowa 1",
     producer_city: "Zgierz",
@@ -563,6 +564,27 @@ Wymagania:
 
             {showAdvanced && (
               <div className="space-y-3 pt-1">
+                <div className="bg-orange-50 border border-orange-200 rounded p-2 text-xs text-orange-700">
+                  ⚠️ Ta kategoria wymaga podania EAN i producenta
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">EAN (GTIN) *</Label>
+                    <Input 
+                      value={form.ean || ""} 
+                      onChange={e => set("ean", e.target.value)} 
+                      placeholder="np. 5901234567890"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Producent *</Label>
+                    <Input 
+                      value={form.producer_name || ""} 
+                      onChange={e => set("producer_name", e.target.value)} 
+                      placeholder="np. Nike Inc."
+                    />
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-xs">Czas obsługi</Label>

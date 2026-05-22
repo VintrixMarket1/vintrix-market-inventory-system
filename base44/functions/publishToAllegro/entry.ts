@@ -109,6 +109,7 @@ Deno.serve(async (req) => {
       producer_zip,
       safety_type,
       safety_url,
+      ean,
       } = body;
 
       const resolvedSafetyType = safety_type || "ROLE_FULFILLED_BY_MARKETPLACE";
@@ -347,8 +348,23 @@ Deno.serve(async (req) => {
         safetyInformation,
       }];
     } else if (conditionParams.length > 0) {
-      // No catalog product — include only Stan param (safe for most categories)
-      offerPayload.parameters = conditionParams;
+      // No catalog product — include required parameters (EAN, Producer, Stan)
+      const additionalParams = [];
+      
+      // Add EAN if provided
+      if (ean && ean.length >= 8) {
+        additionalParams.push({ id: "225693", values: [ean] });
+      }
+      
+      // Add Producer if provided
+      if (producer_name && producer_name !== "null") {
+        additionalParams.push({ id: "248914", values: [producer_name] });
+      }
+      
+      // Add condition
+      additionalParams.push(...conditionParams);
+      
+      offerPayload.parameters = additionalParams;
     }
 
     if (product.internal_code) {
