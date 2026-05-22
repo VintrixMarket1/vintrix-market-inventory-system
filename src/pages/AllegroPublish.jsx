@@ -285,7 +285,12 @@ Wymagania:
         </div>
         <AllegroProductSearch
           categoryId={form.allegro_category_id}
-          onSelect={(p) => set("allegro_product", p)}
+          onSelect={(p) => {
+            set("allegro_product", p);
+            if (p && !form.producer_name) {
+              set("producer_name", product?.brand || "");
+            }
+          }}
           selectedProduct={form.allegro_product}
         />
       </div>
