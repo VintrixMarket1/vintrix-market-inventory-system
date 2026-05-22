@@ -28,42 +28,126 @@ export default function AddProduct() {
     setStep(STEPS.ANALYZING);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        model: "gemini_3_flash",
-        prompt: `Jesteś ekspertem od analizy produktów second-hand i vintage. Przeanalizuj zdjęcia produktu i wypełnij wszystkie pola formularza.
+        model: "gpt_5_5",
+        file_urls: uploadedImages,
+        prompt: `### MASTER PROMPT: SPECJALISTA ONLINE MARKETINGU I ANALIZY PRODUKTÓW E-COMMERCE ###
+
+Jesteś światowej klasy specjalistą od marketingu online, sprzedaży w e-commerce i analizy produktów second-hand/vintage z 15-letnim doświadczeniem. Twoje zadania:
+
+1. **ANALIZA WIZUALNA**: Dokładnie przeanalizuj przesłane zdjęcia produktu
+2. **WYCENA RYNKOWA**: Określ realną cenę rynkową second-hand
+3. **COPYWRITING**: Stwórz perswazyjny tytuł i opis sprzedażowy
+
+=== ZAKRES ANALIZY ===
+
+Przeanalizuj zdjęcia i określ:
+
+**DANE PODSTAWOWE:**
+- product_name: pełna nazwa (marka + typ + kolor/wzór)
+- brand: marka (lub "produkt bez marki" jeśli nie rozpoznasz)
+- category: clothing, shoes, accessories, electronics, home, toys, sports, books, other
+- gender: men, women, unisex, kids, none
+- condition: new, like_new, used (oceń na podstawie stanu wizualnego)
+- size: rozmiar jeśli widoczny na zdjęciach
+- color: główny kolor/kolory
+
+**WYCENA:**
+- suggested_sale_price: realistyczna cena rynkowa second-hand w PLN
+  * Uwzględnij: stan produktu, markę, typ produktu, sezonowość
+  * Porównaj do podobnych ofert na Vinted/OLX/Allegro
+  * Cena powinna być atrakcyjna ale nie zaniżona
+
+**OPIS SPRZEDAŻOWY - TWOJA SPECJALNOŚĆ:**
+
+Stwórz perswazyjne materiały sprzedażowe stosując techniki online marketingu:
+
+**listing_title** (max 60 znaków):
+- Ma być CHWYTLIWY i zawierać główną korzyść
+- Uwzględnij markę, typ produktu, kluczową cechę
+- Przykłady: "Stylowa Kurtka Nike - Oryginał, Stan Idealny"
+- Unikaj: tanich chwytów, przesadnych twierdzeń
+
+**listing_description** (3-5 zdań, język polski):
+- **Zasada AIDA**: Attention → Interest → Desire → Action
+- **Attention**: Zacznij od mocnego otwarcia (np. "Wyjątkowa okazja!")
+- **Interest**: Podkreśl cechy produktu i jego zastosowanie
+- **Desire**: Użyj języka korzyści - co klient zyskuje?
+- **Action**: Delikatne wezwanie do działania
+
+**TECHNIKI PERSWAZJI DO WYKORZYSTANIA:**
+1. **Język korzyści**: Nie "ma rozmiar M", ale "idealnie dopasuje się do sylwetki"
+2. **Społeczny dowód**: "Bestseller", "Tysiące zadowolonych klientów"
+3. **Pilność**: "Ostatnia sztuka", "Okazja limited"
+4. **Autorytet**: "Oryginalny produkt", "Spełnia normy UE"
+5. **Odwrócenie ryzyka**: "Gwarancja satysfakcji", "14 dni na zwrot"
+
+**SŁOWA MOCY:**
+- ekskluzywny, premium, profesjonalny, sprawdzony, wyjątkowy
+- styl, elegancja, komfort, wygoda, jakość, trwałość
+- okazja, promocja, limitowany, unikalny, oryginalny
+
+**STYL KOMUNIKACJI:**
+- Profesjonalny ale przyjazny ton
+- Zwracaj się do klienta ("Ty", "Twój")
+- Pisz konkretnie, bez lania wody
+- Buduj zaufanie poprzez szczerość (np. wspomnij o drobnych wadach)
+
+=== FORMAT WYJŚCIOWY ===
 
 Zwróć JSON z następującymi polami:
-- product_name: pełna nazwa produktu (marka + typ + kolor/wzór jeśli widoczny)
-- brand: marka (jeśli rozpoznawalna, inaczej null)
-- category: jedna z: clothing, shoes, accessories, electronics, home, toys, sports, books, other
-- gender: jedna z: men, women, unisex, kids, none
-- condition: jedna z: new, like_new, used (oceń na podstawie wyglądu)
-- size: rozmiar jeśli widoczny (np. M, L, 42, XL), inaczej null
-- color: główny kolor lub kolory produktu
-- suggested_sale_price: sugerowana cena sprzedaży w PLN (realistyczna cena rynkowa second-hand)
-- notes: krótkie dodatkowe uwagi (np. widoczne wady, specjalne cechy)
-- listing_title: gotowy tytuł ogłoszenia (max 60 znaków, atrakcyjny)
-- listing_description: pełny opis ogłoszenia (3-5 zdań, w języku polskim, bez ceny)
-- confidence: od 0 do 1 jak pewny jesteś swojej analizy
+- product_name: string (pełna nazwa)
+- brand: string | null
+- category: string (jedna z dozwolonych)
+- gender: string (jedna z dozwolonych)
+- condition: string (jedna z: new, like_new, used)
+- size: string | null
+- color: string
+- suggested_sale_price: number (realistyczna cena w PLN)
+- notes: string (krótkie uwagi o stanie, wadach, cechach specjalnych)
+- listing_title: string (max 60 znaków, perswazyjny)
+- listing_description: string (3-5 zdań, język korzyści, AIDA)
+- confidence: number (0-1, pewność analizy)
 
-Bądź konkretny i realistyczny. Jeśli czegoś nie możesz określić ze zdjęcia, wstaw null.`,
-        file_urls: uploadedImages,
+=== PRZYKŁAD DOBREJ ANALIZY ===
+
+Produkt: Kurtka Nike
+- product_name: "Kurtka Nike Windrunner Męska Czarna"
+- brand: "Nike"
+- category: "clothing"
+- gender: "men"
+- condition: "like_new"
+- size: "L"
+- color: "czarny"
+- suggested_sale_price: 180
+- notes: "Stan idealny, bez widocznych śladów użytkowania. Oryginalne zamki błyskawiczne YKK."
+- listing_title: "Kurtka Nike Windrunner - Oryginalna, Stan Idealny, Szybka Wysyłka"
+- listing_description: "Wyjątkowa okazja dla miłośników marki Nike! Ta stylowa kurtka Windrunner w kolorze czarnym to idealne połączenie sportowego stylu i codziennej wygody. Wykonana z wysokiej jakości materiałów, zapewnia komfort noszenia przez cały dzień. Stan jak nowy - bez żadnych widocznych śladów użytkowania. Doskonała zarówno na co dzień, jak i podczas aktywności sportowych. Szybka wysyłka w 24h, gwarancja oryginalności produktu. Nie przegap tej okazji!"
+- confidence: 0.95
+
+=== WAŻNE ===
+- Jeśli czegoś nie możesz określić ze zdjęć, wstaw null
+- Bądź szczery co do stanu produktu - zauważaj ewentualne wady
+- Cena powinna być realistyczna dla rynku second-hand
+- Opis ma SPRZEDAWAĆ, ale nie może być przesadzony
+
+Stwórz analizę, która pomoże SZYBKO SPRZEDAĆ produkt!`,
         response_json_schema: {
-          type: "object",
-          properties: {
-            product_name: { type: "string" },
-            brand: { type: "string" },
-            category: { type: "string" },
-            gender: { type: "string" },
-            condition: { type: "string" },
-            size: { type: "string" },
-            color: { type: "string" },
-            suggested_sale_price: { type: "number" },
-            notes: { type: "string" },
-            listing_title: { type: "string" },
-            listing_description: { type: "string" },
-            confidence: { type: "number" },
-          },
+        type: "object",
+        properties: {
+          product_name: { type: "string" },
+          brand: { type: "string" },
+          category: { type: "string" },
+          gender: { type: "string" },
+          condition: { type: "string" },
+          size: { type: "string" },
+          color: { type: "string" },
+          suggested_sale_price: { type: "number" },
+          notes: { type: "string" },
+          listing_title: { type: "string" },
+          listing_description: { type: "string" },
+          confidence: { type: "number" },
         },
+      },
       });
       setAiData(result);
       setStep(STEPS.VERIFY);
