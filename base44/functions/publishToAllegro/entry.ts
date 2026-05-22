@@ -343,12 +343,16 @@ Deno.serve(async (req) => {
         console.log("Responsible producer error:", prodErr.message);
       }
 
-      offerPayload.productSet = [{
+      // Only include safetyInfo if it's DOCUMENT_URL (not needed for ROLE_FULFILLED_BY_MARKETPLACE)
+      const productSetItem = {
         product: { id: allegro_product_id },
         quantity: { value: resolvedQuantity },
         ...(producerId ? { responsibleProducer: { id: producerId } } : {}),
-        safetyInfo: safetyInformation,
-      }];
+      };
+      if (safetyInformation.role === "DOCUMENT_URL" && safetyInformation.documentUrl) {
+        productSetItem.safetyInfo = safetyInformation;
+      }
+      offerPayload.productSet = [productSetItem];
     } else if (conditionParams.length > 0) {
       // No catalog product — include required parameters (EAN, Producer, Stan)
       const additionalParams = [];
