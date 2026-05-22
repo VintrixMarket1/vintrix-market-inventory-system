@@ -372,6 +372,26 @@ Wymagania:
           }}
           selectedProduct={form.allegro_product}
         />
+        {!form.allegro_product && (
+          <div className="text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded p-2 flex gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="flex-1">
+              <b>Nie wybrano produktu z katalogu.</b> Możesz wystawić ofertę bez produktu - w takim przypadku uzupełnij EAN i producenta w ustawieniach zaawansowanych.
+            </span>
+            <button
+              type="button"
+              className="text-xs font-medium underline hover:text-blue-800 whitespace-nowrap"
+              onClick={() => {
+                setShowAdvanced(true);
+                // Scroll to advanced settings
+                const advancedSection = document.getElementById('advanced-settings');
+                if (advancedSection) advancedSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
+            >
+              Przejdź do ustawień →
+            </button>
+          </div>
+        )}
         {form.allegro_product && (
           <div className="text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded p-2 flex gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -565,22 +585,26 @@ Wymagania:
             </div>
 
             {/* Advanced settings */}
-            <button
-              className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1"
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full text-xs gap-1.5"
               onClick={() => setShowAdvanced(!showAdvanced)}
             >
-              {showAdvanced ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              Ustawienia zaawansowane
-            </button>
+              {showAdvanced ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              {showAdvanced ? "Ukryj ustawienia zaawansowane" : "Pokaż ustawienia zaawansowane (EAN, producent, czas wysyłki)"}
+            </Button>
 
             {showAdvanced && (
-              <div className="space-y-3 pt-1">
-                <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
-                  💡 Jeśli nie możesz znaleźć produktu w katalogu Allegro, podaj EAN i producenta ręcznie
+              <div id="advanced-settings" className="space-y-3 pt-3 border-t mt-2">
+                <div className="bg-orange-50 border border-orange-200 rounded p-3 text-xs text-orange-800">
+                  <p className="font-semibold mb-1">💡 Wystawiasz bez produktu z katalogu?</p>
+                  <p>Uzupełnij <b>EAN</b> i <b>producenta</b> - Allegro wymaga tych danych gdy nie wybierzesz produktu z katalogu.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs">EAN (GTIN)</Label>
+                    <Label className="text-xs">EAN (GTIN) *</Label>
                     <Input 
                       value={form.ean || ""} 
                       onChange={e => set("ean", e.target.value)} 
@@ -588,7 +612,7 @@ Wymagania:
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Producent</Label>
+                    <Label className="text-xs">Producent *</Label>
                     <Input 
                       value={form.producer_name || ""} 
                       onChange={e => set("producer_name", e.target.value)} 
