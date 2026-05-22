@@ -69,15 +69,16 @@ Jesteś ekspertem Allegro z 10-letnim doświadczeniem. Tworzysz opisy, które:
 - Cena: ${form.listing_price || "atrakcyjna"} PLN
 
 === ZASADY ===
-1. Używaj WYŁĄCZNIE tagów: h1, h2, p, ul, ol, li, b, br
+1. Używaj WYŁĄCZNIE tagów: h1, h2, p, ul, ol, li, b
 2. ZERO atrybutów (brak class, style, id)
-3. ZERO CSS, divów, table, img
-4. CZYSTY HTML - bez komentarzy
+3. ZERO CSS, divów, table, img, br
+4. Używaj tagów P zamiast BR - każdy akapit to oddzielny <p>
+5. CZYSTY HTML - bez komentarzy
 
 === STRUKTURA ===
 1. **H1** - Tytuł (max 75 znaków, marka + stan + korzyść)
 2. **H2 "✨ DLACZEGO WARTO?"** - UL z 3-4 korzyściami
-3. **H2 "📋 OPIS"** - 2 akapity P z perswazyjnym tekstem
+3. **H2 "📋 OPIS"** - 2-3 akapity P z perswazyjnym tekstem
 4. **H2 "⭐ CECHY"** - UL z 5-6 zaletami (stan, rozmiar, kolor, marka)
 5. **H2 "📦 DOSTAWA"** - P o wysyłce 1-2 dni + zwroty
 
@@ -92,10 +93,10 @@ ekskluzywny, premium, profesjonalny, sprawdzony, gwarantowany, wyjątkowy, orygi
 
 === FORMATOWANIE ===
 - Emoji w nagłówkach: ✨, 📋, ⭐, 📦, ❓
-- Pogrubienia: **b**ważne**b**
-- Krótkie akapity (max 3 zdania)
+- Pogrubienia wewnątrz tekstu: użyj <b>tekst</b>
+- Każdy akapit odrębnym tagiem <p>
 
-Wygeneruj WYŁĄCZNIE gotowy HTML. Bez wstępów. Zacznij od h1.`;
+Wygeneruj WYŁĄCZNIE gotowy HTML. Bez wstępów. Zacznij od h1. HTML musi być ściśle walidny.`;
     } else {
       prompt = `### MASTER PROMPT: SPECJALISTA VINTED/OLX ###
 
