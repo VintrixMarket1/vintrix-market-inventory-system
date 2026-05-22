@@ -196,6 +196,10 @@ Wymagania:
       alert("Wybierz kategorię z drzewa Allegro przed wystawieniem.");
       return;
     }
+    if (!form.conditionId && !form.condition) {
+      alert("Wybierz stan produktu przed wystawieniem.");
+      return;
+    }
     if (!form.allegro_product && !window.confirm("Nie wybrano produktu z katalogu Allegro. Wiele kategorii wymaga powiązania z katalogiem — bez tego oferta zostanie odrzucona. Kontynuować?")) {
       return;
     }
