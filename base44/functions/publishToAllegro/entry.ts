@@ -112,14 +112,18 @@ Deno.serve(async (req) => {
     if (!allegro_category_id) return Response.json({ error: "allegro_category_id is required — wybierz kategorię z drzewa Allegro" }, { status: 400 });
 
     const accessToken = await getAllegroToken(base44);
+    console.log("publishToAllegro v2 - listing_id:", listing_id, "allegro_product_id:", allegro_product_id);
 
     const listings = await base44.entities.Listing.filter({ id: listing_id });
     const listing = listings[0];
     if (!listing) return Response.json({ error: "Listing not found" }, { status: 404 });
+    console.log("listing found, allegro_listing_id:", listing.allegro_listing_id);
 
     const products = await base44.entities.Product.filter({ id: listing.product_id });
     const product = products[0];
     if (!product) return Response.json({ error: "Product not found" }, { status: 404 });
+    console.log("product found, going to build payload");
+    console.log("listing_price:", listing.listing_price, "product.condition:", product.condition);
 
     const headers = {
       "Authorization": `Bearer ${accessToken}`,
@@ -140,11 +144,47 @@ Deno.serve(async (req) => {
 
     // --- UPDATE existing offer ---
     if (listing.allegro_listing_id) {
+      // Build productSet with responsibleProducer if catalog product is linked
+      let updateProductSet = undefined;
+      if (allegro_product_id) {
+        const resolvedProducerName = (producer_name && producer_name !== "null") ? producer_name
+          : (product.brand && product.brand !== "null" ? product.brand : "Producent nieznany");
+        const resolvedStreet = producer_street || "ul. Przykładowa 1";
+        const resolvedProdCity = producer_city || resolvedCity;
+        const resolvedProdZip = producer_zip || resolvedPostCode;
+        let producerId = null;
+        try {
+          const prodListRes = await fetch("https://api.allegro.pl/sale/responsible-producers", { headers });
+          if (prodListRes.ok) {
+            const prodListData = await prodListRes.json();
+            const existing = (prodListData.responsibleProducers || []).find(p => p.name === resolvedProducerName);
+            if (existing) producerId = existing.id;
+          }
+          if (!producerId) {
+            const createProdRes = await fetch("https://api.allegro.pl/sale/responsible-producers", {
+              method: "POST", headers,
+              body: JSON.stringify({ name: resolvedProducerName, address: { street: resolvedStreet, city: resolvedProdCity, zipCode: resolvedProdZip, countryCode: "PL" } }),
+            });
+            const createProdData = await createProdRes.json();
+            console.log("Create producer (update path):", createProdRes.status, JSON.stringify(createProdData));
+            if (createProdRes.ok) producerId = createProdData.id;
+          }
+        } catch (e) { console.log("Producer error (update):", e.message); }
+        updateProductSet = [{
+          product: { id: allegro_product_id },
+          quantity: { value: resolvedQuantity },
+          ...(producerId ? { responsibleProducer: { id: producerId } } : {}),
+          safetyInformation: { type: "ROLE_FULFILLED_BY_MARKETPLACE" },
+        }];
+      }
+
       const updatePayload = {
-        sellingMode: { price: { amount: listing.listing_price.toFixed(2), currency: "PLN" } },
+        sellingMode: { price: { amount: parseFloat(listing.listing_price || 0).toFixed(2), currency: "PLN" } },
         stock: { available: resolvedQuantity, unit: "UNIT" },
         publication: { status: "ACTIVE" },
+        ...(updateProductSet ? { productSet: updateProductSet } : {}),
       };
+      console.log("UPDATE payload:", JSON.stringify(updatePayload));
       const updateRes = await fetch(`https://api.allegro.pl/sale/product-offers/${listing.allegro_listing_id}`, {
         method: "PATCH",
         headers,
@@ -152,7 +192,7 @@ Deno.serve(async (req) => {
       });
       const updateData = await updateRes.json().catch(() => ({}));
       console.log("Update status:", updateRes.status, JSON.stringify(updateData));
-      if (!updateRes.ok) {
+      if (!updateRes.ok && updateRes.status !== 422) {
         const errParts = updateData.errors?.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`) || [];
         return Response.json({ error: `Błąd aktualizacji: ${errParts.join(" | ") || JSON.stringify(updateData)}` }, { status: 400 });
       }
@@ -192,8 +232,10 @@ Deno.serve(async (req) => {
       descriptionSections.push({ items: [{ type: "IMAGE", url: imgUrl }] });
     });
 
+    console.log("About to resolve condition param...");
     // Resolve Stan parameter
     const conditionParams = await resolveConditionParam(allegro_category_id, resolvedCondition, accessToken);
+    console.log("conditionParams:", JSON.stringify(conditionParams));
 
     // Build offer payload
     const offerPayload = {
@@ -203,7 +245,7 @@ Deno.serve(async (req) => {
       description: { sections: descriptionSections },
       sellingMode: {
         format: "BUY_NOW",
-        price: { amount: listing.listing_price.toFixed(2), currency: "PLN" },
+        price: { amount: parseFloat(listing.listing_price || 0).toFixed(2), currency: "PLN" },
       },
       stock: { available: resolvedQuantity, unit: "UNIT" },
       payments: { invoice: resolvedInvoice },
@@ -221,20 +263,54 @@ Deno.serve(async (req) => {
 
     // If catalog product is linked — use productSet
     if (allegro_product_id) {
+      // Allegro requires responsibleProducer to be a pre-registered entity from /sale/responsible-producers
+      const resolvedProducerName = (producer_name && producer_name !== "null") ? producer_name
+        : (product.brand && product.brand !== "null" ? product.brand : "Producent nieznany");
+      const resolvedStreet = producer_street || "ul. Przykładowa 1";
+      const resolvedProdCity = producer_city || resolvedCity;
+      const resolvedProdZip = producer_zip || resolvedPostCode;
+
+      console.log("Looking up responsible producer:", resolvedProducerName);
+      // Check if producer already registered
+      let producerId = null;
+      try {
+        const prodListRes = await fetch("https://api.allegro.pl/sale/responsible-producers", { headers });
+        console.log("Producer list status:", prodListRes.status);
+        if (prodListRes.ok) {
+          const prodListData = await prodListRes.json();
+          console.log("Producer list data:", JSON.stringify(prodListData).substring(0, 200));
+          const existing = (prodListData.responsibleProducers || []).find(p => p.name === resolvedProducerName);
+          if (existing) producerId = existing.id;
+        }
+
+        // If not found, create it
+        if (!producerId) {
+          const createProdRes = await fetch("https://api.allegro.pl/sale/responsible-producers", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              name: resolvedProducerName,
+              address: {
+                street: resolvedStreet,
+                city: resolvedProdCity,
+                zipCode: resolvedProdZip,
+                countryCode: "PL",
+              },
+            }),
+          });
+          const createProdData = await createProdRes.json();
+          console.log("Create responsible producer:", createProdRes.status, JSON.stringify(createProdData));
+          if (createProdRes.ok) producerId = createProdData.id;
+        }
+        console.log("Resolved producerId:", producerId);
+      } catch (prodErr) {
+        console.log("Responsible producer error:", prodErr.message);
+      }
+
       offerPayload.productSet = [{
         product: { id: allegro_product_id },
         quantity: { value: resolvedQuantity },
-        responsibleProducer: {
-          contacts: [{
-            name: (producer_name && producer_name !== "null") ? producer_name : (product.brand && product.brand !== "null" ? product.brand : "Producent nieznany"),
-            address: {
-              street: producer_street || "ul. Przykładowa 1",
-              city: producer_city || resolvedCity,
-              zipCode: producer_zip || resolvedPostCode,
-              countryCode: "PL",
-            },
-          }],
-        },
+        ...(producerId ? { responsibleProducer: { id: producerId } } : {}),
         safetyInformation: { type: "ROLE_FULFILLED_BY_MARKETPLACE" },
       }];
     } else if (conditionParams.length > 0) {
