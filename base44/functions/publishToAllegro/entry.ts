@@ -115,8 +115,8 @@ Deno.serve(async (req) => {
       // Build safetyInformation - Allegro requires this field when productSet is used
       const resolvedSafetyType = safety_type || "ROLE_FULFILLED_BY_MARKETPLACE";
       const safetyInformation = resolvedSafetyType === "DOCUMENT_URL" && safety_url
-        ? { type: "DOCUMENT_URL", documentUrl: safety_url }
-        : { type: resolvedSafetyType };
+        ? { role: "DOCUMENT_URL", documentUrl: safety_url }
+        : { role: resolvedSafetyType };
       console.log("safetyInformation:", JSON.stringify(safetyInformation));
 
     if (!listing_id) return Response.json({ error: "listing_id is required" }, { status: 400 });
