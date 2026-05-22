@@ -126,29 +126,35 @@ Wymagania:
     setPublishing(true);
     setResult(null);
 
-    await base44.entities.Listing.update(listingId, {
-      listing_title: form.name,
-      listing_price: parseFloat(form.price),
-      listing_description: form.description,
-      selected_images: form.selected_images,
-    });
+    try {
+      await base44.entities.Listing.update(listingId, {
+        listing_title: form.name,
+        listing_price: parseFloat(form.price),
+        listing_description: form.description,
+        selected_images: form.selected_images,
+      });
 
-    const res = await base44.functions.invoke("publishToAllegro", {
-      listing_id: listingId,
-      allegro_category_id: form.allegro_category_id,
-      allegro_product_id: form.allegro_product?.id || null,
-      shipping_rate_id: form.shipping_rate_id,
-      condition: form.condition,
-      quantity: parseInt(form.quantity) || 1,
-      handling_time: form.handling_time,
-      location_city: form.location_city,
-      location_post_code: form.location_post_code,
-      invoice: form.invoice,
-      force_active: true,
-    });
-    const data = res.data ?? res;
-    setResult(data);
-    setPublishing(false);
+      const res = await base44.functions.invoke("publishToAllegro", {
+        listing_id: listingId,
+        allegro_category_id: form.allegro_category_id,
+        allegro_product_id: form.allegro_product?.id || null,
+        shipping_rate_id: form.shipping_rate_id,
+        condition: form.condition,
+        quantity: parseInt(form.quantity) || 1,
+        handling_time: form.handling_time,
+        location_city: form.location_city,
+        location_post_code: form.location_post_code,
+        invoice: form.invoice,
+        force_active: true,
+      });
+      const data = res.data ?? res;
+      setResult(data);
+    } catch (err) {
+      const msg = err?.response?.data?.error || err?.message || "Nieznany błąd";
+      setResult({ error: msg });
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const allImages = product?.images || [];
