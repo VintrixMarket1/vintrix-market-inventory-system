@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { base44 } from "@/api/base44Client";
-import { Upload, X, Loader2, RefreshCw, Package } from "lucide-react";
+import { Upload, X, Loader2, RefreshCw, Package, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { SUBCATEGORIES } from "@/lib/subcategories";
 
@@ -65,6 +65,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const handleChange = (field, value) => {
     setForm(prev => {
@@ -95,6 +96,71 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }));
+  };
+
+  const generateDescription = async () => {
+    setGenerating(true);
+    const conditionMap = { new: "Nowy", like_new: "Jak nowy / po zwrocie", used: "Używany" };
+    const prompt = `### MASTER PROMPT: SPECJALISTA ONLINE MARKETINGU I SPRZEDAŻY E-COMMERCE ###
+
+Jesteś światowej klasy specjalistą od marketingu online i sprzedaży w e-commerce z 15-letnim doświadczeniem. Specjalizujesz się w tworzeniu opisów produktów, które:
+- PRZEKONUJĄ do zakupu poprzez język korzyści
+- BUDUJĄ ZAUFANIE i profesjonalny wizerunek
+- SĄ OPTYMALIZOWANE pod kątem konwersji (CRO)
+
+TWOJE ZADANIE: Stwórz perswazyjny opis produktu.
+
+=== DANE PRODUKTU ===
+- Nazwa: ${form.product_name || "Produkt premium"}
+- Marka: ${form.product_name?.split(' ')[0] || "produkt bez marki"}
+- Stan: ${conditionMap[form.condition] || "Bardzo dobry"}
+- Rozmiar: ${form.size || "rozmiar uniwersalny"}
+- Kategoria: ${form.category}
+- Cena: ${form.suggested_sale_price || form.purchase_price || "do negocjacji"} PLN
+
+=== WYMAGANIA ===
+1. Używaj WYŁĄCZNIE tych tagów HTML: h1, h2, h3, p, ul, ol, li, b, br
+2. NIE dodawaj ŻADNYCH atrybutów w tagach (brak class, style, id)
+3. NIE używaj CSS, divów, spanów, table, img
+4. Wygeneruj CZYSTY HTML - bez komentarzy i wstępów
+
+=== STRUKTURA OPISU ===
+
+1. **H1** - Główny tytuł (max 75 znaków, chwytliwy)
+2. **H2 "✨ DLACZEGO WARTO?"** - lista UL z 3-4 korzyściami
+3. **H2 "📋 OPIS PRODUKTU"** - 2 akapity P z perswazyjnym tekstem
+4. **H2 "⭐ NAJWAŻNIEJSZE CECHY"** - lista UL z 5-6 zaletami
+5. **H2 "📦 DOSTAWA"** - akapit o wysyłce i zwrotach
+
+=== TECHNIKI PERSWAZJI ===
+- Język korzyści: nie "ma rozmiar M", tylko "idealnie dopasuje się"
+- Społeczny dowód: "Tysiące zadowolonych klientów"
+- Pilność: "Ostatnie sztuki"
+- Odwrócenie ryzyka: "14 dni na zwrot"
+
+=== SŁOWA MOCY ===
+ekskluzywny, premium, profesjonalny, sprawdzony, gwarantowany, wyjątkowy, unikalny, oryginalny
+
+=== FORMATOWANIE ===
+- Używaj emoji w nagłówkach: ✨, 📋, ⭐, 📦, ❓
+- Pogrubiaj najważniejsze zwroty: **b**tekst**b**
+- Krótkie akapity (max 3-4 zdania)
+
+Wygeneruj WYŁĄCZNIE gotowy HTML. Bez wstępów. Zacznij od h1.`;
+
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt,
+        response_json_schema: { type: "object", properties: { description: { type: "string" } } },
+        model: "gpt_5_5",
+      });
+      handleChange("listing_description", result.description);
+    } catch (err) {
+      console.error("Failed to generate description:", err);
+      alert("Nie udało się wygenerować opisu. Spróbuj ponownie.");
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -260,6 +326,30 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
           <div className="space-y-1.5">
             <Label>Notes</Label>
             <Textarea value={form.notes} onChange={e => handleChange("notes", e.target.value)} placeholder="Any additional notes..." rows={2} />
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label>Opis oferty (HTML)</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={generateDescription}
+                disabled={generating || !form.product_name}
+                className="text-xs h-7 gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50"
+              >
+                {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                Generuj AI
+              </Button>
+            </div>
+            <Textarea
+              value={form.listing_description || ""}
+              onChange={e => handleChange("listing_description", e.target.value)}
+              placeholder="Wygeneruj opis AI lub wpisz ręcznie..."
+              rows={6}
+              className="font-mono text-sm"
+            />
           </div>
 
           <div className="space-y-1.5">
