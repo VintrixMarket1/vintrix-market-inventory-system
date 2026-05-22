@@ -347,7 +347,7 @@ Deno.serve(async (req) => {
         product: { id: allegro_product_id },
         quantity: { value: resolvedQuantity },
         ...(producerId ? { responsibleProducer: { id: producerId } } : {}),
-        safetyInformation,
+        safetyInfo: safetyInformation,
       }];
     } else if (conditionParams.length > 0) {
       // No catalog product — include required parameters (EAN, Producer, Stan)
