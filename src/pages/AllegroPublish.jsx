@@ -170,22 +170,49 @@ export default function AllegroPublish() {
 
   const generateDescription = async () => {
     setGenerating(true);
-    const conditionMap = { new: "Nowy", like_new: "Jak nowy / po zwrocie", used: "Używany" };
-    const prompt = `Wygeneruj profesjonalny opis oferty na Allegro w formacie HTML dla produktu:
+    const conditionMap = { new: "Nowy", like_new: "Jak nowy / po zwrocie (stan outletowy)", used: "Używany" };
+    const prompt = `Jesteś ekspertem e-commerce z 10-letnim doświadczeniem w pisaniu opisów sprzedażowych na Allegro. Twoim zadaniem jest stworzenie profesjonalnego, perswazyjnego opisu oferty HTML.
+
+DANE PRODUKTU:
 - Nazwa: ${form.name}
-- Marka: ${product?.brand || "brak"}
+- Marka: ${product?.brand || "produkt bez marki"}
 - Stan: ${conditionMap[form.condition]}
-- Rozmiar: ${product?.size || "brak"}
-- Kolor: ${product?.color || "brak"}
+- Rozmiar: ${product?.size || "uniwersalny"}
+- Kolor: ${product?.color || "kolor widoczny na zdjęciach"}
 - Cena: ${form.price} PLN
-Wymagania:
-- Używaj TYLKO tych tagów HTML: h1, h2, p, ul, ol, li, b
-- Struktura: h1 z tytułem, h2 "Opis produktu" + p, h2 "Cechy" + ul/li, h2 "Dostawa" + p
-- Pisz po polsku, stylem sprzedażowym
-- NIE dodawaj CSS ani atrybutów w tagach`;
+
+WYMAGANIA TECHNICZNE:
+- Używaj WYŁĄCZNIE tych tagów HTML: h1, h2, p, ul, ol, li, b
+- NIE dodawaj żadnych atrybutów w tagach (żadnych class, style, id)
+- NIE używaj CSS, divów, spanów ani innych tagów
+
+STRUKTURA OPISU:
+1. h1 - tytuł oferty (krótki, zachęcający)
+2. h2 "Opis produktu" - akapit p z 2-3 zdaniami podkreślającymi zalety produktu i jego zastosowanie
+3. h2 "Najważniejsze cechy" - lista ul z 4-6 punktami li wypunktowującymi kluczowe zalety (wykorzystaj dane produktu)
+4. h2 "Stan produktu" - krótki akapit p opisujący stan (np. "Produkt w stanie outletowym, zapakowany oryginalnie")
+5. h2 "Dostawa i płatność" - akapit p z informacją o wysyłce w 24h, możliwościach dostawy
+
+STYL PISANIA:
+- Pisz w języku polskim, stylem profesjonalnym ale przyjaznym
+- Używaj języka korzyści - pisz co klient zyskuje, nie tylko cechy
+- Podkreślaj wartość produktu w stosunku do ceny
+- Dodawaj elementy budujące zaufanie (szybka wysyłka, sprawdzone produkty)
+- Unikaj przesadnych twierdzeń typu "najlepszy", "najtańszy"
+- Bądź konkretny i rzeczowy
+
+PRZYKŁADOWE ZWROTY KTÓRYCH MOŻESZ UŻYĆ:
+- "Idealny wybór dla..."
+- "Gwarantuje satysfakcję dzięki..."
+- "Sprawdzi się zarówno na co dzień, jak i od święta"
+- "Szybka wysyłka w 24h"
+- "Produkt oryginalny, zapakowany"
+
+Wygeneruj TYLKO czysty HTML bez żadnych komentarzy, wyjaśnień czy dodatkowego tekstu.`;
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
       response_json_schema: { type: "object", properties: { description: { type: "string" } } },
+      model: "claude_sonnet_4_6",
     });
     set("description", result.description);
     setGenerating(false);
