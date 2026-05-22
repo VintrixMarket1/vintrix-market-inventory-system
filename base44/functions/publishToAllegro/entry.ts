@@ -227,8 +227,6 @@ Deno.serve(async (req) => {
         responsibleProducer: {
           contacts: [{
             name: (producer_name && producer_name !== "null") ? producer_name : (product.brand && product.brand !== "null" ? product.brand : "Producent nieznany"),
-            phones: [],
-            emails: [],
             address: {
               street: producer_street || "ul. Przykładowa 1",
               city: producer_city || resolvedCity,

@@ -130,6 +130,9 @@ Wymagania:
       alert("Wybierz kategorię z drzewa Allegro przed wystawieniem.");
       return;
     }
+    if (!form.allegro_product && !window.confirm("Nie wybrano produktu z katalogu Allegro. Wiele kategorii wymaga powiązania z katalogiem — bez tego oferta zostanie odrzucona. Kontynuować?")) {
+      return;
+    }
     setPublishing(true);
     setResult(null);
 
@@ -159,7 +162,12 @@ Wymagania:
         producer_zip: form.producer_zip,
       });
       const data = res.data ?? res;
-      setResult(data);
+      // If error mentions product catalog requirement, append a hint
+      if (data?.error?.includes("bez powi")) {
+        setResult({ error: data.error + "\n\n→ Wróć do kroku 2 i wyszukaj produkt w katalogu Allegro." });
+      } else {
+        setResult(data);
+      }
     } catch (err) {
       const msg = err?.response?.data?.error || err?.message || "Nieznany błąd";
       setResult({ error: msg });
