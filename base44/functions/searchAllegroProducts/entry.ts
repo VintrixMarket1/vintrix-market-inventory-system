@@ -41,11 +41,12 @@ Deno.serve(async (req) => {
 
     const accessToken = await getAllegroToken(base44);
     
-    // Build URL with query params
+    // Build URL with query params - increased pageSize for more results
     const url = new URL("https://api.allegro.pl/sale/products");
     url.searchParams.set("language", language);
-    url.searchParams.set("pageSize", "10");
+    url.searchParams.set("pageSize", "50"); // More results
     if (phrase) url.searchParams.set("phrase", phrase);
+    // Only add category if provided - broader search without it
     if (category_id) url.searchParams.set("category.id", category_id);
 
     console.log("Searching Allegro products:", { phrase, category_id, url: url.toString() });

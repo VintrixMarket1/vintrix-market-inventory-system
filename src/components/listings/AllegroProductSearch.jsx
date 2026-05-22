@@ -15,9 +15,9 @@ export default function AllegroProductSearch({ categoryId, onSelect, selectedPro
     if (!phrase.trim()) return;
     setLoading(true);
     setSearched(true);
+    // Search without category filter first - broader search
     const res = await base44.functions.invoke("searchAllegroProducts", {
       phrase: phrase.trim(),
-      category_id: categoryId || undefined,
     });
     setResults(res.data?.products || []);
     setLoading(false);
