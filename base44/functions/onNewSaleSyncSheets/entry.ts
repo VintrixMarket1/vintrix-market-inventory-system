@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+const CONNECTOR_ID = "6a0fa2240a5480da2009fd07";
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -11,12 +13,12 @@ Deno.serve(async (req) => {
     const sale = data;
     if (!sale?.id) return Response.json({ skipped: true, reason: "no sale data" });
 
-    // Get all enabled settings records that have an access_token stored
+    // Get all enabled settings records
     const allSettings = await base44.asServiceRole.entities.GoogleSheetsSettings.list();
-    const enabledSettings = allSettings.filter(s => s.enabled && s.spreadsheet_id && s.access_token);
+    const enabledSettings = allSettings.filter(s => s.enabled && s.spreadsheet_id && s.spreadsheet_id !== "check_only");
 
     if (enabledSettings.length === 0) {
-      console.log("No enabled Google Sheets settings with access token found.");
+      console.log("No enabled Google Sheets settings found.");
       return Response.json({ skipped: true, reason: "no settings configured" });
     }
 
@@ -24,7 +26,23 @@ Deno.serve(async (req) => {
 
     for (const settings of enabledSettings) {
       try {
-        const accessToken = settings.access_token;
+        // Get fresh token from connector using the settings owner's user context
+        let accessToken = settings.access_token;
+
+        // Try to get a fresh token via connector for the user who owns these settings
+        try {
+          const { accessToken: freshToken } = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CONNECTOR_ID);
+          if (freshToken) accessToken = freshToken;
+          console.log("Using fresh connector token");
+        } catch (e) {
+          console.log("Could not get fresh connector token, using stored token:", e.message);
+        }
+
+        if (!accessToken) {
+          results.push({ settings_id: settings.id, ok: false, detail: "No access token available" });
+          continue;
+        }
+
         const targetSheet = settings.sheet_name || "Sprzedaż";
         const range = `${targetSheet}!A:A`;
 
