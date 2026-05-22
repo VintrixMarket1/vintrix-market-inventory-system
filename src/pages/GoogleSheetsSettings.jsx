@@ -82,11 +82,27 @@ export default function GoogleSheetsSettings() {
     setSaving(true);
     setMsg({ type: "", text: "" });
     try {
+      // Get token directly from connector on frontend (where user context works)
+      let accessToken = null;
+      try {
+        const connResult = await base44.functions.invoke("getGoogleSheetsToken", {});
+        accessToken = connResult?.data?.access_token;
+      } catch {
+        // fallback: try getting token via connectAppUser flow
+      }
+
+      if (!accessToken) {
+        setMsg({ type: "error", text: "Nie udało się pobrać tokenu. Rozłącz i połącz konto Google ponownie." });
+        setSaving(false);
+        return;
+      }
+
       const res = await base44.functions.invoke("saveGoogleSheetsToken", {
         spreadsheet_id: form.spreadsheet_id,
         sheet_name: form.sheet_name,
         enabled: form.enabled,
         settings_id: settings?.id || null,
+        access_token: accessToken,
       });
       const data = res?.data;
       if (data?.error) throw new Error(data.error);
@@ -94,12 +110,7 @@ export default function GoogleSheetsSettings() {
       setMsg({ type: "success", text: "Ustawienia zapisane. Od teraz każda nowa sprzedaż będzie automatycznie dodawana do arkusza." });
     } catch (e) {
       const errMsg = e?.response?.data?.error || e?.message || "Nieznany błąd";
-      if (errMsg.includes("No active connection")) {
-        setMsg({ type: "error", text: "Najpierw połącz konto Google przyciskiem powyżej." });
-        setConnected(false);
-      } else {
-        setMsg({ type: "error", text: errMsg });
-      }
+      setMsg({ type: "error", text: errMsg });
     }
     setSaving(false);
   };
