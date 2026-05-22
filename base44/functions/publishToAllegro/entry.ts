@@ -211,10 +211,11 @@ Deno.serve(async (req) => {
         return Response.json({ error: `Błąd aktualizacji: ${errParts.join(" | ") || JSON.stringify(updateData)}` }, { status: 400 });
       }
       const updateErrors = updateData.errors || [];
-      const isActive = updateData.publication?.status === "ACTIVE";
+      // Update is confirmed when Allegro returns 200 without hard errors
+      const updateConfirmed = updateRes.ok && updateErrors.length === 0;
       await Promise.all([
-        base44.entities.Listing.update(listing.id, { listing_status: isActive ? "listed" : "draft" }),
-        base44.entities.Product.update(product.id, { status: isActive ? "listed" : "in_stock" }),
+        base44.entities.Listing.update(listing.id, { listing_status: updateConfirmed ? "listed" : "draft" }),
+        base44.entities.Product.update(product.id, { status: updateConfirmed ? "listed" : "in_stock" }),
       ]);
       if (updateErrors.length > 0) {
         const errParts = updateErrors.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`);
@@ -381,14 +382,20 @@ Deno.serve(async (req) => {
 
     const allegroOfferId = createData.id;
     const offerErrors = createData.errors || [];
+    // Allegro confirms success when it returns an id with HTTP 200/201 — treat as listed
+    // regardless of any warnings in the errors array (those are non-blocking)
+    const allegroStatus = createData.publication?.status;
+    const isConfirmed = !!allegroOfferId && createRes.status < 300;
+
+    console.log("Offer created, id:", allegroOfferId, "publication status:", allegroStatus, "errors:", offerErrors.length);
 
     await Promise.all([
       base44.entities.Listing.update(listing.id, {
-        listing_status: offerErrors.length === 0 ? "listed" : "draft",
+        listing_status: isConfirmed ? "listed" : "draft",
         allegro_listing_id: allegroOfferId,
       }),
       base44.entities.Product.update(product.id, {
-        status: offerErrors.length === 0 ? "listed" : "in_stock",
+        status: isConfirmed ? "listed" : "in_stock",
         allegro_listing_id: allegroOfferId,
       }),
     ]);
@@ -396,7 +403,8 @@ Deno.serve(async (req) => {
     if (offerErrors.length > 0) {
       const errParts = offerErrors.map(e => `[${e.path || e.code}] ${e.userMessage || e.message || e.code}`);
       return Response.json({
-        warning: `Oferta zapisana jako szkic (ID: ${allegroOfferId}). Dokończ w panelu Allegro. Błędy: ${errParts.join(" | ")}`,
+        success: true,
+        warning: `Oferta wystawiona (ID: ${allegroOfferId}), ale z ostrzeżeniami: ${errParts.join(" | ")}`,
         allegro_listing_id: allegroOfferId,
       });
     }
