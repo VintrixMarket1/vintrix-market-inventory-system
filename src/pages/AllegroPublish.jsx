@@ -471,6 +471,11 @@ Stwórz ofertę, która SPRZEDAJE!`;
           categoryId={form.allegro_category_id}
           onSelect={(p) => {
             set("allegro_product", p);
+            // Auto-set category to product's category
+            if (p && p.category?.id) {
+              set("allegro_category_id", p.category.id);
+              set("allegro_category_name", p.category.path?.[p.category.path.length - 1]?.name || "");
+            }
             if (p && !form.producer_name) {
               set("producer_name", product?.brand || "");
             }
