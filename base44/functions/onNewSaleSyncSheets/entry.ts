@@ -1,7 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const CONNECTOR_ID = "6a0fa2240a5480da2009fd07";
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -13,22 +11,20 @@ Deno.serve(async (req) => {
     const sale = data;
     if (!sale?.id) return Response.json({ skipped: true, reason: "no sale data" });
 
-    // Get all users who have connected their Google Sheets account
-    // We'll use service role to get the sale creator's settings
+    // Get all enabled settings records that have an access_token stored
     const allSettings = await base44.asServiceRole.entities.GoogleSheetsSettings.list();
-    if (!allSettings || allSettings.length === 0) {
-      return Response.json({ skipped: true, reason: "no Google Sheets settings configured" });
+    const enabledSettings = allSettings.filter(s => s.enabled && s.spreadsheet_id && s.access_token);
+
+    if (enabledSettings.length === 0) {
+      console.log("No enabled Google Sheets settings with access token found.");
+      return Response.json({ skipped: true, reason: "no settings configured" });
     }
 
     const results = [];
 
-    for (const settings of allSettings) {
-      if (!settings.spreadsheet_id || !settings.enabled) continue;
-
+    for (const settings of enabledSettings) {
       try {
-        // Get the user's access token
-        const { accessToken } = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CONNECTOR_ID);
-
+        const accessToken = settings.access_token;
         const targetSheet = settings.sheet_name || "Sprzedaż";
         const range = `${targetSheet}!A:A`;
 
@@ -72,14 +68,18 @@ Deno.serve(async (req) => {
         );
 
         const appendData = await appendRes.json();
-        results.push({ settings_id: settings.id, ok: appendRes.ok, detail: appendData.error?.message });
+        const ok = appendRes.ok;
+        console.log(`Settings ${settings.id}: ok=${ok}`, appendData.error?.message || "");
+        results.push({ settings_id: settings.id, ok, detail: appendData.error?.message });
       } catch (e) {
+        console.error(`Settings ${settings.id} error:`, e.message);
         results.push({ settings_id: settings.id, ok: false, detail: e.message });
       }
     }
 
     return Response.json({ synced: results.length, results });
   } catch (error) {
+    console.error("onNewSaleSyncSheets error:", error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

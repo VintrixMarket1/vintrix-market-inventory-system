@@ -4,15 +4,19 @@
   "properties": {
     "user_email": {
       "type": "string",
-      "description": "Email u\u017cytkownika, kt\u00f3rego ustawienia to s\u0105"
+      "description": "Email u\u017cytkownika"
+    },
+    "access_token": {
+      "type": "string",
+      "description": "Token dost\u0119powy Google OAuth (przechowywany do u\u017cycia przez automatyzacje)"
     },
     "spreadsheet_id": {
       "type": "string",
-      "description": "ID arkusza Google Sheets (z URL: /spreadsheets/d/{ID}/)"
+      "description": "ID arkusza Google Sheets"
     },
     "sheet_name": {
       "type": "string",
-      "description": "Nazwa zak\u0142adki w arkuszu (domy\u015blnie: Sprzeda\u017c)",
+      "description": "Nazwa zak\u0142adki w arkuszu",
       "default": "Sprzeda\u017c"
     },
     "enabled": {

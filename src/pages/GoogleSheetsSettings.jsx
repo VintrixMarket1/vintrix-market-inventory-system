@@ -18,21 +18,16 @@ export default function GoogleSheetsSettings() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState({ type: "", text: "" });
 
+  // Check if user has an active connector connection
   const checkConnection = async () => {
     try {
-      const res = await base44.functions.invoke("syncSaleToSheets", {
-        sale_id: "test", spreadsheet_id: form.spreadsheet_id || "test"
+      // Try to get token via backend — if it throws "No active connection", we know
+      const res = await base44.functions.invoke("saveGoogleSheetsToken", {
+        spreadsheet_id: "check_only", sheet_name: "check", enabled: false
       });
-      // if we get here without auth error, connected
-      setConnected(true);
-    } catch (e) {
-      const errMsg = e?.response?.data?.error || e?.message || "";
-      // If it's not an auth error, still connected
-      if (errMsg.includes("No connection") || errMsg.includes("not connected") || errMsg.includes("401")) {
-        setConnected(false);
-      } else {
-        setConnected(true);
-      }
+      setConnected(!res?.data?.error);
+    } catch {
+      setConnected(false);
     }
   };
 
@@ -42,9 +37,9 @@ export default function GoogleSheetsSettings() {
       const me = await base44.auth.me();
       setUser(me);
 
-      // Load settings
+      // Load existing settings
       const allSettings = await base44.entities.GoogleSheetsSettings.list();
-      const mySettings = allSettings.find(s => s.created_by === me.email || s.user_email === me.email);
+      const mySettings = allSettings.find(s => s.user_email === me.email || s.created_by === me.email);
       if (mySettings) {
         setSettings(mySettings);
         setForm({
@@ -68,6 +63,7 @@ export default function GoogleSheetsSettings() {
         setCheckingConnection(true);
         await checkConnection();
         setCheckingConnection(false);
+        setMsg({ type: "success", text: "Konto Google połączone! Teraz zapisz ustawienia arkusza." });
       }
     }, 500);
   };
@@ -75,6 +71,7 @@ export default function GoogleSheetsSettings() {
   const handleDisconnect = async () => {
     await base44.connectors.disconnectAppUser(CONNECTOR_ID);
     setConnected(false);
+    setMsg({ type: "", text: "" });
   };
 
   const handleSave = async () => {
@@ -85,16 +82,24 @@ export default function GoogleSheetsSettings() {
     setSaving(true);
     setMsg({ type: "", text: "" });
     try {
-      const payload = { ...form, user_email: user?.email };
-      if (settings?.id) {
-        await base44.entities.GoogleSheetsSettings.update(settings.id, payload);
-      } else {
-        const created = await base44.entities.GoogleSheetsSettings.create(payload);
-        setSettings(created);
-      }
+      const res = await base44.functions.invoke("saveGoogleSheetsToken", {
+        spreadsheet_id: form.spreadsheet_id,
+        sheet_name: form.sheet_name,
+        enabled: form.enabled,
+        settings_id: settings?.id || null,
+      });
+      const data = res?.data;
+      if (data?.error) throw new Error(data.error);
+      if (data?.settings) setSettings(data.settings);
       setMsg({ type: "success", text: "Ustawienia zapisane. Od teraz każda nowa sprzedaż będzie automatycznie dodawana do arkusza." });
     } catch (e) {
-      setMsg({ type: "error", text: e.message });
+      const errMsg = e?.response?.data?.error || e?.message || "Nieznany błąd";
+      if (errMsg.includes("No active connection")) {
+        setMsg({ type: "error", text: "Najpierw połącz konto Google przyciskiem powyżej." });
+        setConnected(false);
+      } else {
+        setMsg({ type: "error", text: errMsg });
+      }
     }
     setSaving(false);
   };
@@ -121,7 +126,7 @@ export default function GoogleSheetsSettings() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Połączenie z Google</CardTitle>
-          <CardDescription>Twoje konto Google musi być połączone, aby eksport działał.</CardDescription>
+          <CardDescription>Połącz swoje konto Google, aby eksport działał.</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-between gap-4">
           {checkingConnection ? (
@@ -134,13 +139,13 @@ export default function GoogleSheetsSettings() {
             </div>
           ) : (
             <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
-              <XCircle className="w-4 h-4" /> Nie połączono
+              <XCircle className="w-4 h-4" /> Nie połączono — kliknij „Połącz konto Google"
             </div>
           )}
           <div className="flex gap-2">
             {connected ? (
               <>
-                <Button variant="outline" size="sm" onClick={() => { setCheckingConnection(true); checkConnection().then(() => setCheckingConnection(false)); }}>
+                <Button variant="outline" size="sm" onClick={async () => { setCheckingConnection(true); await checkConnection(); setCheckingConnection(false); }}>
                   <RefreshCw className="w-3.5 h-3.5 mr-1" /> Sprawdź
                 </Button>
                 <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={handleDisconnect}>
@@ -173,7 +178,7 @@ export default function GoogleSheetsSettings() {
               value={form.spreadsheet_id}
               onChange={e => setForm(f => ({ ...f, spreadsheet_id: e.target.value }))}
             />
-            {form.spreadsheet_id && (
+            {form.spreadsheet_id && form.spreadsheet_id !== "check_only" && (
               <a
                 href={`https://docs.google.com/spreadsheets/d/${form.spreadsheet_id}/edit`}
                 target="_blank"
@@ -217,15 +222,18 @@ export default function GoogleSheetsSettings() {
         </CardContent>
       </Card>
 
-      {/* Column info */}
+      {/* Info */}
       <Card className="bg-muted/40">
-        <CardContent className="pt-4">
-          <p className="text-sm font-medium mb-2">Kolumny w arkuszu:</p>
+        <CardContent className="pt-4 space-y-3">
+          <p className="text-sm font-medium">Kolumny w arkuszu:</p>
           <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
             {["Data", "Produkt", "Platforma", "Cena sprzedaży (PLN)", "Cena zakupu (PLN)", "Zysk (PLN)", "Marża (%)", "ID sprzedaży", "ID produktu"].map((col, i) => (
               <span key={col}><strong>{String.fromCharCode(65 + i)}</strong> — {col}</span>
             ))}
           </div>
+          <p className="text-xs text-muted-foreground pt-1">
+            ⚠️ Token Google jest zapisywany przy każdym „Zapisz ustawienia". Jeśli token wygaśnie (zwykle po 1h), kliknij ponownie „Zapisz ustawienia" by go odświeżyć.
+          </p>
         </CardContent>
       </Card>
     </div>
