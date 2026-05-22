@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, Upload, CheckCircle, AlertCircle, Sparkles, CheckSquare, Square, ChevronDown, ChevronUp, BookTemplate, LayoutTemplate, AlertTriangle } from "lucide-react";
+import { Loader2, ArrowLeft, Upload, CheckCircle, AlertCircle, Sparkles, CheckSquare, Square, ChevronDown, ChevronUp, BookTemplate, LayoutTemplate, AlertTriangle, MessageSquare } from "lucide-react";
 import AllegroDescriptionEditor from "@/components/listings/AllegroDescriptionEditor";
 import AllegroCategory from "@/components/listings/AllegroCategory";
 import AllegroProductSearch from "@/components/listings/AllegroProductSearch";
+import AiChatAssistant from "@/components/ai/AiChatAssistant";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const SHIPPING_OPTIONS = [
@@ -37,6 +38,7 @@ export default function AllegroPublish() {
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -396,19 +398,30 @@ Stwórz ofertę, która SPRZEDAJE!`;
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/Listings")}>
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-        <div>
-          <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <span className="text-orange-500">Allegro</span> — Wystaw ofertę
-          </h1>
-          <p className="text-xs text-slate-500">{listing?.listing_title}</p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/Listings")}>
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <div>
+            <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <span className="text-orange-500">Allegro</span> — Wystaw ofertę
+            </h1>
+            <p className="text-xs text-slate-500">{listing?.listing_title}</p>
+          </div>
         </div>
-        {listing?.allegro_listing_id && (
-          <Badge className="ml-auto bg-orange-100 text-orange-700 border-orange-200">Szkic: {listing.allegro_listing_id}</Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {listing?.allegro_listing_id && (
+            <Badge className="bg-orange-100 text-orange-700 border-orange-200">Szkic: {listing.allegro_listing_id}</Badge>
+          )}
+          <Button 
+            variant="outline" 
+            onClick={() => setShowChat(true)} 
+            className="gap-2 text-emerald-600 border-emerald-200"
+          >
+            <MessageSquare className="w-4 h-4" /> Chat AI
+          </Button>
+        </div>
       </div>
 
       {result?.error && (
@@ -832,6 +845,14 @@ Stwórz ofertę, która SPRZEDAJE!`;
           {publishing ? "Wystawianie..." : "Wystaw na Allegro"}
         </Button>
       </div>
+
+      {showChat && (
+        <AiChatAssistant 
+          product={product}
+          listing={listing}
+          onClose={() => setShowChat(false)} 
+        />
+      )}
     </div>
   );
 }

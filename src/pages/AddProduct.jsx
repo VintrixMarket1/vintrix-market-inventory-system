@@ -4,8 +4,9 @@ import { useNavigate } from "react-router-dom";
 import ImageUploader from "@/components/add-product/ImageUploader";
 import AiAnalysisStep from "@/components/add-product/AiAnalysisStep";
 import ProductVerifyForm from "@/components/add-product/ProductVerifyForm";
+import AiChatAssistant from "@/components/ai/AiChatAssistant";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MessageSquare } from "lucide-react";
 
 const STEPS = {
   UPLOAD: "upload",
@@ -19,6 +20,7 @@ export default function AddProduct() {
   const [step, setStep] = useState(STEPS.UPLOAD);
   const [uploadedImages, setUploadedImages] = useState([]);
   const [aiData, setAiData] = useState(null);
+  const [showChat, setShowChat] = useState(false);
 
   const handleImagesReady = (urls) => {
     setUploadedImages(urls);
@@ -173,19 +175,30 @@ Stwórz analizę, która pomoże SZYBKO SPRZEDAĆ produkt!`,
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/Inventory")}>
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Dodaj produkt</h1>
-          <p className="text-sm text-muted-foreground">
-            {step === STEPS.UPLOAD && "Krok 1: Wgraj zdjęcia produktu"}
-            {step === STEPS.ANALYZING && "Krok 2: AI analizuje produkt..."}
-            {step === STEPS.VERIFY && "Krok 3: Zweryfikuj dane i zapisz"}
-            {step === STEPS.DONE && "Produkt zapisany!"}
-          </p>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/Inventory")}>
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Dodaj produkt</h1>
+            <p className="text-sm text-muted-foreground">
+              {step === STEPS.UPLOAD && "Krok 1: Wgraj zdjęcia produktu"}
+              {step === STEPS.ANALYZING && "Krok 2: AI analizuje produkt..."}
+              {step === STEPS.VERIFY && "Krok 3: Zweryfikuj dane i zapisz"}
+              {step === STEPS.DONE && "Produkt zapisany!"}
+            </p>
+          </div>
         </div>
+        {(step === STEPS.UPLOAD || step === STEPS.VERIFY) && (
+          <Button 
+            variant="outline" 
+            onClick={() => setShowChat(true)} 
+            className="gap-2 text-emerald-600 border-emerald-200"
+          >
+            <MessageSquare className="w-4 h-4" /> Chat AI
+          </Button>
+        )}
       </div>
 
       {step === STEPS.UPLOAD && (
@@ -220,6 +233,13 @@ Stwórz analizę, która pomoże SZYBKO SPRZEDAĆ produkt!`,
             </Button>
           </div>
         </div>
+      )}
+
+      {showChat && step === STEPS.VERIFY && (
+        <AiChatAssistant 
+          product={aiData} 
+          onClose={() => setShowChat(false)} 
+        />
       )}
     </div>
   );

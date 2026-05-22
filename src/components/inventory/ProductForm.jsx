@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { base44 } from "@/api/base44Client";
-import { Upload, X, Loader2, RefreshCw, Package, Sparkles } from "lucide-react";
+import AiChatAssistant from "@/components/ai/AiChatAssistant";
+import { Upload, X, Loader2, RefreshCw, Package, Sparkles, MessageSquare } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { SUBCATEGORIES } from "@/lib/subcategories";
 
@@ -66,6 +67,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   const handleChange = (field, value) => {
     setForm(prev => {
@@ -188,7 +190,17 @@ Wygeneruj WYŁĄCZNIE gotowy HTML. Bez wstępów. Zacznij od h1.`;
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Product" : "Add Product"}</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>{isEdit ? "Edit Product" : "Add Product"}</DialogTitle>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowChat(true)} 
+              className="gap-2 text-emerald-600 border-emerald-200"
+            >
+              <MessageSquare className="w-3.5 h-3.5" /> Chat AI
+            </Button>
+          </div>
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -379,6 +391,12 @@ Wygeneruj WYŁĄCZNIE gotowy HTML. Bez wstępów. Zacznij od h1.`;
           </div>
         </div>
       </DialogContent>
+      {showChat && (
+        <AiChatAssistant 
+          product={form}
+          onClose={() => setShowChat(false)} 
+        />
+      )}
     </Dialog>
   );
 }
