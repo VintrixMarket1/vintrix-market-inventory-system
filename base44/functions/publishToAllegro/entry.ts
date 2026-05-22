@@ -112,10 +112,12 @@ Deno.serve(async (req) => {
       ean,
       } = body;
 
+      // Build safetyInformation - Allegro requires this field when productSet is used
       const resolvedSafetyType = safety_type || "ROLE_FULFILLED_BY_MARKETPLACE";
       const safetyInformation = resolvedSafetyType === "DOCUMENT_URL" && safety_url
-      ? { type: "DOCUMENT_URL", url: safety_url }
-      : { type: resolvedSafetyType };
+        ? { type: "DOCUMENT_URL", documentUrl: safety_url }
+        : { type: resolvedSafetyType };
+      console.log("safetyInformation:", JSON.stringify(safetyInformation));
 
     if (!listing_id) return Response.json({ error: "listing_id is required" }, { status: 400 });
     if (!allegro_category_id) return Response.json({ error: "allegro_category_id is required — wybierz kategorię z drzewa Allegro" }, { status: 400 });
