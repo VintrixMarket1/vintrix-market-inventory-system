@@ -80,6 +80,7 @@ export default function AllegroPublish() {
       setLoadingConditions(true);
       try {
         const res = await base44.functions.invoke("getAllegroConditions", { category_id: form.allegro_category_id });
+        console.log("Loaded conditions:", res.data);
         setAllegroConditions(res.data?.conditions || []);
       } catch (err) {
         console.error("Failed to load conditions:", err);
@@ -513,19 +514,23 @@ Wymagania:
                   Ładowanie dostępnych stanów...
                 </div>
               ) : allegroConditions.length > 0 ? (
-                <Select value={form.conditionId} onValueChange={v => {
-                  set("conditionId", v);
-                  // Map back to internal condition
-                  const conditionMap = { "11323_1": "new", "11323_2": "like_new", "11323_3": "used" };
-                  set("condition", conditionMap[v] || "like_new");
-                }}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Wybierz stan" /></SelectTrigger>
-                  <SelectContent>
-                    {allegroConditions.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                <div className="relative">
+                  <select
+                    value={form.conditionId || ""}
+                    onChange={(e) => {
+                      console.log("Selected condition:", e.target.value);
+                      set("conditionId", e.target.value);
+                      const conditionMap = { "11323_1": "new", "11323_2": "like_new", "11323_3": "used" };
+                      set("condition", conditionMap[e.target.value] || "like_new");
+                    }}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="" disabled>Wybierz stan</option>
+                    {allegroConditions.map((c, idx) => (
+                      <option key={`${c.id}-${idx}`} value={c.id}>{c.name}</option>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </select>
+                </div>
               ) : (
                 <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2">
                   Nie udało się załadować stanów produktu. Spróbuj ponownie.
