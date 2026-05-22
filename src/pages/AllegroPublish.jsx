@@ -564,12 +564,12 @@ Wymagania:
 
             {showAdvanced && (
               <div className="space-y-3 pt-1">
-                <div className="bg-orange-50 border border-orange-200 rounded p-2 text-xs text-orange-700">
-                  ⚠️ Ta kategoria wymaga podania EAN i producenta
+                <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
+                  💡 Jeśli nie możesz znaleźć produktu w katalogu Allegro, podaj EAN i producenta ręcznie
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs">EAN (GTIN) *</Label>
+                    <Label className="text-xs">EAN (GTIN)</Label>
                     <Input 
                       value={form.ean || ""} 
                       onChange={e => set("ean", e.target.value)} 
@@ -577,7 +577,7 @@ Wymagania:
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Producent *</Label>
+                    <Label className="text-xs">Producent</Label>
                     <Input 
                       value={form.producer_name || ""} 
                       onChange={e => set("producer_name", e.target.value)} 
