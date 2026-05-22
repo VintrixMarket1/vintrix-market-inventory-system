@@ -21,6 +21,7 @@ import AllegroSettings from './pages/AllegroSettings';
 import AllegroCallback from './pages/AllegroCallback';
 import AllegroPublish from './pages/AllegroPublish';
 import GoogleSheetsSettings from './pages/GoogleSheetsSettings';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
         <Route path="/AllegroPublish" element={<AllegroPublish />} />
         <Route path="/GoogleSheetsSettings" element={<GoogleSheetsSettings />} />
       </Route>
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
