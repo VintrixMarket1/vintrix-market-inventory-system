@@ -350,10 +350,93 @@ Deno.serve(async (req) => {
         ...(producerId ? { responsibleProducer: { id: producerId } } : {}),
         safetyInformation: safetyInformation,
       }];
-    } else if (conditionParams.length > 0) {
-      // No catalog product — include required parameters (only Stan, EAN/Producer only if category requires)
-      const additionalParams = [...conditionParams];
-      offerPayload.parameters = additionalParams;
+    } else {
+      // No catalog product — include safetyInformation at offer level and all required parameters
+      offerPayload.safetyInformation = safetyInformation;
+
+      // Fetch all required parameters for this category and build them
+      try {
+        const paramRes = await fetch(`https://api.allegro.pl/sale/categories/${allegro_category_id}/parameters`, {
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Accept": "application/vnd.allegro.public.v1+json",
+          },
+        });
+        const paramData = await paramRes.json();
+        const requiredParams = (paramData.parameters || []).filter(p => p.required);
+        console.log("Required params for category:", requiredParams.map(p => `${p.id}:${p.name}`));
+
+        const params = [];
+        for (const p of requiredParams) {
+          // Stan produktu (11323) — already handled via conditionParams
+          if (p.id === "11323") {
+            if (conditionParams.length > 0) params.push(...conditionParams);
+            continue;
+          }
+          // EAN/GTIN (225694) — use provided ean if available
+          if ((p.name?.toLowerCase().includes("ean") || p.name?.toLowerCase().includes("gtin")) && ean) {
+            params.push({ id: p.id, values: [{ value: ean }] });
+            continue;
+          }
+          // Marka / Producent — use brand or producer_name
+          if (p.name?.toLowerCase().includes("marka") || p.name?.toLowerCase().includes("producent")) {
+            const brandVal = producer_name || product.brand;
+            if (brandVal && p.dictionary?.length) {
+              const match = p.dictionary.find(v => v.name?.toLowerCase() === brandVal.toLowerCase())
+                || p.dictionary.find(v => v.name?.toLowerCase().includes(brandVal.toLowerCase()));
+              if (match) { params.push({ id: p.id, valuesIds: [match.id] }); continue; }
+            }
+            // If open dictionary or no match found — skip (Allegro won't accept wrong value)
+          }
+          // For other required params with dictionary — pick first value as fallback
+          if (p.dictionary?.length && !p.multipleChoices) {
+            // Do NOT auto-fill required dictionary params — leave for user to fix in Allegro panel
+          }
+        }
+        // Always include condition params
+        if (conditionParams.length > 0 && !params.find(p => p.id === "11323")) {
+          params.push(...conditionParams);
+        }
+        if (params.length > 0) offerPayload.parameters = params;
+      } catch (e) {
+        console.log("Error fetching required params:", e.message);
+        if (conditionParams.length > 0) offerPayload.parameters = conditionParams;
+      }
+
+      // Add EAN at offer level if provided (Allegro also accepts it as top-level)
+      if (ean) offerPayload.ean = [ean];
+
+      // Add responsible producer at offer level when no catalog product
+      if (producer_name) {
+        const resolvedProducerName = producer_name;
+        const resolvedStreet = producer_street || "ul. Przykładowa 1";
+        const resolvedProdCity = producer_city || resolvedCity;
+        const resolvedProdZip = producer_zip || resolvedPostCode;
+        let producerId = null;
+        try {
+          const prodListRes = await fetch("https://api.allegro.pl/sale/responsible-producers", { headers });
+          if (prodListRes.ok) {
+            const prodListData = await prodListRes.json();
+            const existing = (prodListData.responsibleProducers || []).find(p => p.name === resolvedProducerName);
+            if (existing) producerId = existing.id;
+          }
+          if (!producerId) {
+            const createProdRes = await fetch("https://api.allegro.pl/sale/responsible-producers", {
+              method: "POST", headers,
+              body: JSON.stringify({
+                name: resolvedProducerName,
+                producerData: {
+                  tradeName: resolvedProducerName,
+                  address: { street: resolvedStreet, city: resolvedProdCity, postalCode: resolvedProdZip, countryCode: "PL" },
+                  contact: { formUrl: "https://vintrix.pl/kontakt" },
+                },
+              }),
+            });
+            if (createProdRes.ok) producerId = (await createProdRes.json()).id;
+          }
+        } catch (e) { console.log("Producer error (no catalog):", e.message); }
+        if (producerId) offerPayload.responsibleProducer = { id: producerId };
+      }
     }
 
     if (product.internal_code) {
