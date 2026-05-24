@@ -74,6 +74,7 @@ export default function AllegroPublish() {
   const [loadingConditions, setLoadingConditions] = useState(false);
   const [allegroProductImages, setAllegroProductImages] = useState([]);
   const [loadingAllegroImages, setLoadingAllegroImages] = useState(false);
+  const [allegroProductDescription, setAllegroProductDescription] = useState("");
 
   // Load catalog product images when product is selected
   useEffect(() => {
@@ -86,9 +87,11 @@ export default function AllegroPublish() {
       try {
         const res = await base44.functions.invoke("getAllegroProductImages", { product_id: form.allegro_product.id });
         setAllegroProductImages(res.data?.images || []);
+        setAllegroProductDescription(res.data?.description || "");
       } catch (err) {
         console.error("Failed to load Allegro product images:", err);
         setAllegroProductImages([]);
+        setAllegroProductDescription("");
       } finally {
         setLoadingAllegroImages(false);
       }
@@ -898,11 +901,20 @@ Stwórz ofertę, która SPRZEDAJE!`;
           <div className="bg-white border rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-slate-700">Opis oferty</h2>
-              <Button type="button" variant="outline" size="sm" onClick={generateDescription} disabled={generating}
-                className="text-xs h-7 gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50">
-                {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                Generuj AI
-              </Button>
+              <div className="flex gap-1.5">
+                {allegroProductDescription && (
+                  <Button type="button" variant="outline" size="sm"
+                    onClick={() => set("description", allegroProductDescription)}
+                    className="text-xs h-7 gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50">
+                    Załaduj z katalogu
+                  </Button>
+                )}
+                <Button type="button" variant="outline" size="sm" onClick={generateDescription} disabled={generating}
+                  className="text-xs h-7 gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50">
+                  {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  Generuj AI
+                </Button>
+              </div>
             </div>
             <AllegroDescriptionEditor value={form.description} onChange={v => set("description", v)} />
           </div>

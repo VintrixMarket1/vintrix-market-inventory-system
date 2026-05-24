@@ -41,6 +41,7 @@ Deno.serve(async (req) => {
       headers: {
         "Authorization": `Bearer ${accessToken}`,
         "Accept": "application/vnd.allegro.public.v1+json",
+        "Accept-Language": "pl-PL",
       },
     });
 
@@ -50,10 +51,20 @@ Deno.serve(async (req) => {
     }
 
     const data = await res.json();
-    // images are in data.images array, each with { url }
     const images = (data.images || []).map(img => img.url).filter(Boolean);
 
-    return Response.json({ images });
+    // Extract description text from sections
+    let description = "";
+    const sections = data.description?.sections || [];
+    for (const section of sections) {
+      for (const item of section.items || []) {
+        if (item.type === "TEXT" && item.content) {
+          description += item.content;
+        }
+      }
+    }
+
+    return Response.json({ images, description });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
