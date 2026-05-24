@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, BookOpen } from "lucide-react";
 import { SUBCATEGORIES } from "@/lib/subcategories";
+import ProductDetailModal from "@/components/catalog/ProductDetailModal";
 
 const categories = ["all", "clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
 const genders = ["all", "men", "women", "unisex", "kids", "none"];
@@ -33,6 +34,7 @@ export default function ProductModels() {
   const [category, setCategory] = useState("all");
   const [subcategory, setSubcategory] = useState("all");
   const [gender, setGender] = useState("all");
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products"],
@@ -115,7 +117,7 @@ export default function ProductModels() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {filtered.map(product => (
-            <div key={product.id} className="bg-white rounded-xl border border-slate-200/60 overflow-hidden hover:shadow-md transition-shadow">
+            <div key={product.id} onClick={() => setSelectedProduct(product)} className="bg-white rounded-xl border border-slate-200/60 overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
               {/* Image */}
               <div className="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
                 {product.images?.[0] ? (
@@ -148,6 +150,8 @@ export default function ProductModels() {
           ))}
         </div>
       )}
+
+      <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
     </div>
   );
 }
