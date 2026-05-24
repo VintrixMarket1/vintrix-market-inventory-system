@@ -103,52 +103,34 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
   const generateDescription = async () => {
     setGenerating(true);
     const conditionMap = { new: "Nowy", like_new: "Jak nowy / po zwrocie", used: "Używany" };
-    const prompt = `### MASTER PROMPT: SPECJALISTA ONLINE MARKETINGU I SPRZEDAŻY E-COMMERCE ###
+    const prompt = `Jesteś ekspertem e-commerce tworzącym opisy produktów zgodne z zasadami Allegro.
 
-Jesteś światowej klasy specjalistą od marketingu online i sprzedaży w e-commerce z 15-letnim doświadczeniem. Specjalizujesz się w tworzeniu opisów produktów, które:
-- PRZEKONUJĄ do zakupu poprzez język korzyści
-- BUDUJĄ ZAUFANIE i profesjonalny wizerunek
-- SĄ OPTYMALIZOWANE pod kątem konwersji (CRO)
-
-TWOJE ZADANIE: Stwórz perswazyjny opis produktu.
+=== KRYTYCZNE ZASADY ALLEGRO ===
+1. ZAKAZ wzmianki o zwrotach, wysyłce, czasie dostawy, polityce zwrotów — to jest w innych zakładkach Allegro.
+2. ZAKAZ pisania o stanie produktu (nowy/używany) — stan jest parametrem oferty, NIE treścią opisu.
+3. NIE pisz: "14 dni na zwrot", "wysyłka 24h", "InPost", "kurier", "zwrot towaru", "gwarancja zwrotu", "szybka wysyłka".
+4. Opis musi WYŁĄCZNIE opisywać cechy i właściwości produktu.
 
 === DANE PRODUKTU ===
 - Nazwa: ${form.product_name || "Produkt premium"}
-- Marka: ${form.product_name?.split(' ')[0] || "produkt bez marki"}
-- Stan: ${conditionMap[form.condition] || "Bardzo dobry"}
-- Rozmiar: ${form.size || "rozmiar uniwersalny"}
+- Rozmiar: ${form.size || ""}
 - Kategoria: ${form.category}
 - Cena: ${form.suggested_sale_price || form.purchase_price || "do negocjacji"} PLN
 
-=== WYMAGANIA ===
-1. Używaj WYŁĄCZNIE tych tagów HTML: h1, h2, h3, p, ul, ol, li, b, br
-2. NIE dodawaj ŻADNYCH atrybutów w tagach (brak class, style, id)
-3. NIE używaj CSS, divów, spanów, table, img
-4. Wygeneruj CZYSTY HTML - bez komentarzy i wstępów
+=== WYMAGANIA TECHNICZNE ===
+1. Tylko tagi: h1, h2, h3, p, ul, ol, li, b, br
+2. BRAK atrybutów w tagach (żadnych class, style, id)
+3. BRAK CSS, div, span, table, img
+4. Czysty HTML — bez komentarzy, wstępów
 
-=== STRUKTURA OPISU ===
+=== STRUKTURA ===
+1. H1 — chwytliwy tytuł produktu (max 75 znaków), BEZ wzmianki o wysyłce/stanie
+2. H2 "✨ Dlaczego warto?" — lista UL z 4 korzyściami (cechy produktu, nie wysyłka)
+3. H2 "📋 Opis produktu" — 2 akapity P o cechach i zastosowaniu (BEZ zwrotów/dostawy)
+4. H2 "⭐ Najważniejsze cechy" — lista UL z 5-6 cechami (<b>Cecha:</b> opis)
+5. H2 "❓ Informacje" — krótki akapit o produkcie/marce (NIE o wysyłce)
 
-1. **H1** - Główny tytuł (max 75 znaków, chwytliwy)
-2. **H2 "✨ DLACZEGO WARTO?"** - lista UL z 3-4 korzyściami
-3. **H2 "📋 OPIS PRODUKTU"** - 2 akapity P z perswazyjnym tekstem
-4. **H2 "⭐ NAJWAŻNIEJSZE CECHY"** - lista UL z 5-6 zaletami
-5. **H2 "📦 DOSTAWA"** - akapit o wysyłce i zwrotach
-
-=== TECHNIKI PERSWAZJI ===
-- Język korzyści: nie "ma rozmiar M", tylko "idealnie dopasuje się"
-- Społeczny dowód: "Tysiące zadowolonych klientów"
-- Pilność: "Ostatnie sztuki"
-- Odwrócenie ryzyka: "14 dni na zwrot"
-
-=== SŁOWA MOCY ===
-ekskluzywny, premium, profesjonalny, sprawdzony, gwarantowany, wyjątkowy, unikalny, oryginalny
-
-=== FORMATOWANIE ===
-- Używaj emoji w nagłówkach: ✨, 📋, ⭐, 📦, ❓
-- Pogrubiaj najważniejsze zwroty: **b**tekst**b**
-- Krótkie akapity (max 3-4 zdania)
-
-Wygeneruj WYŁĄCZNIE gotowy HTML. Bez wstępów. Zacznij od h1.`;
+Wygeneruj WYŁĄCZNIE gotowy HTML. Zacznij od <h1>.`;
 
     try {
       const result = await base44.integrations.Core.InvokeLLM({

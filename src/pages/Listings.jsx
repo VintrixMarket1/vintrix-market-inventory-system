@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Edit2, Trash2, ExternalLink } from "lucide-react";
 import ListingForm from "../components/listings/ListingForm";
+import AllegroStatusMonitor from "../components/listings/AllegroStatusMonitor";
 
 const platformColors = {
   vinted: "bg-teal-100 text-teal-700",
@@ -100,7 +101,8 @@ export default function Listings() {
             const product = productsMap[listing.product_id];
             const image = product?.images?.[0];
             return (
-              <div key={listing.id} className="bg-white rounded-xl border border-slate-200/60 p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
+              <div key={listing.id}>
+              <div className="bg-white rounded-xl border border-slate-200/60 p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
                 <div className="w-14 h-14 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
                   {image ? (
                     <img src={image} alt="" className="w-full h-full object-cover" />
@@ -123,6 +125,13 @@ export default function Listings() {
                   <p className="font-bold text-slate-900">{listing.listing_price} PLN</p>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
+                  {listing.platform === "allegro" && listing.allegro_listing_id && (
+                    <a href={`https://allegro.pl/oferta/${listing.allegro_listing_id}`} target="_blank" rel="noreferrer">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-orange-500">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Button>
+                    </a>
+                  )}
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditListing(listing)}>
                     <Edit2 className="w-3.5 h-3.5" />
                   </Button>
@@ -130,6 +139,10 @@ export default function Listings() {
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
+              </div>
+              {listing.platform === "allegro" && listing.allegro_listing_id && (
+                <AllegroStatusMonitor listing={listing} />
+              )}
               </div>
             );
           })}
