@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, X, Send, Sparkles, User, Bot, CheckCircle, XCircle, Pencil } from "lucide-react";
+import { Loader2, X, Send, Sparkles, User, Bot, CheckCircle, XCircle, Pencil, Trash2 } from "lucide-react";
 
 const FIELD_LABELS = {
   listing_title: "Tytuł oferty",
@@ -45,15 +45,26 @@ function ActionCard({ action, onApply, onDismiss, applying }) {
   );
 }
 
+const INITIAL_MESSAGE = { role: "assistant", content: 'Cześć! Jestem Twoim asystentem AI. Mogę analizować produkt, sugerować zmiany i **od razu je zapisywać** — wystarczy kliknąć "Zastosuj". Co chcesz sprawdzić lub zmienić?' };
+
 export default function AiChatAssistant({ product, listing, onClose, onDataChanged }) {
-  const [messages, setMessages] = useState([
-    { role: "assistant", content: 'Cześć! Jestem Twoim asystentem AI. Mogę analizować produkt, sugerować zmiany i **od razu je zapisywać** — wystarczy kliknąć "Zastosuj". Co chcesz sprawdzić lub zmienić?' }
-  ]);
+  const storageKey = `ai_chat_${product?.id || "global"}_${listing?.id || "nolisting"}`;
+
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? JSON.parse(saved) : [INITIAL_MESSAGE];
+    } catch { return [INITIAL_MESSAGE]; }
+  });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [applyingAction, setApplyingAction] = useState(null);
   const [dismissedActions, setDismissedActions] = useState(new Set());
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    try { localStorage.setItem(storageKey, JSON.stringify(messages)); } catch {}
+  }, [messages, storageKey]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -206,9 +217,14 @@ ZAWSZE odpowiadaj po polsku.`;
             <p className="text-xs text-emerald-100">Może wprowadzać zmiany bezpośrednio w systemie</p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20">
-          <X className="w-4 h-4" />
-        </Button>
+        <div className="flex gap-1">
+          <Button variant="ghost" size="icon" title="Wyczyść historię" onClick={() => { setMessages([INITIAL_MESSAGE]); setDismissedActions(new Set()); }} className="text-white hover:bg-white/20">
+            <Trash2 className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20">
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Messages */}
