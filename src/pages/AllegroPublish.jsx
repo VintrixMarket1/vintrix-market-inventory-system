@@ -938,7 +938,8 @@ Stwórz ofertę, która SPRZEDAJE!`;
         <AiChatAssistant 
           product={product}
           listing={listing}
-          onClose={() => setShowChat(false)} 
+          onClose={() => setShowChat(false)}
+          onDataChanged={loadData}
         />
       )}
     </div>
