@@ -72,6 +72,29 @@ export default function AllegroPublish() {
 
   const [allegroConditions, setAllegroConditions] = useState([]);
   const [loadingConditions, setLoadingConditions] = useState(false);
+  const [allegroProductImages, setAllegroProductImages] = useState([]);
+  const [loadingAllegroImages, setLoadingAllegroImages] = useState(false);
+
+  // Load catalog product images when product is selected
+  useEffect(() => {
+    if (!form.allegro_product?.id) {
+      setAllegroProductImages([]);
+      return;
+    }
+    const loadImages = async () => {
+      setLoadingAllegroImages(true);
+      try {
+        const res = await base44.functions.invoke("getAllegroProductImages", { product_id: form.allegro_product.id });
+        setAllegroProductImages(res.data?.images || []);
+      } catch (err) {
+        console.error("Failed to load Allegro product images:", err);
+        setAllegroProductImages([]);
+      } finally {
+        setLoadingAllegroImages(false);
+      }
+    };
+    loadImages();
+  }, [form.allegro_product?.id]);
 
   useEffect(() => {
     if (!form.allegro_category_id) {
@@ -791,30 +814,83 @@ Stwórz ofertę, która SPRZEDAJE!`;
         {/* Right column */}
         <div className="space-y-4">
           {/* Images */}
-          {allImages.length > 0 && (
+          {(allImages.length > 0 || allegroProductImages.length > 0) && (
             <div className="bg-white border rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-slate-700">Zdjęcia</h2>
-                <span className="text-xs text-slate-400">{form.selected_images.length}/{allImages.length}</span>
+                <span className="text-xs text-slate-400">{form.selected_images.length} zaznaczonych</span>
               </div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {allImages.map((url, i) => {
-                  const selected = form.selected_images.includes(url);
-                  return (
-                    <button key={i} type="button" onClick={() => toggleImage(url)}
-                      className={`relative rounded-lg overflow-hidden border-2 aspect-square transition-all ${selected ? "border-orange-500 ring-2 ring-orange-200" : "border-slate-200 hover:border-slate-400"}`}>
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                      <div className={`absolute top-0.5 right-0.5 ${selected ? "text-orange-500" : "text-slate-300"}`}>
-                        {selected ? <CheckSquare className="w-3.5 h-3.5 drop-shadow" /> : <Square className="w-3.5 h-3.5 drop-shadow" />}
-                      </div>
-                    </button>
-                  );
-                })}
+
+              {/* Allegro catalog images */}
+              {form.allegro_product && (
+                <div>
+                  <p className="text-xs font-medium text-orange-600 mb-1.5 flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
+                    Zdjęcia z katalogu Allegro
+                  </p>
+                  {loadingAllegroImages ? (
+                    <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Ładowanie zdjęć z katalogu...
+                    </div>
+                  ) : allegroProductImages.length > 0 ? (
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {allegroProductImages.map((url, i) => {
+                        const selected = form.selected_images.includes(url);
+                        return (
+                          <button key={i} type="button" onClick={() => toggleImage(url)}
+                            className={`relative rounded-lg overflow-hidden border-2 aspect-square transition-all ${selected ? "border-orange-500 ring-2 ring-orange-200" : "border-slate-200 hover:border-slate-400"}`}>
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <div className={`absolute top-0.5 right-0.5 ${selected ? "text-orange-500" : "text-slate-300"}`}>
+                              {selected ? <CheckSquare className="w-3.5 h-3.5 drop-shadow" /> : <Square className="w-3.5 h-3.5 drop-shadow" />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400">Brak zdjęć w katalogu dla tego produktu.</p>
+                  )}
+                </div>
+              )}
+
+              {/* Own product images */}
+              {allImages.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-slate-500 mb-1.5 flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-slate-400 inline-block"></span>
+                    Własne zdjęcia produktu
+                  </p>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {allImages.map((url, i) => {
+                      const selected = form.selected_images.includes(url);
+                      return (
+                        <button key={i} type="button" onClick={() => toggleImage(url)}
+                          className={`relative rounded-lg overflow-hidden border-2 aspect-square transition-all ${selected ? "border-orange-500 ring-2 ring-orange-200" : "border-slate-200 hover:border-slate-400"}`}>
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <div className={`absolute top-0.5 right-0.5 ${selected ? "text-orange-500" : "text-slate-300"}`}>
+                            {selected ? <CheckSquare className="w-3.5 h-3.5 drop-shadow" /> : <Square className="w-3.5 h-3.5 drop-shadow" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                {allImages.length > 0 && (
+                  <Button type="button" variant="outline" size="sm" className="flex-1 text-xs"
+                    onClick={() => setForm(prev => ({ ...prev, selected_images: allImages.slice(0, 8) }))}>
+                    Zaznacz własne
+                  </Button>
+                )}
+                {allegroProductImages.length > 0 && (
+                  <Button type="button" variant="outline" size="sm" className="flex-1 text-xs text-orange-600 border-orange-200 hover:bg-orange-50"
+                    onClick={() => setForm(prev => ({ ...prev, selected_images: allegroProductImages.slice(0, 8) }))}>
+                    Zaznacz z katalogu
+                  </Button>
+                )}
               </div>
-              <Button type="button" variant="outline" size="sm" className="w-full text-xs"
-                onClick={() => setForm(prev => ({ ...prev, selected_images: allImages.slice(0, 8) }))}>
-                Zaznacz wszystkie
-              </Button>
             </div>
           )}
 
