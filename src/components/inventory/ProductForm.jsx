@@ -187,6 +187,7 @@ Wygeneruj WYŁĄCZNIE gotowy HTML. Bez wstępów. Zacznij od h1.`;
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -391,12 +392,17 @@ Wygeneruj WYŁĄCZNIE gotowy HTML. Bez wstępów. Zacznij od h1.`;
           </div>
         </div>
       </DialogContent>
-      {showChat && (
+    </Dialog>
+
+    {showChat && (
+      <div style={{ zIndex: 9999 }} onClick={e => e.stopPropagation()}>
         <AiChatAssistant 
           product={form}
-          onClose={() => setShowChat(false)} 
+          onClose={() => setShowChat(false)}
+          onDataChanged={() => {}}
         />
-      )}
-    </Dialog>
+      </div>
+    )}
+    </>
   );
 }
