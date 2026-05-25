@@ -2,24 +2,27 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Package, Tag, DollarSign, Zap, 
-  Menu, X, ChevronRight, Layers, BookOpen, ShoppingBag, Store
+  Menu, X, ChevronRight, Layers, BookOpen, ShoppingBag, Store, Settings
 } from "lucide-react";
-
-const navItems = [
-  { path: "/Dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/Inventory", label: "Inventory", icon: Package },
-  { path: "/ProductModels", label: "Catalog", icon: BookOpen },
-  { path: "/Pallets", label: "Pallets", icon: Layers },
-  { path: "/Listings", label: "Listings", icon: Tag },
-  { path: "/Sales", label: "Sales", icon: DollarSign },
-  { path: "/QuickAdd", label: "Quick Add", icon: Zap },
-  { path: "/ShopifySettings", label: "Shopify", icon: ShoppingBag },
-  { path: "/AllegroSettings", label: "Allegro", icon: Store },
-];
+import { useLang } from "@/lib/i18n";
 
 export default function Sidebar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useLang();
+
+  const navItems = [
+    { path: "/Dashboard", labelKey: "nav_dashboard", icon: LayoutDashboard },
+    { path: "/Inventory", labelKey: "nav_inventory", icon: Package },
+    { path: "/ProductModels", labelKey: "nav_catalog", icon: BookOpen },
+    { path: "/Pallets", labelKey: "nav_pallets", icon: Layers },
+    { path: "/Listings", labelKey: "nav_listings", icon: Tag },
+    { path: "/Sales", labelKey: "nav_sales", icon: DollarSign },
+    { path: "/QuickAdd", labelKey: "nav_quick_add", icon: Zap },
+    { path: "/ShopifySettings", labelKey: "nav_shopify", icon: ShoppingBag },
+    { path: "/AllegroSettings", labelKey: "nav_allegro", icon: Store },
+    { path: "/Settings", labelKey: "nav_settings", icon: Settings },
+  ];
 
   const isActive = (path) => location.pathname === path;
 
@@ -50,7 +53,7 @@ export default function Sidebar() {
             }`}
           >
             <item.icon className={`w-4.5 h-4.5 ${isActive(item.path) ? "text-emerald-400" : "text-slate-500 group-hover:text-slate-300"}`} />
-            {item.label}
+            {t(item.labelKey)}
             {isActive(item.path) && <ChevronRight className="w-3.5 h-3.5 ml-auto text-emerald-400" />}
           </Link>
         ))}
@@ -58,8 +61,8 @@ export default function Sidebar() {
 
       <div className="p-4 border-t border-slate-700/50">
         <div className="bg-slate-800/50 rounded-lg p-3">
-          <p className="text-xs text-slate-400">Speed Tip</p>
-          <p className="text-xs text-slate-500 mt-1">Use Quick Add for fast mobile entries</p>
+          <p className="text-xs text-slate-400">💡 Tip</p>
+          <p className="text-xs text-slate-500 mt-1">{t("nav_quick_add")} → szybkie dodawanie</p>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useLang } from "@/lib/i18n";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +16,7 @@ import ShopifyProductImporter from "../components/shopify/ShopifyProductImporter
 import BulkActionsBar from "../components/inventory/BulkActionsBar";
 
 export default function Inventory() {
+  const { t } = useLang();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
@@ -54,7 +56,7 @@ export default function Inventory() {
   });
 
   const handleDelete = async (product) => {
-    if (!confirm("Delete this product?")) return;
+    if (!confirm(t("inv_delete_confirm"))) return;
     await base44.entities.Product.delete(product.id);
     queryClient.invalidateQueries({ queryKey: ["products"] });
   };
@@ -85,18 +87,18 @@ export default function Inventory() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Inventory</h1>
-          <p className="text-sm text-slate-500 mt-1">{filtered.length} products</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t("inv_title")}</h1>
+          <p className="text-sm text-slate-500 mt-1">{filtered.length} {t("inv_products")}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowShopifyImport(true)} className="gap-1.5 text-emerald-700 border-emerald-300 hover:bg-emerald-50">
-            <ShoppingBag className="w-4 h-4" /> Shopify
+            <ShoppingBag className="w-4 h-4" /> {t("inv_shopify")}
           </Button>
           <Button variant="outline" size="sm" onClick={() => setShowCsvImport(true)} className="gap-1.5">
-            <Plus className="w-4 h-4" /> Import CSV
+            <Plus className="w-4 h-4" /> {t("inv_import_csv")}
           </Button>
           <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
-            <Download className="w-4 h-4" /> Export
+            <Download className="w-4 h-4" /> {t("inv_export")}
           </Button>
           <div className="flex border rounded-md overflow-hidden">
             <button onClick={() => setViewMode("grid")} className={`px-2 py-1.5 ${viewMode === "grid" ? "bg-slate-900 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}>
@@ -107,7 +109,7 @@ export default function Inventory() {
             </button>
           </div>
           <Button size="sm" onClick={() => navigate("/AddProduct")} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="w-4 h-4" /> Add Product
+            <Plus className="w-4 h-4" /> {t("inv_add_product")}
           </Button>
         </div>
       </div>
@@ -120,9 +122,9 @@ export default function Inventory() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-slate-400">No products found</p>
+          <p className="text-slate-400">{t("inv_no_products")}</p>
           <Button size="sm" onClick={() => navigate("/AddProduct")} className="mt-4 bg-emerald-600 hover:bg-emerald-700">
-            Add your first product
+            {t("inv_add_first")}
           </Button>
         </div>
       ) : viewMode === "grid" ? (
@@ -146,8 +148,8 @@ export default function Inventory() {
               <div className="flex gap-1 mt-1.5">
                 {(product.status || "in_stock") !== "sold" && (
                   <>
-                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setListingProduct(product)}>List</Button>
-                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => setSaleProduct(product)}>Sell</Button>
+                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setListingProduct(product)}>{t("inv_list")}</Button>
+                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                   </>
                 )}
               </div>
@@ -178,7 +180,7 @@ export default function Inventory() {
                     <span className="font-semibold text-sm text-slate-900">{product.product_name}</span>
                     <Badge variant="outline" className={`text-[10px] ${conditionColors[product.condition] || ""}`}>{product.condition?.replace("_", " ")}</Badge>
                     <Badge className={`text-[10px] ${statusColors[product.status] || statusColors.in_stock}`}>{(product.status || "in_stock").replace("_", " ")}</Badge>
-                    {product.size && <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Rozmiar: {product.size}</span>}
+                    {product.size && <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{t("inv_size")}: {product.size}</span>}
                   </div>
                   <div className="flex items-center gap-3 mt-1 text-xs text-slate-500 flex-wrap">
                     <span className="font-mono text-slate-400">{product.internal_code}</span>
@@ -194,9 +196,9 @@ export default function Inventory() {
                 </div>
                 {/* Prices */}
                 <div className="text-right shrink-0">
-                  <p className="text-xs text-slate-400">Zakup</p>
+                  <p className="text-xs text-slate-400">{t("inv_purchase")}</p>
                   <p className="text-sm font-bold text-slate-600">{product.purchase_price} PLN</p>
-                  <p className="text-xs text-slate-400 mt-1">Sprzedaż</p>
+                  <p className="text-xs text-slate-400 mt-1">{t("inv_sale")}</p>
                   <p className="text-sm font-bold text-emerald-600">{product.suggested_sale_price || "—"} PLN</p>
                 </div>
                 {/* Actions */}
@@ -209,8 +211,8 @@ export default function Inventory() {
                   </button>
                   {(product.status || "in_stock") !== "sold" && (
                     <>
-                      <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={() => setListingProduct(product)}>List</Button>
-                      <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-emerald-600 border-emerald-200" onClick={() => setSaleProduct(product)}>Sell</Button>
+                      <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={() => setListingProduct(product)}>{t("inv_list")}</Button>
+                      <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-emerald-600 border-emerald-200" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                     </>
                   )}
                 </div>

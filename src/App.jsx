@@ -5,6 +5,8 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import { LangProvider } from '@/lib/i18n';
+import Settings from './pages/Settings';
 
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
@@ -59,6 +61,7 @@ const AuthenticatedApp = () => {
         <Route path="/AllegroSettings" element={<AllegroSettings />} />
         <Route path="/AllegroPublish" element={<AllegroPublish />} />
         <Route path="/AllegroTemplates" element={<AllegroTemplates />} />
+        <Route path="/Settings" element={<Settings />} />
       </Route>
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="*" element={<PageNotFound />} />
@@ -69,6 +72,7 @@ const AuthenticatedApp = () => {
 function App() {
   return (
     <AuthProvider>
+      <LangProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <Routes>
@@ -79,6 +83,7 @@ function App() {
         </Router>
         <Toaster />
       </QueryClientProvider>
+      </LangProvider>
     </AuthProvider>
   )
 }
