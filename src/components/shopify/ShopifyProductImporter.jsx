@@ -80,7 +80,7 @@ export default function ShopifyProductImporter({ open, onClose }) {
     queryClient.invalidateQueries({ queryKey: ["products"] });
     toast({ title: "Zaimportowano", description: `Dodano ${imported} produktów ze Shopify` });
     setImporting(false);
-    onClose();
+    setSelected(new Set());
   };
 
   const statusColor = (s) => {

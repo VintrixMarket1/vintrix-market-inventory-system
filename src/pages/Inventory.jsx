@@ -12,6 +12,7 @@ import ListingForm from "../components/listings/ListingForm";
 import SaleForm from "../components/sales/SaleForm";
 import CsvImport from "../components/inventory/CsvImport";
 import ShopifyProductImporter from "../components/shopify/ShopifyProductImporter";
+import BulkActionsBar from "../components/inventory/BulkActionsBar";
 
 export default function Inventory() {
   const queryClient = useQueryClient();
@@ -22,6 +23,15 @@ export default function Inventory() {
   const [saleProduct, setSaleProduct] = useState(null);
   const [showCsvImport, setShowCsvImport] = useState(false);
   const [showShopifyImport, setShowShopifyImport] = useState(false);
+  const [bulkSelected, setBulkSelected] = useState(new Set());
+
+  const toggleBulkSelect = (id) => {
+    setBulkSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
   const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "all" });
   const [viewMode, setViewMode] = useState("grid");
 
@@ -123,6 +133,8 @@ export default function Inventory() {
                 product={product}
                 onEdit={(p) => { setEditProduct(p); setShowForm(true); }}
                 onDelete={handleDelete}
+                selected={bulkSelected.has(product.id)}
+                onToggleSelect={toggleBulkSelect}
               />
               {product.pallet_id && palletsMap[product.pallet_id] && (
                 <div className="mt-1 px-1">
@@ -244,6 +256,17 @@ export default function Inventory() {
         <ShopifyProductImporter
           open={showShopifyImport}
           onClose={() => setShowShopifyImport(false)}
+        />
+      )}
+      {bulkSelected.size > 0 && (
+        <BulkActionsBar
+          selectedIds={bulkSelected}
+          allProducts={products}
+          onClear={() => setBulkSelected(new Set())}
+          onListSelected={(ids) => {
+            const first = products.find(p => p.id === ids[0]);
+            if (first) { setListingProduct(first); setBulkSelected(new Set()); }
+          }}
         />
       )}
     </div>

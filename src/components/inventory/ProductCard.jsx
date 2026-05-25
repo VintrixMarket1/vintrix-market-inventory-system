@@ -1,5 +1,6 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MapPin, Edit2, Trash2 } from "lucide-react";
 
 const conditionLabels = { new: "New", like_new: "Like New", used: "Used" };
@@ -14,17 +15,25 @@ const statusColors = {
   sold: "bg-emerald-100 text-emerald-700",
 };
 
-export default function ProductCard({ product, onEdit, onDelete }) {
+export default function ProductCard({ product, onEdit, onDelete, selected, onToggleSelect }) {
   const mainImage = product.images && product.images.length > 0 ? product.images[0] : null;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200/60 overflow-hidden hover:shadow-lg transition-all duration-200 group">
+    <div className={`bg-white rounded-xl border overflow-hidden hover:shadow-lg transition-all duration-200 group ${selected ? "border-emerald-400 ring-2 ring-emerald-200" : "border-slate-200/60"}`}>
       <div className="aspect-square bg-slate-100 relative overflow-hidden">
         {mainImage ? (
           <img src={mainImage} alt={product.product_name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-slate-300">
             <span className="text-4xl">📦</span>
+          </div>
+        )}
+        {/* Checkbox */}
+        {onToggleSelect && (
+          <div className="absolute top-2 left-2" onClick={e => { e.stopPropagation(); onToggleSelect(product.id); }}>
+            <div className={`w-6 h-6 rounded-md flex items-center justify-center shadow ${selected ? "bg-emerald-500" : "bg-white/90 opacity-0 group-hover:opacity-100"}`}>
+              <Checkbox checked={!!selected} onCheckedChange={() => onToggleSelect(product.id)} className="border-0 data-[state=checked]:bg-transparent" />
+            </div>
           </div>
         )}
         <div className="absolute top-2 right-2 flex gap-1">
