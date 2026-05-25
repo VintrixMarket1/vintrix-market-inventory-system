@@ -4,13 +4,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Download, LayoutGrid, List, Edit2, Trash2, MapPin } from "lucide-react";
+import { Plus, Download, LayoutGrid, List, Edit2, Trash2, MapPin, ShoppingBag } from "lucide-react";
 import ProductCard from "../components/inventory/ProductCard";
 import ProductForm from "../components/inventory/ProductForm";
 import SearchFilters from "../components/inventory/SearchFilters";
 import ListingForm from "../components/listings/ListingForm";
 import SaleForm from "../components/sales/SaleForm";
 import CsvImport from "../components/inventory/CsvImport";
+import ShopifyProductImporter from "../components/shopify/ShopifyProductImporter";
 
 export default function Inventory() {
   const queryClient = useQueryClient();
@@ -20,6 +21,7 @@ export default function Inventory() {
   const [listingProduct, setListingProduct] = useState(null);
   const [saleProduct, setSaleProduct] = useState(null);
   const [showCsvImport, setShowCsvImport] = useState(false);
+  const [showShopifyImport, setShowShopifyImport] = useState(false);
   const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "all" });
   const [viewMode, setViewMode] = useState("grid");
 
@@ -77,6 +79,9 @@ export default function Inventory() {
           <p className="text-sm text-slate-500 mt-1">{filtered.length} products</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowShopifyImport(true)} className="gap-1.5 text-emerald-700 border-emerald-300 hover:bg-emerald-50">
+            <ShoppingBag className="w-4 h-4" /> Shopify
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowCsvImport(true)} className="gap-1.5">
             <Plus className="w-4 h-4" /> Import CSV
           </Button>
@@ -233,6 +238,12 @@ export default function Inventory() {
           onClose={() => setShowCsvImport(false)}
           pallets={pallets}
           onImported={refresh}
+        />
+      )}
+      {showShopifyImport && (
+        <ShopifyProductImporter
+          open={showShopifyImport}
+          onClose={() => setShowShopifyImport(false)}
         />
       )}
     </div>
