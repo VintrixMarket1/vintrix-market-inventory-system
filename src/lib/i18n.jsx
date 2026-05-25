@@ -142,6 +142,32 @@ export const translations = {
     qa_title: "Quick Add",
     qa_subtitle: "Rapidly add products on the go",
 
+    // Add Product
+    ap_title: "Add Product",
+    ap_step1: "Step 1: Upload product photos",
+    ap_step2: "Step 2: AI is analyzing the product...",
+    ap_step3: "Step 3: Verify data and save",
+    ap_done: "Product saved!",
+    ap_saved: "Product has been saved!",
+    ap_add_another: "Add another",
+    ap_go_inventory: "Go to inventory",
+
+    // Image Uploader
+    iu_uploading: "Uploading photos...",
+    iu_click_drag: "Click or drag photos here",
+    iu_hint: "Upload at least 1 photo so AI can analyze the product",
+    iu_uploaded: "Uploaded photos",
+    iu_main: "Main",
+    iu_analyze: "Analyze with AI",
+
+    // AI Analysis Step
+    ai_analyzing: "AI is analyzing the product...",
+    ai_analyzing_desc: "Recognizing type, brand, condition and generating listing description.",
+    ai_analyzing_wait: "This may take a few seconds.",
+    ai_step_recognize: "Recognizing product",
+    ai_step_assess: "Assessing condition",
+    ai_step_generate: "Generating description",
+
     // Common
     common_close: "Close",
     common_delete: "Delete",
@@ -290,6 +316,32 @@ export const translations = {
     // Quick add
     qa_title: "Szybkie dodanie",
     qa_subtitle: "Szybko dodawaj produkty w locie",
+
+    // Add Product
+    ap_title: "Dodaj produkt",
+    ap_step1: "Krok 1: Wgraj zdjęcia produktu",
+    ap_step2: "Krok 2: AI analizuje produkt...",
+    ap_step3: "Krok 3: Zweryfikuj dane i zapisz",
+    ap_done: "Produkt zapisany!",
+    ap_saved: "Produkt został zapisany!",
+    ap_add_another: "Dodaj kolejny",
+    ap_go_inventory: "Przejdź do inwentarza",
+
+    // Image Uploader
+    iu_uploading: "Przesyłam zdjęcia...",
+    iu_click_drag: "Kliknij lub przeciągnij zdjęcia tutaj",
+    iu_hint: "Wgraj co najmniej 1 zdjęcie, aby AI mogło przeanalizować produkt",
+    iu_uploaded: "Wgrane zdjęcia",
+    iu_main: "Główne",
+    iu_analyze: "Analizuj z AI",
+
+    // AI Analysis Step
+    ai_analyzing: "AI analizuje produkt...",
+    ai_analyzing_desc: "Rozpoznaję typ, markę, stan i generuję opis ogłoszenia.",
+    ai_analyzing_wait: "To może zająć kilka sekund.",
+    ai_step_recognize: "Rozpoznaję produkt",
+    ai_step_assess: "Oceniam stan",
+    ai_step_generate: "Generuję opis",
 
     // Common
     common_close: "Zamknij",

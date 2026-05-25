@@ -2,10 +2,12 @@ import { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Sparkles, ImagePlus } from "lucide-react";
+import { useLang } from "@/lib/i18n";
 
 export default function ImageUploader({ uploadedImages, onImagesReady, onAnalyze }) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef();
+  const { t } = useLang();
 
   const handleFiles = async (files) => {
     setUploading(true);
@@ -48,13 +50,13 @@ export default function ImageUploader({ uploadedImages, onImagesReady, onAnalyze
         {uploading ? (
           <div className="flex flex-col items-center gap-2 text-slate-500">
             <div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin" />
-            <p>Przesyłam zdjęcia...</p>
+            <p>{t("iu_uploading")}</p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 text-slate-500">
             <ImagePlus className="w-10 h-10 text-slate-300" />
-            <p className="font-medium">Kliknij lub przeciągnij zdjęcia tutaj</p>
-            <p className="text-sm">Wgraj co najmniej 1 zdjęcie, aby AI mogło przeanalizować produkt</p>
+            <p className="font-medium">{t("iu_click_drag")}</p>
+            <p className="text-sm">{t("iu_hint")}</p>
           </div>
         )}
       </div>
@@ -62,7 +64,7 @@ export default function ImageUploader({ uploadedImages, onImagesReady, onAnalyze
       {uploadedImages.length > 0 && (
         <div>
           <p className="text-sm font-medium text-slate-600 mb-2">
-            Wgrane zdjęcia ({uploadedImages.length})
+            {t("iu_uploaded")} ({uploadedImages.length})
           </p>
           <div className="grid grid-cols-4 gap-3">
             {uploadedImages.map((url, i) => (
@@ -76,7 +78,7 @@ export default function ImageUploader({ uploadedImages, onImagesReady, onAnalyze
                 </button>
                 {i === 0 && (
                   <span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
-                    Główne
+                    {t("iu_main")}
                   </span>
                 )}
               </div>
@@ -98,7 +100,7 @@ export default function ImageUploader({ uploadedImages, onImagesReady, onAnalyze
         size="lg"
       >
         <Sparkles className="w-4 h-4" />
-        Analizuj z AI
+        {t("iu_analyze")}
       </Button>
     </div>
   );

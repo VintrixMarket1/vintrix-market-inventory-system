@@ -1,6 +1,8 @@
 import { Sparkles } from "lucide-react";
+import { useLang } from "@/lib/i18n";
 
 export default function AiAnalysisStep() {
+  const { t } = useLang();
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-5 text-center">
       <div className="relative">
@@ -10,15 +12,15 @@ export default function AiAnalysisStep() {
         <div className="absolute inset-0 rounded-full border-4 border-emerald-300 border-t-transparent animate-spin" />
       </div>
       <div>
-        <h2 className="text-xl font-semibold text-slate-800">AI analizuje produkt...</h2>
+        <h2 className="text-xl font-semibold text-slate-800">{t("ai_analyzing")}</h2>
         <p className="text-slate-500 mt-1 text-sm">
-          Rozpoznaję typ, markę, stan i generuję opis ogłoszenia.
+          {t("ai_analyzing_desc")}
           <br />
-          To może zająć kilka sekund.
+          {t("ai_analyzing_wait")}
         </p>
       </div>
       <div className="flex gap-2 mt-2">
-        {["Rozpoznaję produkt", "Oceniam stan", "Generuję opis"].map((label, i) => (
+        {[t("ai_step_recognize"), t("ai_step_assess"), t("ai_step_generate")].map((label, i) => (
           <span
             key={label}
             className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200 animate-pulse"

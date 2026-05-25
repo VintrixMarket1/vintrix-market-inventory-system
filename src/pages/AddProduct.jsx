@@ -7,6 +7,7 @@ import ProductVerifyForm from "@/components/add-product/ProductVerifyForm";
 import AiChatAssistant from "@/components/ai/AiChatAssistant";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MessageSquare } from "lucide-react";
+import { useLang } from "@/lib/i18n";
 
 const STEPS = {
   UPLOAD: "upload",
@@ -17,6 +18,7 @@ const STEPS = {
 
 export default function AddProduct() {
   const navigate = useNavigate();
+  const { t, lang } = useLang();
   const [step, setStep] = useState(STEPS.UPLOAD);
   const [uploadedImages, setUploadedImages] = useState([]);
   const [aiData, setAiData] = useState(null);
@@ -29,10 +31,11 @@ export default function AddProduct() {
   const handleAnalyze = async () => {
     setStep(STEPS.ANALYZING);
     try {
+      const isPolish = lang === "pl";
       const result = await base44.integrations.Core.InvokeLLM({
         model: "gpt_5_5",
         file_urls: uploadedImages,
-        prompt: `### MASTER PROMPT: SPECJALISTA ONLINE MARKETINGU I ANALIZY PRODUKTÓW E-COMMERCE ###
+        prompt: isPolish ? `### MASTER PROMPT: SPECJALISTA ONLINE MARKETINGU I ANALIZY PRODUKTÓW E-COMMERCE ###
 
 Jesteś światowej klasy specjalistą od marketingu online, sprzedaży w e-commerce i analizy produktów second-hand/vintage z 15-letnim doświadczeniem. Twoje zadania:
 
@@ -56,83 +59,53 @@ Przeanalizuj zdjęcia i określ:
 **WYCENA:**
 - suggested_sale_price: realistyczna cena rynkowa second-hand w PLN
   * Uwzględnij: stan produktu, markę, typ produktu, sezonowość
-  * Porównaj do podobnych ofert na Vinted/OLX/Allegro
   * Cena powinna być atrakcyjna ale nie zaniżona
 
-**OPIS SPRZEDAŻOWY - TWOJA SPECJALNOŚĆ:**
-
-Stwórz perswazyjne materiały sprzedażowe stosując techniki online marketingu:
-
-**listing_title** (max 60 znaków):
-- Ma być CHWYTLIWY i zawierać główną korzyść
-- Uwzględnij markę, typ produktu, kluczową cechę
-- Przykłady: "Stylowa Kurtka Nike - Oryginał, Stan Idealny"
-- Unikaj: tanich chwytów, przesadnych twierdzeń
-
-**listing_description** (3-5 zdań, język polski):
-- **Zasada AIDA**: Attention → Interest → Desire → Action
-- **Attention**: Zacznij od mocnego otwarcia (np. "Wyjątkowa okazja!")
-- **Interest**: Podkreśl cechy produktu i jego zastosowanie
-- **Desire**: Użyj języka korzyści - co klient zyskuje?
-- **Action**: Delikatne wezwanie do działania
-
-**TECHNIKI PERSWAZJI DO WYKORZYSTANIA:**
-1. **Język korzyści**: Nie "ma rozmiar M", ale "idealnie dopasuje się do sylwetki"
-2. **Społeczny dowód**: "Bestseller", "Tysiące zadowolonych klientów"
-3. **Pilność**: "Ostatnia sztuka", "Okazja limited"
-4. **Autorytet**: "Oryginalny produkt", "Spełnia normy UE"
-5. **Odwrócenie ryzyka**: "Gwarancja satysfakcji", "14 dni na zwrot"
-
-**SŁOWA MOCY:**
-- ekskluzywny, premium, profesjonalny, sprawdzony, wyjątkowy
-- styl, elegancja, komfort, wygoda, jakość, trwałość
-- okazja, promocja, limitowany, unikalny, oryginalny
-
-**STYL KOMUNIKACJI:**
-- Profesjonalny ale przyjazny ton
-- Zwracaj się do klienta ("Ty", "Twój")
-- Pisz konkretnie, bez lania wody
-- Buduj zaufanie poprzez szczerość (np. wspomnij o drobnych wadach)
+**OPIS SPRZEDAŻOWY:**
+- listing_title (max 60 znaków): chwytliwy, zawierający markę i główną cechę
+- listing_description (3-5 zdań, PO POLSKU): zasada AIDA, język korzyści
 
 === FORMAT WYJŚCIOWY ===
+Zwróć JSON z polami: product_name, brand, category, gender, condition, size, color, suggested_sale_price, notes, listing_title, listing_description, confidence (0-1)
 
-Zwróć JSON z następującymi polami:
-- product_name: string (pełna nazwa)
-- brand: string | null
-- category: string (jedna z dozwolonych)
-- gender: string (jedna z dozwolonych)
-- condition: string (jedna z: new, like_new, used)
-- size: string | null
-- color: string
-- suggested_sale_price: number (realistyczna cena w PLN)
-- notes: string (krótkie uwagi o stanie, wadach, cechach specjalnych)
-- listing_title: string (max 60 znaków, perswazyjny)
-- listing_description: string (3-5 zdań, język korzyści, AIDA)
-- confidence: number (0-1, pewność analizy)
+- Jeśli czegoś nie możesz określić, wstaw null
+- Cena realistyczna dla rynku second-hand PL
+- Opis ma sprzedawać, ale nie może być przesadzony` : `### MASTER PROMPT: E-COMMERCE PRODUCT ANALYSIS SPECIALIST ###
 
-=== PRZYKŁAD DOBREJ ANALIZY ===
+You are a world-class e-commerce marketing specialist with 15 years of experience analyzing second-hand/vintage products. Your tasks:
 
-Produkt: Kurtka Nike
-- product_name: "Kurtka Nike Windrunner Męska Czarna"
-- brand: "Nike"
-- category: "clothing"
-- gender: "men"
-- condition: "like_new"
-- size: "L"
-- color: "czarny"
-- suggested_sale_price: 180
-- notes: "Stan idealny, bez widocznych śladów użytkowania. Oryginalne zamki błyskawiczne YKK."
-- listing_title: "Kurtka Nike Windrunner - Oryginalna, Stan Idealny, Szybka Wysyłka"
-- listing_description: "Wyjątkowa okazja dla miłośników marki Nike! Ta stylowa kurtka Windrunner w kolorze czarnym to idealne połączenie sportowego stylu i codziennej wygody. Wykonana z wysokiej jakości materiałów, zapewnia komfort noszenia przez cały dzień. Stan jak nowy - bez żadnych widocznych śladów użytkowania. Doskonała zarówno na co dzień, jak i podczas aktywności sportowych. Szybka wysyłka w 24h, gwarancja oryginalności produktu. Nie przegap tej okazji!"
-- confidence: 0.95
+1. **VISUAL ANALYSIS**: Carefully analyze the uploaded product photos
+2. **MARKET PRICING**: Determine a realistic second-hand market price
+3. **COPYWRITING**: Create a persuasive title and sales description
 
-=== WAŻNE ===
-- Jeśli czegoś nie możesz określić ze zdjęć, wstaw null
-- Bądź szczery co do stanu produktu - zauważaj ewentualne wady
-- Cena powinna być realistyczna dla rynku second-hand
-- Opis ma SPRZEDAWAĆ, ale nie może być przesadzony
+=== ANALYSIS SCOPE ===
 
-Stwórz analizę, która pomoże SZYBKO SPRZEDAĆ produkt!`,
+Analyze the photos and determine:
+
+**BASIC DATA:**
+- product_name: full name (brand + type + color/pattern)
+- brand: brand name (or "unbranded" if not recognized)
+- category: clothing, shoes, accessories, electronics, home, toys, sports, books, other
+- gender: men, women, unisex, kids, none
+- condition: new, like_new, used (assess based on visual condition)
+- size: size if visible in photos
+- color: main color(s)
+
+**PRICING:**
+- suggested_sale_price: realistic second-hand market price in PLN
+  * Consider: product condition, brand, product type, seasonality
+  * Price should be attractive but not undervalued
+
+**SALES COPY:**
+- listing_title (max 60 chars): catchy, including brand and key feature
+- listing_description (3-5 sentences, IN ENGLISH): AIDA principle, benefit-driven language
+
+=== OUTPUT FORMAT ===
+Return JSON with fields: product_name, brand, category, gender, condition, size, color, suggested_sale_price, notes, listing_title, listing_description, confidence (0-1)
+
+- If you cannot determine something from the photos, use null
+- Price should be realistic for the second-hand market
+- Description should sell, but must not be exaggerated`,
         response_json_schema: {
         type: "object",
         properties: {
@@ -181,12 +154,12 @@ Stwórz analizę, która pomoże SZYBKO SPRZEDAĆ produkt!`,
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Dodaj produkt</h1>
+            <h1 className="text-2xl font-bold">{t("ap_title")}</h1>
             <p className="text-sm text-muted-foreground">
-              {step === STEPS.UPLOAD && "Krok 1: Wgraj zdjęcia produktu"}
-              {step === STEPS.ANALYZING && "Krok 2: AI analizuje produkt..."}
-              {step === STEPS.VERIFY && "Krok 3: Zweryfikuj dane i zapisz"}
-              {step === STEPS.DONE && "Produkt zapisany!"}
+              {step === STEPS.UPLOAD && t("ap_step1")}
+              {step === STEPS.ANALYZING && t("ap_step2")}
+              {step === STEPS.VERIFY && t("ap_step3")}
+              {step === STEPS.DONE && t("ap_done")}
             </p>
           </div>
         </div>
@@ -196,7 +169,7 @@ Stwórz analizę, która pomoże SZYBKO SPRZEDAĆ produkt!`,
             onClick={() => setShowChat(true)} 
             className="gap-2 text-emerald-600 border-emerald-200"
           >
-            <MessageSquare className="w-4 h-4" /> Chat AI
+            <MessageSquare className="w-4 h-4" /> {t("pf_chat_ai")}
           </Button>
         )}
       </div>
@@ -223,13 +196,13 @@ Stwórz analizę, która pomoże SZYBKO SPRZEDAĆ produkt!`,
       {step === STEPS.DONE && (
         <div className="text-center py-16 space-y-4">
           <div className="text-6xl">✅</div>
-          <h2 className="text-xl font-semibold">Produkt został zapisany!</h2>
+          <h2 className="text-xl font-semibold">{t("ap_saved")}</h2>
           <div className="flex gap-3 justify-center">
             <Button onClick={() => { setStep(STEPS.UPLOAD); setUploadedImages([]); setAiData(null); }}>
-              Dodaj kolejny
+              {t("ap_add_another")}
             </Button>
             <Button variant="outline" onClick={() => navigate("/Inventory")}>
-              Przejdź do inwentarza
+              {t("ap_go_inventory")}
             </Button>
           </div>
         </div>
