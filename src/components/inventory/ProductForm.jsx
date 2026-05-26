@@ -198,7 +198,7 @@ Generate ONLY the ready HTML. Start with <h1>.`;
   return (
     <>
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className={`max-h-[90vh] overflow-hidden transition-all duration-300 ${showChat ? "max-w-[90vw] w-[1100px]" : "max-w-2xl"}`}>
+      <DialogContent className={`flex flex-col max-h-[90vh] overflow-hidden transition-all duration-300 ${showChat ? "max-w-[90vw] w-[1100px]" : "max-w-2xl"}`}>
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>{isEdit ? t("pf_edit") : t("pf_add")}</DialogTitle>
@@ -212,8 +212,8 @@ Generate ONLY the ready HTML. Start with <h1>.`;
             </Button>
           </div>
         </DialogHeader>
-        <div className={`flex gap-4 mt-2 ${showChat ? "max-h-[75vh]" : ""}`}>
-        <div className={`space-y-4 overflow-y-auto ${showChat ? "flex-1 pr-2" : "w-full"}`}>
+        <div className="flex gap-4 mt-2 flex-1 min-h-0">
+        <div className={`space-y-4 overflow-y-auto flex-1 min-h-0 ${showChat ? "pr-2" : ""}`}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>{t("pf_name")} *</Label>
@@ -404,7 +404,7 @@ Generate ONLY the ready HTML. Start with <h1>.`;
         </div>
 
         {showChat && (
-          <div className="w-[400px] shrink-0 border-l border-slate-200 flex flex-col overflow-hidden rounded-r-lg">
+          <div className="w-[400px] shrink-0 border-l border-slate-200 flex flex-col min-h-0 overflow-hidden rounded-r-lg">
             <AiChatAssistant 
               product={form}
               onClose={() => setShowChat(false)}
