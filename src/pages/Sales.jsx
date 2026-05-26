@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Download, TrendingUp, TrendingDown, Calendar } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Download, TrendingUp, TrendingDown, Calendar, Pencil, Loader2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
 
@@ -16,11 +18,101 @@ const platformColors = {
   ebay: "bg-red-100 text-red-700",
 };
 
+const platforms = [
+  { value: "vinted", label: "Vinted" },
+  { value: "olx", label: "OLX" },
+  { value: "allegro", label: "Allegro" },
+  { value: "ebay", label: "eBay" },
+];
+
+function EditSaleModal({ sale, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    sale_price: sale.sale_price || "",
+    purchase_price: sale.purchase_price || "",
+    sale_date: sale.sale_date || "",
+    platform: sale.platform || "vinted",
+    product_name: sale.product_name || "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    await base44.entities.Sale.update(sale.id, {
+      ...form,
+      sale_price: parseFloat(form.sale_price) || 0,
+      purchase_price: parseFloat(form.purchase_price) || 0,
+    });
+    setSaving(false);
+    onSaved();
+    onClose();
+  };
+
+  const profit = (parseFloat(form.sale_price) || 0) - (parseFloat(form.purchase_price) || 0);
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edytuj sprzedaż</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 mt-2">
+          <div className="bg-slate-50 rounded-lg p-3">
+            <p className="text-sm font-medium text-slate-900">{sale.product_name || "Produkt"}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Platforma</Label>
+              <Select value={form.platform} onValueChange={v => handleChange("platform", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {platforms.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Data sprzedaży</Label>
+              <Input type="date" value={form.sale_date} onChange={e => handleChange("sale_date", e.target.value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Cena sprzedaży (PLN)</Label>
+              <Input type="number" value={form.sale_price} onChange={e => handleChange("sale_price", e.target.value)} className="border-emerald-300 focus-visible:ring-emerald-400" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Cena zakupu (PLN)</Label>
+              <Input type="number" value={form.purchase_price} onChange={e => handleChange("purchase_price", e.target.value)} />
+            </div>
+          </div>
+          <div className="bg-emerald-50 rounded-lg p-3 text-center">
+            <p className="text-xs text-emerald-600">Zysk</p>
+            <p className={`text-lg font-bold ${profit >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+              {profit >= 0 ? "+" : ""}{profit.toFixed(2)} PLN
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={onClose}>Anuluj</Button>
+            <Button onClick={handleSubmit} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Zapisz zmiany
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function Sales() {
   const [search, setSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [editingSale, setEditingSale] = useState(null);
+
+  const queryClient = useQueryClient();
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ["sales"],
@@ -152,10 +244,22 @@ export default function Sales() {
                     {profit >= 0 ? "+" : ""}{profit.toFixed(0)} PLN profit
                   </p>
                 </div>
+                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-700 flex-shrink-0" onClick={() => setEditingSale(sale)}>
+                  <Pencil className="w-4 h-4" />
+                </Button>
               </div>
             );
           })}
         </div>
+      )}
+    </div>
+
+      {editingSale && (
+        <EditSaleModal
+          sale={editingSale}
+          onClose={() => setEditingSale(null)}
+          onSaved={() => { queryClient.invalidateQueries({ queryKey: ["sales"] }); setEditingSale(null); }}
+        />
       )}
     </div>
   );
