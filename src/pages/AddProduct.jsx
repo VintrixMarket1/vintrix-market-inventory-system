@@ -63,7 +63,7 @@ Przeanalizuj zdjęcia i określ:
 
 **OPIS SPRZEDAŻOWY:**
 - listing_title (max 60 znaków): chwytliwy, zawierający markę i główną cechę
-- listing_description (3-5 zdań, PO POLSKU): zasada AIDA, język korzyści
+- listing_description: naturalny, ludzki opis ogłoszenia jak od sprzedawcy second-hand. Dozwolone tagi: p, ul, li, b, br — bez h1/h2/h3, bez emoji, bez atrybutów w tagach. Struktura: 1) krótki akapit P z opisem i zastosowaniem, 2) lista UL "W zestawie:" (jeśli dotyczy), 3) akapit P o stanie, 4) lista UL "Parametry:" z kluczowymi parametrami w formacie <b>nazwa:</b> wartość. Zacznij od <p>.
 
 === FORMAT WYJŚCIOWY ===
 Zwróć JSON z polami: product_name, brand, category, gender, condition, size, color, suggested_sale_price, notes, listing_title, listing_description, confidence (0-1)
@@ -98,7 +98,7 @@ Analyze the photos and determine:
 
 **SALES COPY:**
 - listing_title (max 60 chars): catchy, including brand and key feature
-- listing_description (3-5 sentences, IN ENGLISH): AIDA principle, benefit-driven language
+- listing_description: natural, human listing description like a real second-hand seller. Allowed tags: p, ul, li, b, br — no h1/h2/h3, no emojis, no tag attributes. Structure: 1) short P paragraph with description and use case, 2) UL list "What's included:" (if applicable), 3) P paragraph about condition, 4) UL list "Specs:" with key parameters as <b>name:</b> value. Start with <p>.
 
 === OUTPUT FORMAT ===
 Return JSON with fields: product_name, brand, category, gender, condition, size, color, suggested_sale_price, notes, listing_title, listing_description, confidence (0-1)
