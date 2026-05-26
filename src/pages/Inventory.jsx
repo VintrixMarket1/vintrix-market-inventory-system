@@ -149,10 +149,10 @@ export default function Inventory() {
               )}
               <div className="flex gap-1 mt-1.5">
                 {(product.status || "in_stock") !== "sold" && (
-                  <>
-                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setListingProduct(product)}>{t("inv_list")}</Button>
-                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
-                  </>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setListingProduct(product)}>{t("inv_list")}</Button>
+                )}
+                {((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && (
+                  <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                 )}
               </div>
             </div>
@@ -221,10 +221,10 @@ export default function Inventory() {
                     <Trash2 className="w-3.5 h-3.5 text-red-500" />
                   </button>
                   {(product.status || "in_stock") !== "sold" && (
-                    <>
-                      <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={() => setListingProduct(product)}>{t("inv_list")}</Button>
-                      <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-emerald-600 border-emerald-200" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
-                    </>
+                    <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={() => setListingProduct(product)}>{t("inv_list")}</Button>
+                  )}
+                  {((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && (
+                    <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-emerald-600 border-emerald-200" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                   )}
                 </div>
               </div>

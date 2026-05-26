@@ -16,6 +16,9 @@ const platforms = [
 ];
 
 export default function SaleForm({ open, onClose, product, listing, onSaved }) {
+  const isMulti = product?.is_multi_item && (product?.stock_quantity > 0);
+  const maxQty = isMulti ? (product?.stock_quantity || 1) : 1;
+
   const [form, setForm] = useState({
     product_id: product?.id || "",
     listing_id: listing?.id || "",
@@ -25,6 +28,7 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
     sale_date: format(new Date(), "yyyy-MM-dd"),
     purchase_price: product?.purchase_price || 0,
     product_name: product?.product_name || "",
+    quantity: 1,
   });
   const [saving, setSaving] = useState(false);
 
@@ -32,15 +36,28 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
 
   const handleSubmit = async () => {
     setSaving(true);
+    const qty = isMulti ? (parseInt(form.quantity) || 1) : 1;
     const finalPrice = parseFloat(form.final_sale_price) || parseFloat(form.sale_price) || 0;
-    const data = {
+
+    // Create sale records — one per unit sold (or one combined record)
+    await base44.entities.Sale.create({
       ...form,
       sale_price: finalPrice,
       purchase_price: parseFloat(form.purchase_price) || 0,
-    };
-    await base44.entities.Sale.create(data);
+      quantity: qty,
+    });
+
     if (product) {
-      await base44.entities.Product.update(product.id, { status: "sold" });
+      if (isMulti) {
+        const newQty = (product.stock_quantity || 0) - qty;
+        if (newQty <= 0) {
+          await base44.entities.Product.update(product.id, { stock_quantity: 0, status: "sold" });
+        } else {
+          await base44.entities.Product.update(product.id, { stock_quantity: newQty });
+        }
+      } else {
+        await base44.entities.Product.update(product.id, { status: "sold" });
+      }
     }
     if (listing) {
       await base44.entities.Listing.update(listing.id, { listing_status: "sold" });
@@ -60,7 +77,22 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
           <div className="bg-slate-50 rounded-lg p-3">
             <p className="text-sm font-medium text-slate-900">{product?.product_name || "Product"}</p>
             <p className="text-xs text-slate-500">Purchase price: {product?.purchase_price || 0} PLN</p>
+            {isMulti && (
+              <p className="text-xs text-blue-600 font-medium mt-1">Wielosztuk — dostępne: {product.stock_quantity} szt.</p>
+            )}
           </div>
+          {isMulti && (
+            <div className="space-y-1.5">
+              <Label>Ilość sztuk <span className="text-slate-400 font-normal text-xs">— maks. {maxQty}</span></Label>
+              <Input
+                type="number"
+                min={1}
+                max={maxQty}
+                value={form.quantity}
+                onChange={e => handleChange("quantity", Math.min(maxQty, Math.max(1, parseInt(e.target.value) || 1)))}
+              />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Platform</Label>
