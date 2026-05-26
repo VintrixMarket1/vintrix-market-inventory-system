@@ -107,63 +107,67 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
     setGenerating(true);
     const isPolish = lang === "pl";
 
-    const prompt = isPolish
-      ? `Jesteś ekspertem e-commerce tworzącym opisy produktów zgodne z zasadami Allegro.
+    const conditionLabel = { new: "nowy", like_new: "jak nowy / powystawowy", used: "używany" }[form.condition] || form.condition;
 
-=== KRYTYCZNE ZASADY ALLEGRO ===
-1. ZAKAZ wzmianki o zwrotach, wysyłce, czasie dostawy, polityce zwrotów — to jest w innych zakładkach Allegro.
-2. ZAKAZ pisania o stanie produktu (nowy/używany) — stan jest parametrem oferty, NIE treścią opisu.
-3. NIE pisz: "14 dni na zwrot", "wysyłka 24h", "InPost", "kurier", "zwrot towaru", "gwarancja zwrotu", "szybka wysyłka".
-4. Opis musi WYŁĄCZNIE opisywać cechy i właściwości produktu.
+    const prompt = isPolish
+      ? `Jesteś sprzedawcą na platformach OLX/Vinted/Allegro. Napisz naturalny, ludzki opis ogłoszenia sprzedażowego.
+
+=== STYL ===
+- Pisz jak prawdziwy człowiek sprzedający rzecz z drugiej ręki lub powystawową
+- Krótkie zdania, konkretnie, bez marketingowego bełkotu
+- NIE używaj nagłówków HTML (h1/h2/h3), emoji ani list z myślnikami — tylko zwykły tekst i listy punktowane <ul><li>
+- NIE wspominaj o wysyłce, zwrotach, czasie dostawy
+- Opis ma być praktyczny i rzeczowy
 
 === DANE PRODUKTU ===
-- Nazwa: ${form.product_name || "Produkt premium"}
+- Nazwa: ${form.product_name || "Produkt"}
+- Stan: ${conditionLabel}
 - Rozmiar: ${form.size || ""}
 - Kategoria: ${form.category}
-- Cena: ${form.suggested_sale_price || form.purchase_price || "do negocjacji"} PLN
+- Notatki sprzedawcy: ${form.notes || "brak"}
 
 === WYMAGANIA TECHNICZNE ===
-1. Tylko tagi: h1, h2, h3, p, ul, ol, li, b, br
-2. BRAK atrybutów w tagach (żadnych class, style, id)
-3. BRAK CSS, div, span, table, img
-4. Czysty HTML — bez komentarzy, wstępów
+- Dozwolone tagi: p, ul, li, b, br
+- BRAK atrybutów w tagach (żadnych class, style, id)
+- BRAK h1, h2, h3, div, span, CSS, img
+- Czysty HTML — bez komentarzy, bez wstępów
 
-=== STRUKTURA ===
-1. H1 — chwytliwy tytuł produktu (max 75 znaków), BEZ wzmianki o wysyłce/stanie
-2. H2 "✨ Dlaczego warto?" — lista UL z 4 korzyściami (cechy produktu, nie wysyłka)
-3. H2 "📋 Opis produktu" — 2 akapity P o cechach i zastosowaniu (BEZ zwrotów/dostawy)
-4. H2 "⭐ Najważniejsze cechy" — lista UL z 5-6 cechami (<b>Cecha:</b> opis)
-5. H2 "❓ Informacje" — krótki akapit o produkcie/marce (NIE o wysyłce)
+=== STRUKTURA OPISU ===
+1. Jeden akapit P — krótki opis produktu i jego zastosowania (2-3 zdania)
+2. "W zestawie:" — lista UL z zawartością zestawu (jeśli dotyczy, inaczej pomiń)
+3. Jeden akapit P — opis stanu (co sprawdzono, co działa, co widoczne na zdjęciach)
+4. "Parametry:" — lista UL z kluczowymi parametrami technicznymi w formacie <b>nazwa:</b> wartość
 
-Wygeneruj WYŁĄCZNIE gotowy HTML. Zacznij od <h1>.`
-      : `You are an e-commerce expert creating marketplace-compliant product descriptions.
+Wygeneruj WYŁĄCZNIE gotowy HTML. Zacznij od <p>.`
+      : `You are a marketplace seller on OLX/Vinted/eBay. Write a natural, human product listing description.
 
-=== CRITICAL RULES ===
-1. DO NOT mention returns, shipping, delivery times, or return policies — these are in other sections.
-2. DO NOT write about product condition (new/used) — condition is a listing parameter, NOT description content.
-3. DO NOT write: "free returns", "fast shipping", "next day delivery", "money back guarantee".
-4. Description must ONLY describe product features and properties.
+=== STYLE ===
+- Write like a real person selling a second-hand or display item
+- Short sentences, concrete, no marketing fluff
+- Do NOT use HTML headings (h1/h2/h3), emojis or dash lists — only plain text and <ul><li> bullet lists
+- Do NOT mention shipping, returns, delivery times
+- Keep it practical and factual
 
 === PRODUCT DATA ===
-- Name: ${form.product_name || "Premium Product"}
+- Name: ${form.product_name || "Product"}
+- Condition: ${conditionLabel}
 - Size: ${form.size || ""}
 - Category: ${form.category}
-- Price: ${form.suggested_sale_price || form.purchase_price || "negotiable"} PLN
+- Seller notes: ${form.notes || "none"}
 
 === TECHNICAL REQUIREMENTS ===
-1. Only tags: h1, h2, h3, p, ul, ol, li, b, br
-2. NO attributes in tags (no class, style, id)
-3. NO CSS, div, span, table, img
-4. Clean HTML — no comments, no preamble
+- Allowed tags: p, ul, li, b, br
+- NO attributes in tags (no class, style, id)
+- NO h1, h2, h3, div, span, CSS, img
+- Clean HTML — no comments, no preamble
 
-=== STRUCTURE ===
-1. H1 — compelling product title (max 75 chars), NO mention of shipping/condition
-2. H2 "✨ Why choose this?" — UL list with 4 benefits (product features, not shipping)
-3. H2 "📋 Product Description" — 2 P paragraphs about features and use (NO returns/delivery)
-4. H2 "⭐ Key Features" — UL list with 5-6 features (<b>Feature:</b> description)
-5. H2 "❓ Information" — short paragraph about product/brand (NOT about shipping)
+=== DESCRIPTION STRUCTURE ===
+1. One P paragraph — short product description and use case (2-3 sentences)
+2. "What's included:" — UL list with box contents (if applicable, otherwise skip)
+3. One P paragraph — condition description (what was checked, what works, what's visible in photos)
+4. "Specs:" — UL list with key technical parameters in format <b>name:</b> value
 
-Generate ONLY the ready HTML. Start with <h1>.`;
+Generate ONLY the ready HTML. Start with <p>.`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
