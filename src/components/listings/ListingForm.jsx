@@ -238,7 +238,16 @@ Wygeneruj opis. Bez wstępów.`;
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label>Zdjęcia do listingu</Label>
-                <span className="text-xs text-muted-foreground">{selectedImages.length} / {productImages.length} zaznaczonych</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">{selectedImages.length} / {productImages.length} zaznaczonych</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedImages(selectedImages.length === productImages.length ? [] : [...productImages])}
+                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium underline"
+                  >
+                    {selectedImages.length === productImages.length ? "Odznacz wszystkie" : "Zaznacz wszystkie"}
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {productImages.map((url, i) => {
