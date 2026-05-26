@@ -412,7 +412,12 @@ Generate ONLY the ready HTML. Start with <p>.`;
             <AiChatAssistant 
               product={form}
               onClose={() => setShowChat(false)}
-              onDataChanged={() => {}}
+              onDataChanged={async () => {
+                if (product?.id) {
+                  const updated = await base44.entities.Product.filter({ id: product.id });
+                  if (updated && updated.length > 0) setForm(updated[0]);
+                }
+              }}
             />
           </div>
         )}
