@@ -19,7 +19,10 @@ export default function ProductCard({ product, onEdit, onDelete, selected, onTog
 
   return (
     <div className={`bg-white rounded-xl border overflow-hidden hover:shadow-lg transition-all duration-200 group ${selected ? "border-emerald-400 ring-2 ring-emerald-200" : "border-slate-200/60"}`}>
-      <div className="aspect-square bg-slate-100 relative overflow-hidden">
+      <div
+        className="aspect-square bg-slate-100 relative overflow-hidden cursor-pointer"
+        onClick={onToggleSelect ? (e) => { e.stopPropagation(); onToggleSelect(product.id); } : undefined}
+      >
         {mainImage ? (
           <img src={mainImage} alt={product.product_name} className="w-full h-full object-cover" />
         ) : (
