@@ -252,8 +252,6 @@ export default function Sales() {
           })}
         </div>
       )}
-    </div>
-
       {editingSale && (
         <EditSaleModal
           sale={editingSale}
