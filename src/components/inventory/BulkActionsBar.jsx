@@ -2,11 +2,10 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, CheckSquare, Tag, TrendingUp, Trash2, Loader2 } from "lucide-react";
+import { X, CheckSquare, Tag, TrendingUp, Trash2, Loader2, ShoppingBag } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
-export default function BulkActionsBar({ selectedIds, allProducts, onClear, onListSelected }) {
+export default function BulkActionsBar({ selectedIds, allProducts, onClear, onListSelected, onShopifyPublish }) {
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -66,6 +65,11 @@ export default function BulkActionsBar({ selectedIds, allProducts, onClear, onLi
       <Button size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1" onClick={() => onListSelected([...selectedIds])} disabled={loading}>
         <TrendingUp className="w-3.5 h-3.5" />
         Wystaw wybrane
+      </Button>
+
+      <Button size="sm" className="h-7 text-xs bg-slate-700 hover:bg-slate-600 text-white gap-1 border border-slate-600" onClick={() => onShopifyPublish?.([...selectedIds])} disabled={loading}>
+        <ShoppingBag className="w-3.5 h-3.5" />
+        Shopify
       </Button>
 
       <Button size="sm" variant="ghost" className="h-7 text-xs text-red-400 hover:text-red-300 hover:bg-slate-800" onClick={bulkDelete} disabled={loading}>

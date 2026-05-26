@@ -14,6 +14,7 @@ import SaleForm from "../components/sales/SaleForm";
 import CsvImport from "../components/inventory/CsvImport";
 import ShopifyProductImporter from "../components/shopify/ShopifyProductImporter";
 import BulkActionsBar from "../components/inventory/BulkActionsBar";
+import ShopifyBulkPublishModal from "../components/shopify/ShopifyBulkPublishModal";
 
 export default function Inventory() {
   const { t } = useLang();
@@ -26,6 +27,7 @@ export default function Inventory() {
   const [showCsvImport, setShowCsvImport] = useState(false);
   const [showShopifyImport, setShowShopifyImport] = useState(false);
   const [bulkSelected, setBulkSelected] = useState(new Set());
+  const [shopifyBulkProducts, setShopifyBulkProducts] = useState(null);
 
   const toggleBulkSelect = (id) => {
     setBulkSelected(prev => {
@@ -269,6 +271,18 @@ export default function Inventory() {
             const first = products.find(p => p.id === ids[0]);
             if (first) { setListingProduct(first); setBulkSelected(new Set()); }
           }}
+          onShopifyPublish={(ids) => {
+            const selected = products.filter(p => ids.includes(p.id));
+            setShopifyBulkProducts(selected);
+          }}
+        />
+      )}
+      {shopifyBulkProducts && (
+        <ShopifyBulkPublishModal
+          open={!!shopifyBulkProducts}
+          onClose={() => setShopifyBulkProducts(null)}
+          products={shopifyBulkProducts}
+          onDone={() => { refresh(); setBulkSelected(new Set()); setShopifyBulkProducts(null); }}
         />
       )}
     </div>
