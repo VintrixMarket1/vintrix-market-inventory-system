@@ -176,7 +176,7 @@ export default function Inventory() {
                   )}
                 </div>
                 {/* Images strip */}
-                <div className="flex gap-1 shrink-0">
+                <div className="flex gap-1 shrink-0 cursor-pointer" onClick={() => toggleBulkSelect(product.id)}>
                   {images.length > 0 ? images.slice(0, 4).map((url, i) => (
                     <div key={i} className="w-14 h-14 rounded-lg overflow-hidden border border-slate-100 shrink-0">
                       <img src={url} alt="" className="w-full h-full object-cover" />
