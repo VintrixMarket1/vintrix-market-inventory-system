@@ -41,8 +41,8 @@ export default function ProductCard({ product, onEdit, onDelete, selected, onTog
             {(product.status || "in_stock").replace("_", " ")}
           </Badge>
         </div>
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-200 flex items-end justify-end p-2 opacity-0 group-hover:opacity-100">
-          <div className="flex gap-1.5">
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-200 flex items-end justify-end p-2 opacity-0 group-hover:opacity-100 pointer-events-none">
+          <div className="flex gap-1.5 pointer-events-auto">
             <button onClick={() => onEdit(product)} className="p-1.5 bg-white rounded-lg shadow-sm hover:bg-slate-50">
               <Edit2 className="w-3.5 h-3.5 text-slate-600" />
             </button>
