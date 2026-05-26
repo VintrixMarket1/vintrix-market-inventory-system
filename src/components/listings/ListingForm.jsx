@@ -98,39 +98,30 @@ ekskluzywny, premium, profesjonalny, sprawdzony, gwarantowany, wyjątkowy, orygi
 
 Wygeneruj WYŁĄCZNIE gotowy HTML. Bez wstępów. Zacznij od h1. HTML musi być ściśle walidny.`;
     } else {
-      prompt = `### MASTER PROMPT: SPECJALISTA VINTED/OLX ###
+      const conditionLabel = { new: "nowy", like_new: "jak nowy / powystawowy", used: "używany" }[product?.condition] || "dobry";
+      prompt = `Jesteś sprzedawcą na platformach Vinted/OLX. Napisz naturalny, ludzki opis ogłoszenia sprzedażowego.
 
-Jesteś ekspertem marketplace'ów Vinted/OLX. Tworzysz opisy, które:
-- PRZECIĄGAJĄ wzrok w pierwszych 3 sekundach
-- BUDUJĄ ZAUFANIE autentycznością
-- SPRZEDAJĄ poprzez jasne korzyści
+=== STYL ===
+- Pisz jak prawdziwy człowiek sprzedający rzecz
+- Krótkie zdania, konkretnie, bez marketingowego bełkotu
+- Żadnych nagłówków, emoji ani ozdobników — tylko zwykły tekst
+- NIE wspominaj o wysyłce, zwrotach, czasie dostawy
+- Opis ma być praktyczny i rzeczowy
 
-=== PRODUKT ===
+=== DANE PRODUKTU ===
 - Nazwa: ${product?.product_name || form.listing_title}
+- Stan: ${conditionLabel}
+- Rozmiar: ${product?.size || ""}
 - Kategoria: ${product?.category}
-- Stan: ${conditionMap[product?.condition] || "bardzo dobry"}
-- Rozmiar: ${product?.size || "uniwersalny"}
-- Kod: ${product?.internal_code || "N/A"}
-
-=== ZASADY ===
-1. Pisz po polsku, stylem LUZ ale PROFESJONALNYM
-2. Krótko i konkretnie (max 150 słów)
-3. Używaj emoji strategicznie: ✨, 📦, ✅, 🏷️
-4. Formatowanie: myślniki, krótkie akapity
+- Notatki: ${product?.notes || "brak"}
 
 === STRUKTURA ===
-1. **STAN** - 1 zdanie o stanie (np. "Stan bardzo dobry, bez wad")
-2. **ROZMIAR** - jeśli odzież/buty (np. "Rozmiar M, tabela na zdjęciu")
-3. **OPIS** - 2-3 zdania z językiem korzyści
-4. **WYSYŁKA** - "Wysyłka 1-2 dni robocze 📦"
-5. **KOD** - "Kod: ${product?.internal_code || "N/A"}"
+1. Jeden akapit — krótki opis produktu i jego zastosowania (2-3 zdania)
+2. "W zestawie:" — lista punktowana z zawartością (jeśli dotyczy, inaczej pomiń)
+3. Jeden akapit — opis stanu (co sprawdzono, co działa, co widoczne na zdjęciach)
+4. "Parametry:" — lista punktowana z kluczowymi parametrami w formacie "nazwa: wartość"
 
-=== TECHNIKI ===
-- Autentyczność: "Zapraszam do kontaktu"
-- Pilność: "Szybka wysyłka"
-- Zaufanie: "Możliwy odbiór osobisty"
-
-Wygeneruj opis. Bez wstępów.`;
+Wygeneruj czysty tekst bez HTML. Tylko zwykły tekst z podziałami na akapity. Bez wstępów.`;
     }
 
     const result = await base44.integrations.Core.InvokeLLM({
