@@ -198,21 +198,22 @@ Generate ONLY the ready HTML. Start with <h1>.`;
   return (
     <>
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={`max-h-[90vh] overflow-hidden transition-all duration-300 ${showChat ? "max-w-[90vw] w-[1100px]" : "max-w-2xl"}`}>
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>{isEdit ? t("pf_edit") : t("pf_add")}</DialogTitle>
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => setShowChat(true)} 
-              className="gap-2 text-emerald-600 border-emerald-200"
+              onClick={() => setShowChat(v => !v)} 
+              className={`gap-2 ${showChat ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700" : "text-emerald-600 border-emerald-200"}`}
             >
               <MessageSquare className="w-3.5 h-3.5" /> {t("pf_chat_ai")}
             </Button>
           </div>
         </DialogHeader>
-        <div className="space-y-4 mt-2">
+        <div className={`flex gap-4 mt-2 ${showChat ? "max-h-[75vh]" : ""}`}>
+        <div className={`space-y-4 overflow-y-auto ${showChat ? "flex-1 pr-2" : "w-full"}`}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>{t("pf_name")} *</Label>
@@ -401,18 +402,19 @@ Generate ONLY the ready HTML. Start with <h1>.`;
             </Button>
           </div>
         </div>
+
+        {showChat && (
+          <div className="w-[400px] shrink-0 border-l border-slate-200 flex flex-col overflow-hidden rounded-r-lg">
+            <AiChatAssistant 
+              product={form}
+              onClose={() => setShowChat(false)}
+              onDataChanged={() => {}}
+            />
+          </div>
+        )}
+        </div>
       </DialogContent>
     </Dialog>
-
-    {showChat && (
-      <div style={{ zIndex: 9999 }} onClick={e => e.stopPropagation()}>
-        <AiChatAssistant 
-          product={form}
-          onClose={() => setShowChat(false)}
-          onDataChanged={() => {}}
-        />
-      </div>
-    )}
     </>
   );
 }

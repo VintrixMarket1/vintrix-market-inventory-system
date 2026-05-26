@@ -207,7 +207,7 @@ ZAWSZE odpowiadaj po polsku.`;
   };
 
   return (
-    <div className="fixed right-0 top-0 h-full w-[420px] bg-white border-l shadow-2xl flex flex-col z-50">
+    <div className="flex flex-col h-full w-full bg-white">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-emerald-500 to-teal-500 text-white shrink-0">
         <div className="flex items-center gap-2">
