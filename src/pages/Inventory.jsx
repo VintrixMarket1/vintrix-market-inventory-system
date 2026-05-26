@@ -165,7 +165,16 @@ export default function Inventory() {
             const statusColors = { in_stock: "bg-slate-100 text-slate-600", listed: "bg-purple-100 text-purple-700", sold: "bg-emerald-100 text-emerald-700" };
             const images = product.images || [];
             return (
-              <div key={product.id} className="bg-white border border-slate-200 rounded-xl p-3 flex items-center gap-4 hover:shadow-md transition-all">
+              <div key={product.id} className={`bg-white border rounded-xl p-3 flex items-center gap-4 hover:shadow-md transition-all ${bulkSelected.has(product.id) ? "border-emerald-400 ring-2 ring-emerald-200" : "border-slate-200"}`}>
+                {/* Checkbox */}
+                <div
+                  className={`w-6 h-6 rounded-md flex items-center justify-center shadow cursor-pointer shrink-0 transition-all ${bulkSelected.has(product.id) ? "bg-emerald-500" : "bg-slate-100 hover:bg-slate-200"}`}
+                  onClick={() => toggleBulkSelect(product.id)}
+                >
+                  {bulkSelected.has(product.id) && (
+                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  )}
+                </div>
                 {/* Images strip */}
                 <div className="flex gap-1 shrink-0">
                   {images.length > 0 ? images.slice(0, 4).map((url, i) => (

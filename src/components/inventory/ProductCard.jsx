@@ -1,6 +1,5 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { MapPin, Edit2, Trash2 } from "lucide-react";
 
 const conditionLabels = { new: "New", like_new: "Like New", used: "Used" };
@@ -30,10 +29,15 @@ export default function ProductCard({ product, onEdit, onDelete, selected, onTog
         )}
         {/* Checkbox */}
         {onToggleSelect && (
-          <div className="absolute top-2 left-2" onClick={e => { e.stopPropagation(); onToggleSelect(product.id); }}>
-            <div className={`w-6 h-6 rounded-md flex items-center justify-center shadow ${selected ? "bg-emerald-500" : "bg-white/90 opacity-0 group-hover:opacity-100"}`}>
-              <Checkbox checked={!!selected} onCheckedChange={() => onToggleSelect(product.id)} className="border-0 data-[state=checked]:bg-transparent" />
-            </div>
+          <div
+            className={`absolute top-2 left-2 w-6 h-6 rounded-md flex items-center justify-center shadow cursor-pointer z-10 transition-all ${selected ? "bg-emerald-500 opacity-100" : "bg-white/90 opacity-40 group-hover:opacity-100"}`}
+            onClick={e => { e.stopPropagation(); e.preventDefault(); onToggleSelect(product.id); }}
+          >
+            {selected ? (
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            ) : (
+              <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2" /></svg>
+            )}
           </div>
         )}
         <div className="absolute top-2 right-2 flex gap-1">
