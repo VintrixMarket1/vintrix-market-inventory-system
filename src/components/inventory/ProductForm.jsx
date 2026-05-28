@@ -107,24 +107,30 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
     setGenerating(true);
     const isPolish = lang === "pl";
 
-    const conditionLabel = { new: "nowy", like_new: "jak nowy / powystawowy", used: "używany" }[form.condition] || form.condition;
+    const conditionLabel = isPolish
+      ? { new: "nowy", like_new: "jak nowy / powystawowy", used: "używany" }[form.condition] || form.condition
+      : { new: "new", like_new: "like new / display model", used: "used" }[form.condition] || form.condition;
 
     const prompt = isPolish
-      ? `Jesteś sprzedawcą na platformach OLX/Vinted/Allegro. Napisz naturalny, ludzki opis ogłoszenia sprzedażowego.
-
-=== STYL ===
-- Pisz jak prawdziwy człowiek sprzedający rzecz z drugiej ręki lub powystawową
-- Krótkie zdania, konkretnie, bez marketingowego bełkotu
-- NIE używaj nagłówków HTML (h1/h2/h3), emoji ani list z myślnikami — tylko zwykły tekst i listy punktowane <ul><li>
-- NIE wspominaj o wysyłce, zwrotach, czasie dostawy
-- Opis ma być praktyczny i rzeczowy
+      ? `Jesteś ekspertem copywritingu e-commerce specjalizującym się w sprzedaży second-hand na OLX/Vinted/Allegro. Twój opis ma SPRZEDAĆ produkt — szybko i skutecznie.
 
 === DANE PRODUKTU ===
 - Nazwa: ${form.product_name || "Produkt"}
+- Marka: ${form.brand || "nieznana"}
 - Stan: ${conditionLabel}
-- Rozmiar: ${form.size || ""}
-- Kategoria: ${form.category}
+- Rozmiar: ${form.size || "nie podano"}
+- Kolor: ${form.color || "nie podano"}
+- Kategoria: ${form.category}${form.subcategory ? ` / ${form.subcategory}` : ""}
 - Notatki sprzedawcy: ${form.notes || "brak"}
+
+=== ZASADY COPYWRITINGU ===
+- Zacznij od najmocniejszej cechy produktu — tej, która przyciąga uwagę kupującego
+- Używaj konkretnych, opisowych przymiotników zamiast ogólników ("głęboka czerń, matowe wykończenie" zamiast "czarny")
+- Podkreśl wartość (co kupujący zyska) a nie tylko cechy
+- Stan opisz szczerze ale pozytywnie — co jest w dobrym stanie, co działą perfekcyjnie
+- NIE wspominaj o wysyłce, zwrotach, negocjacjach
+- NIE używaj nagłówków HTML (h1/h2/h3), emoji ani myślników
+- Pisz naturalnie, jak osoba polecająca produkt znajomemu
 
 === WYMAGANIA TECHNICZNE ===
 - Dozwolone tagi: p, ul, li, b, br
@@ -132,28 +138,31 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
 - BRAK h1, h2, h3, div, span, CSS, img
 - Czysty HTML — bez komentarzy, bez wstępów
 
-=== STRUKTURA OPISU ===
-1. Jeden akapit P — krótki opis produktu i jego zastosowania (2-3 zdania)
-2. "W zestawie:" — lista UL z zawartością zestawu (jeśli dotyczy, inaczej pomiń)
-3. Jeden akapit P — opis stanu (co sprawdzono, co działa, co widoczne na zdjęciach)
-4. "Parametry:" — lista UL z kluczowymi parametrami technicznymi w formacie <b>nazwa:</b> wartość
+=== STRUKTURA ===
+1. <p> — 2-3 zdania haczyka: co to jest + dlaczego warto kupić (podkreśl markę jeśli znana, wyjątkową cechę)
+2. <p> — szczery opis stanu: co sprawdzono, co jest jak nowe, ewentualne drobne ślady użytkowania widoczne na zdjęciach
+3. <ul> "Parametry:" — kluczowe dane w formacie <b>parametr:</b> wartość (rozmiar, kolor, materiał, model itp.)
 
 Wygeneruj WYŁĄCZNIE gotowy HTML. Zacznij od <p>.`
-      : `You are a marketplace seller on OLX/Vinted/eBay. Write a natural, human product listing description.
-
-=== STYLE ===
-- Write like a real person selling a second-hand or display item
-- Short sentences, concrete, no marketing fluff
-- Do NOT use HTML headings (h1/h2/h3), emojis or dash lists — only plain text and <ul><li> bullet lists
-- Do NOT mention shipping, returns, delivery times
-- Keep it practical and factual
+      : `You are an e-commerce copywriting expert specializing in second-hand sales on OLX/Vinted/eBay. Your description must SELL the product — quickly and effectively.
 
 === PRODUCT DATA ===
 - Name: ${form.product_name || "Product"}
+- Brand: ${form.brand || "unknown"}
 - Condition: ${conditionLabel}
-- Size: ${form.size || ""}
-- Category: ${form.category}
+- Size: ${form.size || "not specified"}
+- Color: ${form.color || "not specified"}
+- Category: ${form.category}${form.subcategory ? ` / ${form.subcategory}` : ""}
 - Seller notes: ${form.notes || "none"}
+
+=== COPYWRITING RULES ===
+- Open with the strongest feature — the one that grabs the buyer's attention
+- Use specific, descriptive adjectives instead of generics ("deep matte black" not just "black")
+- Highlight value (what the buyer gains) not just features
+- Describe condition honestly but positively — what's in great shape, what works perfectly
+- Do NOT mention shipping, returns, negotiations
+- Do NOT use HTML headings (h1/h2/h3), emojis or dash lists
+- Write naturally, like recommending a product to a friend
 
 === TECHNICAL REQUIREMENTS ===
 - Allowed tags: p, ul, li, b, br
@@ -161,11 +170,10 @@ Wygeneruj WYŁĄCZNIE gotowy HTML. Zacznij od <p>.`
 - NO h1, h2, h3, div, span, CSS, img
 - Clean HTML — no comments, no preamble
 
-=== DESCRIPTION STRUCTURE ===
-1. One P paragraph — short product description and use case (2-3 sentences)
-2. "What's included:" — UL list with box contents (if applicable, otherwise skip)
-3. One P paragraph — condition description (what was checked, what works, what's visible in photos)
-4. "Specs:" — UL list with key technical parameters in format <b>name:</b> value
+=== STRUCTURE ===
+1. <p> — 2-3 hook sentences: what it is + why it's worth buying (highlight brand if known, unique feature)
+2. <p> — honest condition description: what was checked, what's like new, any minor wear visible in photos
+3. <ul> "Specs:" — key data in format <b>spec:</b> value (size, color, material, model etc.)
 
 Generate ONLY the ready HTML. Start with <p>.`;
 

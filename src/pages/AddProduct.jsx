@@ -35,77 +35,79 @@ export default function AddProduct() {
       const result = await base44.integrations.Core.InvokeLLM({
         model: "gpt_5_5",
         file_urls: uploadedImages,
-        prompt: isPolish ? `### MASTER PROMPT: SPECJALISTA ONLINE MARKETINGU I ANALIZY PRODUKTÓW E-COMMERCE ###
+        prompt: isPolish ? `### EKSPERT E-COMMERCE: ANALIZA PRODUKTU I COPYWRITING SPRZEDAŻOWY ###
 
-Jesteś światowej klasy specjalistą od marketingu online, sprzedaży w e-commerce i analizy produktów second-hand/vintage z 15-letnim doświadczeniem. Twoje zadania:
+Jesteś ekspertem od e-commerce i copywritingu sprzedażowego z 15-letnim doświadczeniem w sprzedaży second-hand. Przeanalizuj zdjęcia i stwórz materiały sprzedażowe które NAPRAWDĘ sprzedają.
 
-1. **ANALIZA WIZUALNA**: Dokładnie przeanalizuj przesłane zdjęcia produktu
-2. **WYCENA RYNKOWA**: Określ realną cenę rynkową second-hand
-3. **COPYWRITING**: Stwórz perswazyjny tytuł i opis sprzedażowy
-
-=== ZAKRES ANALIZY ===
-
-Przeanalizuj zdjęcia i określ:
-
-**DANE PODSTAWOWE:**
-- product_name: pełna nazwa (marka + typ + kolor/wzór)
-- brand: marka (lub "produkt bez marki" jeśli nie rozpoznasz)
+=== ANALIZA WIZUALNA ===
+Przeanalizuj dokładnie zdjęcia i określ:
+- product_name: pełna nazwa (marka + model/typ + główna cecha, np. "Nike Air Max 90 białe sneakersy")
+- brand: dokładna marka (lub null jeśli nierozpoznawalna)
 - category: clothing, shoes, accessories, electronics, home, toys, sports, books, other
 - gender: men, women, unisex, kids, none
-- condition: new, like_new, used (oceń na podstawie stanu wizualnego)
-- size: rozmiar jeśli widoczny na zdjęciach
-- color: główny kolor/kolory
+- condition: new (metki, nieużywany), like_new (minimalne ślady), used (widoczne użytkowanie)
+- size: rozmiar jeśli widoczny na zdjęciach lub metkach
+- color: dokładny kolor/kolory (opisowo, np. "głęboka czerń z białymi akcentami")
+- notes: obiektywne obserwacje o stanie — widoczne wady, uszkodzenia, ślady użytkowania (null jeśli brak)
 
-**WYCENA:**
-- suggested_sale_price: realistyczna cena rynkowa second-hand w PLN
-  * Uwzględnij: stan produktu, markę, typ produktu, sezonowość
-  * Cena powinna być atrakcyjna ale nie zaniżona
+=== WYCENA RYNKOWA ===
+- suggested_sale_price: realistyczna cena second-hand w PLN
+  * Znane marki (Nike, Adidas, Apple, Samsung itp.): cena wyższa, 30-60% ceny nowej
+  * Stan "jak nowy": cena bliżej górnej granicy
+  * Stan "używany": cena 20-40% ceny nowej
+  * Uwzględnij sezonowość i aktualny popyt
 
-**OPIS SPRZEDAŻOWY:**
-- listing_title (max 60 znaków): chwytliwy, zawierający markę i główną cechę
-- listing_description: naturalny, ludzki opis w stylu Vinted — czysty tekst BEZ żadnego HTML. Pisz jak prawdziwa osoba sprzedająca rzecz: krótki opis i zastosowanie, stan (co sprawdzono, co widać na zdjęciach), ewentualnie co w zestawie, kluczowe parametry. Krótkie zdania, konkretnie, bez marketingowego bełkotu, bez emoji.
+=== COPYWRITING SPRZEDAŻOWY ===
+listing_title (MAX 60 znaków!):
+- Format: [Marka] [Typ] [Kluczowa cecha] [Stan/Rozmiar]
+- Przykłady: "Nike Air Force 1 białe r.42 jak nowe", "Płaszcz wełniany H&M oversize szary M"
+- Zawsze konkretny, bez "super", "piękny", "polecam"
+
+listing_description (czysty tekst, BEZ HTML, BEZ emoji):
+- Zacznij od najmocniejszej cechy — tej która przyciągnie uwagę kupującego
+- 3-5 zdań: co to jest i do czego służy, dlaczego warto (marka, jakość, popularność modelu), szczery opis stanu
+- Zakończ konkretnymi parametrami (rozmiar, materiał, wymiary jeśli ważne)
+- Pisz jak osoba polecająca produkt znajomemu — naturalnie, rzeczowo, bez bełkotu
 
 === FORMAT WYJŚCIOWY ===
-Zwróć JSON z polami: product_name, brand, category, gender, condition, size, color, suggested_sale_price, notes, listing_title, listing_description, confidence (0-1)
+JSON z polami: product_name, brand, category, gender, condition, size, color, suggested_sale_price, notes, listing_title, listing_description, confidence (0-1)
+Jeśli nie możesz czegoś określić ze zdjęć — wstaw null.` : `### E-COMMERCE EXPERT: PRODUCT ANALYSIS & SALES COPYWRITING ###
 
-- Jeśli czegoś nie możesz określić, wstaw null
-- Cena realistyczna dla rynku second-hand PL
-- Opis ma sprzedawać, ale nie może być przesadzony` : `### MASTER PROMPT: E-COMMERCE PRODUCT ANALYSIS SPECIALIST ###
+You are an e-commerce and sales copywriting expert with 15 years of second-hand experience. Analyze the photos and create marketing materials that ACTUALLY sell.
 
-You are a world-class e-commerce marketing specialist with 15 years of experience analyzing second-hand/vintage products. Your tasks:
-
-1. **VISUAL ANALYSIS**: Carefully analyze the uploaded product photos
-2. **MARKET PRICING**: Determine a realistic second-hand market price
-3. **COPYWRITING**: Create a persuasive title and sales description
-
-=== ANALYSIS SCOPE ===
-
-Analyze the photos and determine:
-
-**BASIC DATA:**
-- product_name: full name (brand + type + color/pattern)
-- brand: brand name (or "unbranded" if not recognized)
+=== VISUAL ANALYSIS ===
+Carefully analyze the photos and determine:
+- product_name: full name (brand + model/type + main feature, e.g. "Nike Air Max 90 White Sneakers")
+- brand: exact brand name (or null if unrecognizable)
 - category: clothing, shoes, accessories, electronics, home, toys, sports, books, other
 - gender: men, women, unisex, kids, none
-- condition: new, like_new, used (assess based on visual condition)
-- size: size if visible in photos
-- color: main color(s)
+- condition: new (tags on, unused), like_new (minimal signs), used (visible wear)
+- size: size if visible in photos or labels
+- color: precise color description (e.g. "deep black with white accents")
+- notes: objective condition observations — visible flaws, damage, wear (null if none)
 
-**PRICING:**
-- suggested_sale_price: realistic second-hand market price in PLN
-  * Consider: product condition, brand, product type, seasonality
-  * Price should be attractive but not undervalued
+=== MARKET PRICING ===
+- suggested_sale_price: realistic second-hand price in PLN
+  * Known brands (Nike, Adidas, Apple, Samsung etc.): higher price, 30-60% of retail
+  * "Like new" condition: price toward upper end
+  * "Used" condition: 20-40% of retail price
+  * Consider seasonality and current demand
 
-**SALES COPY:**
-- listing_title (max 60 chars): catchy, including brand and key feature
-- listing_description: natural, human description in Vinted style — plain text with NO HTML whatsoever. Write like a real person selling second-hand: short description and use case, condition (what was checked, what's visible in photos), what's included if applicable, key specs. Short sentences, factual, no marketing fluff, no emojis.
+=== SALES COPYWRITING ===
+listing_title (MAX 60 characters!):
+- Format: [Brand] [Type] [Key feature] [Condition/Size]
+- Examples: "Nike Air Force 1 white sz.42 like new", "H&M wool oversize coat grey M"
+- Always specific, no "super", "beautiful", "highly recommend"
+
+listing_description (plain text, NO HTML, NO emojis):
+- Open with the strongest feature — the one that grabs the buyer's attention
+- 3-5 sentences: what it is and its purpose, why it's worth buying (brand, quality, model popularity), honest condition description
+- End with specific parameters (size, material, dimensions if relevant)
+- Write like recommending a product to a friend — naturally, factually, without fluff
 
 === OUTPUT FORMAT ===
-Return JSON with fields: product_name, brand, category, gender, condition, size, color, suggested_sale_price, notes, listing_title, listing_description, confidence (0-1)
-
-- If you cannot determine something from the photos, use null
-- Price should be realistic for the second-hand market
-- Description should sell, but must not be exaggerated`,
+JSON with fields: product_name, brand, category, gender, condition, size, color, suggested_sale_price, notes, listing_title, listing_description, confidence (0-1)
+If you cannot determine something from photos — use null.`,
         response_json_schema: {
         type: "object",
         properties: {

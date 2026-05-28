@@ -13,17 +13,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, CheckCircle, ArrowLeft, Save } from "lucide-react";
+import { Sparkles, CheckCircle, ArrowLeft } from "lucide-react";
 import AiConfidenceBadge from "./AiConfidenceBadge";
 import { SUBCATEGORIES } from "@/lib/subcategories";
+import { useLang } from "@/lib/i18n";
 
 const CATEGORIES = ["clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
 const CONDITIONS = ["new", "like_new", "used"];
 const GENDERS = ["men", "women", "unisex", "kids", "none"];
-const CONDITION_LABELS = { new: "Nowy", like_new: "Jak nowy", used: "Używany" };
-const GENDER_LABELS = { men: "Mężczyzna", women: "Kobieta", unisex: "Unisex", kids: "Dzieci", none: "Brak" };
 
 export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
+  const { t, lang } = useLang();
+  const isPolish = lang === "pl";
+
+  const CONDITION_LABELS = {
+    new: isPolish ? "Nowy" : "New",
+    like_new: isPolish ? "Jak nowy" : "Like new",
+    used: isPolish ? "Używany" : "Used",
+  };
+  const GENDER_LABELS = {
+    men: isPolish ? "Mężczyzna" : "Men",
+    women: isPolish ? "Kobieta" : "Women",
+    unisex: "Unisex",
+    kids: isPolish ? "Dzieci" : "Kids",
+    none: isPolish ? "Brak" : "None",
+  };
+
   const [form, setForm] = useState({
     product_name: "",
     brand: "",
@@ -88,8 +103,14 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
       <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
         <Sparkles className="w-5 h-5 text-emerald-600 shrink-0" />
         <div className="flex-1">
-          <p className="text-sm font-medium text-emerald-800">AI wypełniło formularz automatycznie</p>
-          <p className="text-xs text-emerald-600">Sprawdź dane i popraw jeśli coś jest nieprawidłowe, następnie zapisz.</p>
+          <p className="text-sm font-medium text-emerald-800">
+            {isPolish ? "AI wypełniło formularz automatycznie" : "AI has filled the form automatically"}
+          </p>
+          <p className="text-xs text-emerald-600">
+            {isPolish
+              ? "Sprawdź dane i popraw jeśli coś jest nieprawidłowe, następnie zapisz."
+              : "Review the data and correct anything that looks wrong, then save."}
+          </p>
         </div>
         {aiData?.confidence != null && <AiConfidenceBadge confidence={aiData.confidence} />}
       </div>
@@ -104,24 +125,24 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
       {/* Main fields */}
       <div className="grid grid-cols-1 gap-4">
         <div className="space-y-1.5">
-          <Label>Nazwa produktu *</Label>
+          <Label>{isPolish ? "Nazwa produktu *" : "Product Name *"}</Label>
           <Input value={form.product_name} onChange={(e) => set("product_name", e.target.value)} />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label>Marka</Label>
-            <Input value={form.brand} onChange={(e) => set("brand", e.target.value)} placeholder="np. Nike, H&M" />
+            <Label>{isPolish ? "Marka" : "Brand"}</Label>
+            <Input value={form.brand} onChange={(e) => set("brand", e.target.value)} placeholder={isPolish ? "np. Nike, H&M" : "e.g. Nike, H&M"} />
           </div>
           <div className="space-y-1.5">
-            <Label>Kolor</Label>
-            <Input value={form.color} onChange={(e) => set("color", e.target.value)} placeholder="np. czarny, granatowy" />
+            <Label>{isPolish ? "Kolor" : "Color"}</Label>
+            <Input value={form.color} onChange={(e) => set("color", e.target.value)} placeholder={isPolish ? "np. czarny, granatowy" : "e.g. black, navy"} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label>Kategoria *</Label>
+            <Label>{isPolish ? "Kategoria *" : "Category *"}</Label>
             <Select value={form.category} onValueChange={(v) => { set("category", v); set("subcategory", ""); }}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -130,9 +151,9 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Podkategoria</Label>
+            <Label>{isPolish ? "Podkategoria" : "Subcategory"}</Label>
             <Select value={form.subcategory || ""} onValueChange={(v) => set("subcategory", v)}>
-              <SelectTrigger><SelectValue placeholder="Wybierz..." /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={isPolish ? "Wybierz..." : "Select..."} /></SelectTrigger>
               <SelectContent>
                 {(SUBCATEGORIES[form.category] || []).map((s) => (
                   <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
@@ -141,9 +162,10 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
             </Select>
           </div>
         </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label>Przeznaczenie</Label>
+            <Label>{isPolish ? "Przeznaczenie" : "Gender"}</Label>
             <Select value={form.gender} onValueChange={(v) => set("gender", v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -152,7 +174,7 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Stan *</Label>
+            <Label>{isPolish ? "Stan *" : "Condition *"}</Label>
             <Select value={form.condition} onValueChange={(v) => set("condition", v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -164,28 +186,28 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-1.5">
-            <Label>Rozmiar</Label>
-            <Input value={form.size} onChange={(e) => set("size", e.target.value)} placeholder="np. M, 42, XL" />
+            <Label>{isPolish ? "Rozmiar" : "Size"}</Label>
+            <Input value={form.size} onChange={(e) => set("size", e.target.value)} placeholder={isPolish ? "np. M, 42, XL" : "e.g. M, 42, XL"} />
           </div>
           <div className="space-y-1.5">
-            <Label>Suger. cena sprzedaży (PLN)</Label>
+            <Label>{isPolish ? "Suger. cena sprzedaży (PLN)" : "Suggested Sale Price (PLN)"}</Label>
             <Input type="number" value={form.suggested_sale_price} onChange={(e) => set("suggested_sale_price", e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label>Cena zakupu (PLN)</Label>
-            <Input type="number" value={form.purchase_price} onChange={(e) => set("purchase_price", e.target.value)} placeholder="lub oblicz z palety" />
+            <Label>{isPolish ? "Cena zakupu (PLN)" : "Purchase Price (PLN)"}</Label>
+            <Input type="number" value={form.purchase_price} onChange={(e) => set("purchase_price", e.target.value)} placeholder={isPolish ? "lub oblicz z palety" : "or calc from pallet"} />
           </div>
         </div>
 
         {/* Pallet assignment */}
         <div className="space-y-1.5">
-          <Label>Paleta (opcjonalnie)</Label>
+          <Label>{isPolish ? "Paleta (opcjonalnie)" : "Pallet (optional)"}</Label>
           <Select value={selectedPallet} onValueChange={setSelectedPallet}>
             <SelectTrigger>
-              <SelectValue placeholder="Przypisz do palety..." />
+              <SelectValue placeholder={isPolish ? "Przypisz do palety..." : "Assign to pallet..."} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>Brak palety</SelectItem>
+              <SelectItem value={null}>{isPolish ? "Brak palety" : "No pallet"}</SelectItem>
               {pallets.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.pallet_code} — {p.investor_name}
@@ -198,7 +220,7 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
         {/* Listing fields */}
         <div className="space-y-1.5 pt-2 border-t">
           <Label className="flex items-center gap-1.5">
-            Tytuł ogłoszenia
+            {isPolish ? "Tytuł ogłoszenia" : "Listing Title"}
             <Badge variant="outline" className="text-xs font-normal text-emerald-600 border-emerald-300">AI</Badge>
           </Label>
           <Input value={form.listing_title} onChange={(e) => set("listing_title", e.target.value)} maxLength={60} />
@@ -207,21 +229,26 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
 
         <div className="space-y-1.5">
           <Label className="flex items-center gap-1.5">
-            Opis ogłoszenia
+            {isPolish ? "Opis ogłoszenia" : "Listing Description"}
             <Badge variant="outline" className="text-xs font-normal text-emerald-600 border-emerald-300">AI</Badge>
           </Label>
           <Textarea value={form.listing_description} onChange={(e) => set("listing_description", e.target.value)} rows={4} />
         </div>
 
         <div className="space-y-1.5">
-          <Label>Notatki wewnętrzne</Label>
-          <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={2} placeholder="Widoczne wady, uwagi dla magazynu..." />
+          <Label>{isPolish ? "Notatki wewnętrzne" : "Internal Notes"}</Label>
+          <Textarea
+            value={form.notes}
+            onChange={(e) => set("notes", e.target.value)}
+            rows={2}
+            placeholder={isPolish ? "Widoczne wady, uwagi dla magazynu..." : "Visible defects, warehouse notes..."}
+          />
         </div>
       </div>
 
       <div className="flex gap-3 pt-2">
         <Button variant="outline" onClick={onBack} className="gap-2">
-          <ArrowLeft className="w-4 h-4" /> Wróć
+          <ArrowLeft className="w-4 h-4" /> {isPolish ? "Wróć" : "Back"}
         </Button>
         <Button
           className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -234,7 +261,7 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
           ) : (
             <CheckCircle className="w-4 h-4" />
           )}
-          Zapisz produkt
+          {isPolish ? "Zapisz produkt" : "Save product"}
         </Button>
       </div>
     </div>
