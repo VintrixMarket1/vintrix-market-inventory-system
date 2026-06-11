@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Sparkles, ImagePlus } from "lucide-react";
 import { useLang } from "@/lib/i18n";
+import { compressImage } from "@/lib/compressImage";
 
 export default function ImageUploader({ uploadedImages, onImagesReady, onAnalyze }) {
   const [uploading, setUploading] = useState(false);
@@ -13,7 +14,8 @@ export default function ImageUploader({ uploadedImages, onImagesReady, onAnalyze
     setUploading(true);
     const newUrls = [];
     for (const file of files) {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const compressed = await compressImage(file);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: compressed });
       newUrls.push(file_url);
     }
     onImagesReady([...uploadedImages, ...newUrls]);

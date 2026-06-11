@@ -1,0 +1,47 @@
+{
+  "name": "Sale",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "Reference to product"
+    },
+    "listing_id": {
+      "type": "string",
+      "description": "Reference to listing"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "vinted",
+        "olx",
+        "allegro",
+        "ebay"
+      ],
+      "description": "Platform where sold"
+    },
+    "sale_price": {
+      "type": "number",
+      "description": "Final sale price"
+    },
+    "sale_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of sale"
+    },
+    "purchase_price": {
+      "type": "number",
+      "description": "Original purchase price for profit calc"
+    },
+    "product_name": {
+      "type": "string",
+      "description": "Product name snapshot"
+    }
+  },
+  "required": [
+    "product_id",
+    "platform",
+    "sale_price",
+    "sale_date"
+  ]
+}

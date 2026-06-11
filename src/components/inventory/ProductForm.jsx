@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { base44 } from "@/api/base44Client";
 import AiChatAssistant from "@/components/ai/AiChatAssistant";
 import { Upload, X, Loader2, RefreshCw, Package, Sparkles, MessageSquare } from "lucide-react";
+import { compressImage } from "@/lib/compressImage";
 import { useQuery } from "@tanstack/react-query";
 import { SUBCATEGORIES } from "@/lib/subcategories";
 import { useLang } from "@/lib/i18n";
@@ -89,7 +90,8 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
     setUploading(true);
     const urls = [];
     for (const file of files) {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const compressed = await compressImage(file);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: compressed });
       urls.push(file_url);
     }
     setForm(prev => ({ ...prev, images: [...(prev.images || []), ...urls] }));
