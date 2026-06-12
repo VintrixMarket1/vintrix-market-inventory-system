@@ -32,7 +32,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No products found for this pallet' }, { status: 400 });
     }
 
-    const unitPrice = parseFloat((pallet.total_cost / products.length).toFixed(2));
+    // Count total units: multi-item products use stock_quantity, others count as 1
+    const totalUnits = products.reduce((sum, p) => {
+      return sum + (p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1);
+    }, 0);
+
+    const unitPrice = parseFloat((pallet.total_cost / totalUnits).toFixed(2));
 
     // Update each product's purchase_price sequentially to avoid rate limits
     for (const p of products) {
@@ -50,7 +55,7 @@ Deno.serve(async (req) => {
       success: true,
       pallet_code: pallet.pallet_code,
       total_cost: pallet.total_cost,
-      product_count: products.length,
+      product_count: totalUnits,
       calculated_unit_price: unitPrice,
     });
   } catch (error) {
