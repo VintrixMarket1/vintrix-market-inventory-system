@@ -20,9 +20,25 @@ export default function Dashboard() {
     queryKey: ["sales"],
     queryFn: () => base44.entities.Sale.list("-created_date"),
   });
+  const { data: pallets = [] } = useQuery({
+    queryKey: ["pallets"],
+    queryFn: () => base44.entities.Pallet.list(),
+  });
 
-  const inStock = products.filter(p => p.status === "in_stock" || !p.status).length;
-  const listed = products.filter(p => p.status === "listed").length;
+  // Nieskalkulowane palety — traktowane jako produkty zbiorcze na stanie
+  const unsettledPallets = pallets.filter(p => p.status !== "processed");
+  const unsettledPalletIds = new Set(unsettledPallets.map(p => p.id));
+
+  // Produkty z skalkulowanych palet (lub bez palety)
+  const settledProducts = products.filter(p => !p.pallet_id || !unsettledPalletIds.has(p.pallet_id));
+
+  // Liczba nieskalkulowanych szt. z palet (wg produktów tymczasowych)
+  const unsettledUnits = products
+    .filter(p => p.pallet_id && unsettledPalletIds.has(p.pallet_id))
+    .reduce((sum, p) => sum + (p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1), 0);
+
+  const inStock = settledProducts.filter(p => p.status === "in_stock" || !p.status).length + unsettledUnits;
+  const listed = settledProducts.filter(p => p.status === "listed").length;
   const sold = sales.length;
   const totalProfit = sales.reduce((sum, s) => sum + ((s.sale_price || 0) - (s.purchase_price || 0)), 0);
 
@@ -34,7 +50,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title={t("dash_in_stock")} value={inStock} icon={Package} color="blue" subtitle={`${products.length} ${t("dash_total_products")}`} />
+        <StatCard title={t("dash_in_stock")} value={inStock} icon={Package} color="blue" subtitle={unsettledPallets.length > 0 ? `w tym ${unsettledPallets.length} palet(y) niesort.` : `${settledProducts.length} ${t("dash_total_products")}`} />
         <StatCard title={t("dash_listed")} value={listed} icon={Tag} color="purple" subtitle={t("dash_active_listings")} />
         <StatCard title={t("dash_sold")} value={sold} icon={DollarSign} color="amber" subtitle={t("dash_all_time")} />
         <StatCard title={t("dash_total_profit")} value={`${totalProfit.toFixed(0)} PLN`} icon={TrendingUp} color="emerald" subtitle={t("dash_revenue_minus_costs")} />

@@ -15,6 +15,7 @@ import CsvImport from "../components/inventory/CsvImport";
 import ShopifyProductImporter from "../components/shopify/ShopifyProductImporter";
 import BulkActionsBar from "../components/inventory/BulkActionsBar";
 import ShopifyBulkPublishModal from "../components/shopify/ShopifyBulkPublishModal";
+import PalletSummaryCard from "../components/inventory/PalletSummaryCard";
 
 export default function Inventory() {
   const { t } = useLang();
@@ -49,7 +50,14 @@ export default function Inventory() {
   });
   const palletsMap = Object.fromEntries(pallets.map(p => [p.id, p]));
 
+  // Palety nieskalkulowane (bez cen) — wyświetlane jako karty zbiorcze
+  const unsettledPallets = pallets.filter(p => p.status !== "processed");
+  // IDs palet nieskalkulowanych — produkty z tych palet NIE trafiają na listę
+  const unsettledPalletIds = new Set(unsettledPallets.map(p => p.id));
+
   const filtered = products.filter(p => {
+    // Ukryj produkty z nieskalkulowanych palet — są reprezentowane przez kartę palety
+    if (p.pallet_id && unsettledPalletIds.has(p.pallet_id)) return false;
     const searchMatch = !filters.search || p.product_name?.toLowerCase().includes(filters.search.toLowerCase()) || p.internal_code?.toLowerCase().includes(filters.search.toLowerCase());
     const categoryMatch = filters.category === "all" || p.category === filters.category;
     const subcategoryMatch = !filters.subcategory || filters.subcategory === "all" || p.subcategory === filters.subcategory;
@@ -117,6 +125,26 @@ export default function Inventory() {
       </div>
 
       <SearchFilters filters={filters} onChange={setFilters} />
+
+      {/* Karty palet nieskalkulowanych */}
+      {unsettledPallets.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Palety w trakcie sortowania</span>
+            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{unsettledPallets.length}</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {unsettledPallets.map(pallet => {
+              const palletProducts = products.filter(p => p.pallet_id === pallet.id);
+              const totalUnits = palletProducts.reduce((sum, p) => sum + (p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1), 0);
+              return (
+                <PalletSummaryCard key={pallet.id} pallet={pallet} productCount={totalUnits} />
+              );
+            })}
+          </div>
+          {filtered.length > 0 && <div className="border-t border-slate-200 mt-4 pt-2"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Produkty na stanie</span></div>}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-20">
