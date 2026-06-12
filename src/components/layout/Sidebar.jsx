@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Package, Tag, DollarSign, Zap, 
-  Menu, X, ChevronRight, Layers, BookOpen, ShoppingBag, Store, Settings
+  Menu, X, ChevronRight, Layers, BookOpen, ShoppingBag, Store, Settings, FileText
 } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 
@@ -18,6 +18,7 @@ export default function Sidebar() {
     { path: "/Pallets", labelKey: "nav_pallets", icon: Layers },
     { path: "/Listings", labelKey: "nav_listings", icon: Tag },
     { path: "/Sales", labelKey: "nav_sales", icon: DollarSign },
+    { path: "/WarehouseDocuments", label: "Dokumenty Mag.", icon: FileText },
     { path: "/QuickAdd", labelKey: "nav_quick_add", icon: Zap },
     { path: "/ShopifySettings", labelKey: "nav_shopify", icon: ShoppingBag },
     { path: "/AllegroSettings", labelKey: "nav_allegro", icon: Store },
@@ -53,7 +54,7 @@ export default function Sidebar() {
             }`}
           >
             <item.icon className={`w-4.5 h-4.5 ${isActive(item.path) ? "text-emerald-400" : "text-slate-500 group-hover:text-slate-300"}`} />
-            {t(item.labelKey)}
+            {item.label || t(item.labelKey)}
             {isActive(item.path) && <ChevronRight className="w-3.5 h-3.5 ml-auto text-emerald-400" />}
           </Link>
         ))}

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { base44 } from "@/api/base44Client";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { generateDocumentNumber } from "@/lib/documentNumber";
 
 const platforms = [
   { value: "vinted", label: "Vinted" },
@@ -39,12 +40,34 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
     const qty = isMulti ? (parseInt(form.quantity) || 1) : 1;
     const finalPrice = parseFloat(form.final_sale_price) || parseFloat(form.sale_price) || 0;
 
-    // Create sale records — one per unit sold (or one combined record)
-    await base44.entities.Sale.create({
+    // Create sale record
+    const saleRecord = await base44.entities.Sale.create({
       ...form,
       sale_price: finalPrice,
       purchase_price: parseFloat(form.purchase_price) || 0,
       quantity: qty,
+    });
+
+    // Auto-generate WZ document
+    const unitPrice = parseFloat(form.purchase_price) || 0;
+    const wzNumber = await generateDocumentNumber("WZ");
+    await base44.entities.WarehouseDocument.create({
+      document_number: wzNumber,
+      document_type: "WZ",
+      date: form.sale_date,
+      status: "confirmed",
+      platform: form.platform,
+      sale_id: saleRecord?.id || "",
+      counterparty: form.platform ? `Sprzedaż — ${form.platform}` : "Sprzedaż",
+      items: [{
+        product_id: product?.id || "",
+        product_name: product?.product_name || form.product_name,
+        internal_code: product?.internal_code || "",
+        quantity: qty,
+        unit_price: unitPrice,
+        total_value: parseFloat((unitPrice * qty).toFixed(2)),
+      }],
+      total_value: parseFloat((unitPrice * qty).toFixed(2)),
     });
 
     if (product) {

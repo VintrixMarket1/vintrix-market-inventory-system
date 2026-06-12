@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import { generateDocumentNumber } from "@/lib/documentNumber";
+import { format } from "date-fns";
 
 export default function PalletForm({ open, onClose, pallet, onSaved }) {
   const [form, setForm] = useState({
@@ -18,11 +20,33 @@ export default function PalletForm({ open, onClose, pallet, onSaved }) {
 
   const handleSubmit = async () => {
     setSaving(true);
-    const data = { ...form, total_cost: parseFloat(form.total_cost) || 0 };
+    const cost = parseFloat(form.total_cost) || 0;
+    const data = { ...form, total_cost: cost };
     if (pallet) {
       await base44.entities.Pallet.update(pallet.id, data);
     } else {
-      await base44.entities.Pallet.create(data);
+      const created = await base44.entities.Pallet.create(data);
+      // Auto-generate PZ document for new pallet
+      const pzNumber = await generateDocumentNumber("PZ");
+      await base44.entities.WarehouseDocument.create({
+        document_number: pzNumber,
+        document_type: "PZ",
+        date: form.purchase_date || format(new Date(), "yyyy-MM-dd"),
+        status: "confirmed",
+        counterparty: form.investor_name || "Dostawca",
+        pallet_id: created?.id || "",
+        reference_number: form.pallet_code,
+        items: [{
+          product_id: "",
+          product_name: `Paleta ${form.pallet_code} — przyjęcie zbiorcze`,
+          internal_code: form.pallet_code,
+          quantity: 1,
+          unit_price: cost,
+          total_value: cost,
+        }],
+        total_value: cost,
+        notes: form.notes || "",
+      });
     }
     setSaving(false);
     onSaved();

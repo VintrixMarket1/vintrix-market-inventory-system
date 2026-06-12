@@ -1,0 +1,89 @@
+{
+  "name": "InventoryCheck",
+  "type": "object",
+  "properties": {
+    "check_number": {
+      "type": "string",
+      "description": "Numer spisu z natury np. IN/2026/06/001"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data przeprowadzenia inwentaryzacji"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "in_progress",
+        "completed"
+      ],
+      "default": "in_progress",
+      "description": "Status inwentaryzacji"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "internal_code": {
+            "type": "string"
+          },
+          "system_quantity": {
+            "type": "number",
+            "description": "Stan wg systemu"
+          },
+          "actual_quantity": {
+            "type": "number",
+            "description": "Stan faktyczny (wg fizycznego liczenia)"
+          },
+          "difference": {
+            "type": "number",
+            "description": "R\u00f3\u017cnica (actual - system)"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "difference_value": {
+            "type": "number",
+            "description": "Warto\u015b\u0107 r\u00f3\u017cnicy (PLN)"
+          }
+        }
+      },
+      "description": "Pozycje spisu z natury"
+    },
+    "total_system_value": {
+      "type": "number",
+      "description": "\u0141\u0105czna warto\u015b\u0107 wg systemu (PLN)"
+    },
+    "total_actual_value": {
+      "type": "number",
+      "description": "\u0141\u0105czna warto\u015b\u0107 faktyczna (PLN)"
+    },
+    "total_difference_value": {
+      "type": "number",
+      "description": "\u0141\u0105czna r\u00f3\u017cnica warto\u015bci (PLN)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Uwagi do inwentaryzacji"
+    },
+    "conducted_by": {
+      "type": "string",
+      "description": "Osoba przeprowadzaj\u0105ca"
+    },
+    "warehouse_document_id": {
+      "type": "string",
+      "description": "Referencja do dokumentu IN koryguj\u0105cego stany"
+    }
+  },
+  "required": [
+    "check_number",
+    "date"
+  ]
+}

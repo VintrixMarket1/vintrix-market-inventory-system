@@ -24,6 +24,7 @@ import AllegroCallback from './pages/AllegroCallback';
 import AllegroPublish from './pages/AllegroPublish';
 import AllegroTemplates from './pages/AllegroTemplates';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import WarehouseDocuments from './pages/WarehouseDocuments';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
         <Route path="/AllegroPublish" element={<AllegroPublish />} />
         <Route path="/AllegroTemplates" element={<AllegroTemplates />} />
         <Route path="/Settings" element={<Settings />} />
+        <Route path="/WarehouseDocuments" element={<WarehouseDocuments />} />
       </Route>
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="*" element={<PageNotFound />} />
