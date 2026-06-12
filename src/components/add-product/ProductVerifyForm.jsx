@@ -53,6 +53,10 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
     listing_title: "",
     listing_description: "",
     purchase_price: "",
+    internal_code: "",
+    warehouse_zone: "",
+    shelf: "",
+    box_number: "",
   });
   const [selectedPallet, setSelectedPallet] = useState("");
   const [saving, setSaving] = useState(false);
@@ -196,6 +200,31 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
           <div className="space-y-1.5">
             <Label>{isPolish ? "Cena zakupu (PLN)" : "Purchase Price (PLN)"}</Label>
             <Input type="number" value={form.purchase_price} onChange={(e) => set("purchase_price", e.target.value)} placeholder={isPolish ? "lub oblicz z palety" : "or calc from pallet"} />
+          </div>
+        </div>
+
+        {/* SKU + warehouse location */}
+        <div className="space-y-3 pt-2 border-t">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{isPolish ? "Kod & Lokalizacja magazynowa" : "SKU & Warehouse Location"}</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>{isPolish ? "Kod wewnętrzny (SKU)" : "Internal Code (SKU)"}</Label>
+              <Input value={form.internal_code} onChange={(e) => set("internal_code", e.target.value)} placeholder="np. CLO-00123456" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{isPolish ? "Strefa magazynowa" : "Warehouse Zone"}</Label>
+              <Input value={form.warehouse_zone} onChange={(e) => set("warehouse_zone", e.target.value)} placeholder="A" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>{isPolish ? "Regał / półka" : "Shelf"}</Label>
+              <Input value={form.shelf} onChange={(e) => set("shelf", e.target.value)} placeholder="3" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{isPolish ? "Numer pudełka" : "Box Number"}</Label>
+              <Input value={form.box_number} onChange={(e) => set("box_number", e.target.value)} placeholder="12" />
+            </div>
           </div>
         </div>
 

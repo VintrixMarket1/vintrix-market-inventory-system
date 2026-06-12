@@ -23,6 +23,7 @@ export default function AddProduct() {
   const [uploadedImages, setUploadedImages] = useState([]);
   const [aiData, setAiData] = useState(null);
   const [showChat, setShowChat] = useState(false);
+  const [aiNotes, setAiNotes] = useState("");
 
   const handleImagesReady = (urls) => {
     setUploadedImages(urls);
@@ -38,7 +39,7 @@ export default function AddProduct() {
         prompt: isPolish ? `### EKSPERT E-COMMERCE: ANALIZA PRODUKTU I COPYWRITING SPRZEDAŻOWY ###
 
 Jesteś ekspertem od e-commerce i copywritingu sprzedażowego z 15-letnim doświadczeniem w sprzedaży second-hand. Przeanalizuj zdjęcia i stwórz materiały sprzedażowe które NAPRAWDĘ sprzedają.
-
+${aiNotes ? `\n=== UWAGI OD SPRZEDAWCY (traktuj jako pewne informacje) ===\n${aiNotes}\n` : ""}
 === ANALIZA WIZUALNA ===
 Przeanalizuj dokładnie zdjęcia i określ:
 - product_name: pełna nazwa (marka + model/typ + główna cecha, np. "Nike Air Max 90 białe sneakersy")
@@ -74,7 +75,7 @@ JSON z polami: product_name, brand, category, gender, condition, size, color, su
 Jeśli nie możesz czegoś określić ze zdjęć — wstaw null.` : `### E-COMMERCE EXPERT: PRODUCT ANALYSIS & SALES COPYWRITING ###
 
 You are an e-commerce and sales copywriting expert with 15 years of second-hand experience. Analyze the photos and create marketing materials that ACTUALLY sell.
-
+${aiNotes ? `\n=== SELLER NOTES (treat as reliable facts) ===\n${aiNotes}\n` : ""}
 === VISUAL ANALYSIS ===
 Carefully analyze the photos and determine:
 - product_name: full name (brand + model/type + main feature, e.g. "Nike Air Max 90 White Sneakers")
@@ -135,7 +136,8 @@ If you cannot determine something from photos — use null.`,
   };
 
   const handleSave = async (formData, palletId) => {
-    const internalCode = `${(formData.category || "OTH").slice(0, 3).toUpperCase()}-${Date.now().toString().slice(-8)}`;
+    const internalCode = formData.internal_code?.trim()
+      || `${(formData.category || "OTH").slice(0, 3).toUpperCase()}-${Date.now().toString().slice(-8)}`;
     await base44.entities.Product.create({
       ...formData,
       internal_code: internalCode,
@@ -181,6 +183,8 @@ If you cannot determine something from photos — use null.`,
           onImagesReady={handleImagesReady}
           onAnalyze={handleAnalyze}
           uploadedImages={uploadedImages}
+          aiNotes={aiNotes}
+          onAiNotesChange={setAiNotes}
         />
       )}
 

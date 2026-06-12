@@ -1,14 +1,17 @@
 import { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Sparkles, ImagePlus } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Upload, X, Sparkles, ImagePlus, MessageSquarePlus } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { compressImage } from "@/lib/compressImage";
 
-export default function ImageUploader({ uploadedImages, onImagesReady, onAnalyze }) {
+export default function ImageUploader({ uploadedImages, onImagesReady, onAnalyze, aiNotes, onAiNotesChange }) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef();
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const isPolish = lang === "pl";
 
   const handleFiles = async (files) => {
     setUploading(true);
@@ -94,6 +97,28 @@ export default function ImageUploader({ uploadedImages, onImagesReady, onAnalyze
           </div>
         </div>
       )}
+
+      {/* AI notes */}
+      <div className="space-y-1.5">
+        <Label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+          <MessageSquarePlus className="w-4 h-4 text-emerald-600" />
+          {isPolish ? "Uwagi dla AI (opcjonalnie)" : "Notes for AI (optional)"}
+        </Label>
+        <Textarea
+          value={aiNotes || ""}
+          onChange={(e) => onAiNotesChange?.(e.target.value)}
+          rows={2}
+          placeholder={isPolish
+            ? "np. To jest bluza z kapturem, kolor khaki, widoczne przetarcia na łokciach, rozmiar widoczny na metce wewnętrznej..."
+            : "e.g. This is a hoodie, khaki color, visible wear on elbows, size visible on inner label..."}
+          className="text-sm resize-none"
+        />
+        <p className="text-xs text-slate-400">
+          {isPolish
+            ? "Dodaj szczegóły, które mogą pomóc AI — marka, stan, rozmiar, specyficzne cechy, defekty."
+            : "Add details that may help the AI — brand, condition, size, specific features, defects."}
+        </p>
+      </div>
 
       <Button
         className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
