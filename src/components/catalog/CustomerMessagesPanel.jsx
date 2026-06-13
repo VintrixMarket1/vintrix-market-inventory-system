@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MessageCircle, HandCoins, Clock, CheckCircle, XCircle, ThumbsUp, ThumbsDown, ArrowLeftRight, ChevronRight, X, Loader2 } from "lucide-react";
+import { MessageCircle, HandCoins, Clock, CheckCircle, XCircle, ThumbsUp, ThumbsDown, ArrowLeftRight, ChevronRight, X, Loader2, ShoppingCart } from "lucide-react";
 import { format } from "date-fns";
+import CheckoutModal from "./CheckoutModal";
 
 const INQUIRY_STATUS = {
   new: { label: "Oczekuje", color: "bg-blue-100 text-blue-700", icon: Clock },
@@ -59,9 +60,11 @@ function OfferCard({ offer, queryClient }) {
   const [showReply, setShowReply] = useState(false);
   const [counterPrice, setCounterPrice] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
 
   const isCountered = offer.status === "countered";
   const isFinal = ["accepted", "rejected", "customer_countered", "customer_accepted", "customer_rejected"].includes(offer.status);
+  const canCheckout = offer.status === "accepted" || offer.status === "customer_accepted";
 
   const cfg = OFFER_STATUS[offer.status] || OFFER_STATUS.new;
   const Icon = cfg.icon;
@@ -144,12 +147,30 @@ function OfferCard({ offer, queryClient }) {
       )}
 
       {/* Status messages */}
-      {offer.status === "accepted" && <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">✅ Oferta zaakceptowana przez sprzedawcę!</div>}
+      {offer.status === "accepted" && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">✅ Oferta zaakceptowana przez sprzedawcę! Możesz teraz sfinalizować zakup.</div>
+      )}
       {offer.status === "rejected" && <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">❌ Oferta odrzucona przez sprzedawcę.</div>}
-      {offer.status === "customer_accepted" && <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">✅ Zaakceptowałeś kontrofertę. Sprzedawca zostanie powiadomiony.</div>}
+      {offer.status === "customer_accepted" && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">✅ Zaakceptowałeś kontrofertę. Możesz teraz sfinalizować zakup.</div>
+      )}
       {offer.status === "customer_rejected" && <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">❌ Odrzuciłeś kontrofertę.</div>}
       {offer.status === "customer_countered" && <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-800">💬 Wysłałeś kontrofertę {offer.offered_price} PLN. Czekamy na odpowiedź sprzedawcy.</div>}
       {offer.status === "new" && <p className="text-xs text-slate-400 italic">Czekamy na odpowiedź sprzedawcy...</p>}
+
+      {/* Checkout button for accepted offers */}
+      {canCheckout && (
+        <Button
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2"
+          onClick={() => setShowCheckout(true)}
+        >
+          <ShoppingCart className="w-4 h-4" /> Sfinalizuj i zapłać
+        </Button>
+      )}
+
+      {showCheckout && (
+        <CheckoutModal offer={offer} onClose={() => setShowCheckout(false)} />
+      )}
 
       {/* Customer can respond to countered offer */}
       {isCountered && !isFinal && (
