@@ -10,10 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft, Package, FileText, CheckCircle2, AlertTriangle,
   Download, Edit2, Plus, Loader2, TrendingUp, DollarSign,
-  ShoppingCart, Trash2, BarChart3
+  ShoppingCart, Trash2, BarChart3, PackageSearch
 } from "lucide-react";
 import { format } from "date-fns";
 import AllocationModal from "../components/pallets/AllocationModal";
+import AddUnknownItemsModal from "../components/pallets/AddUnknownItemsModal";
 import { exportDRP, exportRW, exportPW, exportPZ } from "@/lib/palletPdfExport";
 import { toast } from "@/components/ui/use-toast";
 
@@ -39,6 +40,7 @@ export default function PalletDetail() {
   const queryClient = useQueryClient();
 
   const [allocationModal, setAllocationModal] = useState(false);
+  const [unknownModal, setUnknownModal] = useState(false);
   const [explodingLoading, setExplodingLoading] = useState(false);
   const [editingPallet, setEditingPallet] = useState(false);
   const [palletForm, setPalletForm] = useState(null);
@@ -301,9 +303,14 @@ export default function PalletDetail() {
             <Badge className="bg-slate-100 text-slate-600 text-xs">{products.length}</Badge>
           </h2>
           {!isExploded && (
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => navigate(`/AddProduct?pallet_id=${palletId}`)}>
-              <Plus className="w-3.5 h-3.5" /> Dodaj produkt
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="gap-1.5 text-xs border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => setUnknownModal(true)}>
+                <PackageSearch className="w-3.5 h-3.5" /> Dodaj nieznane
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => navigate(`/AddProduct?pallet_id=${palletId}`)}>
+                <Plus className="w-3.5 h-3.5" /> Dodaj produkt
+              </Button>
+            </div>
           )}
         </div>
 
@@ -336,9 +343,12 @@ export default function PalletDetail() {
                   const qty = p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1;
                   const isUnknown = p.product_name === "Nieznany produkt";
                   return (
-                    <tr key={p.id} className={`hover:bg-slate-50 ${isUnknown ? "opacity-60" : ""}`}>
+                    <tr key={p.id} className={`hover:bg-slate-50 cursor-pointer ${isUnknown ? "opacity-70" : ""}`} onClick={() => navigate(`/Inventory?edit=${p.id}`)}>
                       <td className="py-2 pr-3">
-                        <p className={`font-medium truncate max-w-[180px] ${isUnknown ? "text-amber-600 italic" : "text-slate-900"}`}>{p.product_name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className={`font-medium truncate max-w-[180px] ${isUnknown ? "text-amber-600 italic" : "text-slate-900"}`}>{p.product_name}</p>
+                          {isUnknown && <span className="text-[10px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full whitespace-nowrap">uzupełnij →</span>}
+                        </div>
                         {p.internal_code && <p className="text-xs text-slate-400 font-mono">{p.internal_code}</p>}
                       </td>
                       <td className="py-2 text-xs text-slate-500">{p.category || "—"}</td>
@@ -387,6 +397,16 @@ export default function PalletDetail() {
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Notatki</p>
           <p className="text-sm text-slate-700">{pallet.notes}</p>
         </div>
+      )}
+
+      {/* Unknown items modal */}
+      {unknownModal && pallet && (
+        <AddUnknownItemsModal
+          open={unknownModal}
+          onClose={() => setUnknownModal(false)}
+          pallet={pallet}
+          onSaved={refresh}
+        />
       )}
 
       {/* Allocation modal */}

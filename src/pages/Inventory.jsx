@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLang } from "@/lib/i18n";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -44,6 +44,22 @@ export default function Inventory() {
     queryKey: ["products"],
     queryFn: () => base44.entities.Product.list("-created_date"),
   });
+
+  // Auto-open edit form when ?edit=<id> is in URL (e.g. coming from PalletDetail)
+  useEffect(() => {
+    if (products.length === 0) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get("edit");
+    if (editId) {
+      const product = products.find(p => p.id === editId);
+      if (product) {
+        setEditProduct(product);
+        setShowForm(true);
+        // Clean up URL param without reload
+        window.history.replaceState({}, "", "/Inventory");
+      }
+    }
+  }, [products]);
   const { data: pallets = [] } = useQuery({
     queryKey: ["pallets"],
     queryFn: () => base44.entities.Pallet.list(),
