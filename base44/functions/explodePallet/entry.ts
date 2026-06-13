@@ -41,8 +41,8 @@ Deno.serve(async (req) => {
     const products = await base44.asServiceRole.entities.Product.filter({ pallet_id });
     if (!products || products.length === 0) return Response.json({ error: 'Brak produktów przypisanych do palety' }, { status: 400 });
 
-    // Validate each product has a name
-    const unnamed = products.filter(p => !p.product_name || p.product_name === 'Nieznany produkt');
+    // Validate — produkty bez żadnej nazwy są blokowane, ale "Nieznany produkt" jest dozwolony
+    const unnamed = products.filter(p => !p.product_name || p.product_name.trim() === '');
     if (unnamed.length > 0) return Response.json({ error: `${unnamed.length} produktów nie ma nazwy. Uzupełnij przed rozbiciem.` }, { status: 400 });
 
     // 3. Calculate allocation
