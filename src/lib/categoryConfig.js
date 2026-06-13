@@ -128,8 +128,24 @@ export const CATEGORY_GROUPS = [
         subcategories: ["Sofy i kanapy", "Fotele", "Stoły i stoliki", "Krzesła", "Łóżka i ramy", "Szafy i komody", "Regały i biblioteczki", "Biurka", "Ławki", "Meble ogrodowe", "Meble dziecięce"]
       },
       {
-        value: "home_kitchen", label: "Kuchnia",
-        subcategories: ["Naczynia i garnki", "Noże i akcesoria", "Deski do krojenia", "Ekspresy i kawiarki", "Tostery i opiekacze", "Blendery i miksery", "Roboty kuchenne", "Talerze i zastawa", "Sztućce", "Formy i blachy do pieczenia", "Inne AGD kuchenne"]
+        value: "home_kitchen", label: "Kuchnia — AGD",
+        subcategories: ["Ekspresy do kawy", "Kawiarki i french pressy", "Tostery i opiekacze", "Blendery i miksery ręczne", "Roboty kuchenne", "Multicookery i wolnowary", "Kuchenki mikrofalowe", "Kuchenki elektryczne", "Frytkownice i air fryery", "Sokowirówki i wyciskarki", "Urządzenia do lodów", "Elektryczne grille stołowe", "Krajalnice do chleba i wędlin", "Naczynia i garnki", "Noże i akcesoria", "Deski do krojenia", "Talerze i zastawa", "Sztućce", "Formy i blachy do pieczenia"]
+      },
+      {
+        value: "home_agd_large", label: "Duże AGD",
+        subcategories: ["Pralki", "Suszarki do prania", "Pralko-suszarki", "Lodówki", "Zamrażarki", "Zmywarki", "Kuchenki gazowe i elektryczne", "Piekarniki", "Okapy kuchenne", "Urządzenia chłodnicze — inne"]
+      },
+      {
+        value: "home_agd_cleaning", label: "AGD — Sprzątanie",
+        subcategories: ["Odkurzacze pionowe", "Odkurzacze workowe i bezworkowe", "Odkurzacze robotyczne (roomba)", "Odkurzacze piorące", "Mopy parowe", "Odkurzacze ręczne (handheld)", "Froterki i polerki", "Myjki ciśnieniowe", "Odkurzacze do basenów"]
+      },
+      {
+        value: "home_agd_personal", label: "AGD — Pielęgnacja osobista",
+        subcategories: ["Masażery ciała i pleców", "Masażery nóg i stóp", "Masażery twarzy", "Poduszki masujące", "Maty masujące", "Depilatowy i maszynki do golenia", "Suszarki do włosów", "Prostownice do włosów", "Lokówki", "Szczotki do włosów elektryczne", "Epilatory", "Urządzenia do manicure / pedicure", "Elektryczne szczoteczki do zębów", "Nawilżacze powietrza", "Oczyszczacze powietrza", "Jonizatory"]
+      },
+      {
+        value: "home_agd_laundry", label: "AGD — Prasowanie i pielęgnacja odzieży",
+        subcategories: ["Żelazka parowe", "Stacje parowe", "Parownice do ubrań", "Deski do prasowania", "Odświeżacze do odzieży"]
       },
       {
         value: "home_bedding", label: "Pościel i tekstylia",
@@ -145,7 +161,7 @@ export const CATEGORY_GROUPS = [
       },
       {
         value: "home_garden", label: "Ogród",
-        subcategories: ["Narzędzia ogrodowe", "Doniczki i skrzynie", "Nasiona i sadzonki", "Nawozy i środki ochrony", "Grille i akcesoria BBQ", "Meble ogrodowe", "Huśtawki i leżaki", "Namioty ogrodowe"]
+        subcategories: ["Narzędzia ogrodowe", "Kosiarki i podkaszarki", "Piły do drzew", "Dmuchawy do liści", "Doniczki i skrzynie", "Nasiona i sadzonki", "Nawozy i środki ochrony", "Grille i akcesoria BBQ", "Meble ogrodowe", "Huśtawki i leżaki", "Namioty ogrodowe", "Baseny i jacuzzi ogrodowe"]
       },
       {
         value: "home_tools", label: "Narzędzia",
