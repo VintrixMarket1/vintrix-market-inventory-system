@@ -1,0 +1,196 @@
+import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
+import { MessageCircle, HandCoins, Clock, CheckCircle, XCircle, ThumbsUp, ThumbsDown, ArrowLeftRight, ChevronRight, X } from "lucide-react";
+import { format } from "date-fns";
+
+const INQUIRY_STATUS = {
+  new: { label: "Oczekuje", color: "bg-blue-100 text-blue-700", icon: Clock },
+  replied: { label: "Odpowiedziano", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
+  closed: { label: "Zamknięte", color: "bg-slate-100 text-slate-600", icon: XCircle },
+};
+
+const OFFER_STATUS = {
+  new: { label: "Oczekuje", color: "bg-blue-100 text-blue-700", icon: Clock },
+  accepted: { label: "Zaakceptowana", color: "bg-emerald-100 text-emerald-700", icon: ThumbsUp },
+  rejected: { label: "Odrzucona", color: "bg-red-100 text-red-700", icon: ThumbsDown },
+  countered: { label: "Kontroferta", color: "bg-amber-100 text-amber-700", icon: ArrowLeftRight },
+};
+
+function InquiryCard({ inquiry }) {
+  const cfg = INQUIRY_STATUS[inquiry.status] || INQUIRY_STATUS.new;
+  const Icon = cfg.icon;
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-slate-800 text-sm truncate">{inquiry.product_name || "Produkt"}</p>
+          <p className="text-[10px] text-slate-400 mt-0.5">{inquiry.created_date && format(new Date(inquiry.created_date), "dd.MM.yyyy HH:mm")}</p>
+        </div>
+        <Badge className={`text-[10px] shrink-0 ${cfg.color}`}>
+          <Icon className="w-3 h-3 mr-1" />{cfg.label}
+        </Badge>
+      </div>
+
+      <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700">
+        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Twoje zapytanie</p>
+        {inquiry.message}
+      </div>
+
+      {inquiry.admin_reply ? (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">
+          <p className="text-[10px] font-semibold text-emerald-500 uppercase tracking-wide mb-1">Odpowiedź sprzedawcy</p>
+          {inquiry.admin_reply}
+        </div>
+      ) : (
+        <p className="text-xs text-slate-400 italic">Czekamy na odpowiedź sprzedawcy...</p>
+      )}
+    </div>
+  );
+}
+
+function OfferCard({ offer }) {
+  const cfg = OFFER_STATUS[offer.status] || OFFER_STATUS.new;
+  const Icon = cfg.icon;
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-slate-800 text-sm truncate">{offer.product_name || "Produkt"}</p>
+          <p className="text-[10px] text-slate-400 mt-0.5">{offer.created_date && format(new Date(offer.created_date), "dd.MM.yyyy HH:mm")}</p>
+        </div>
+        <Badge className={`text-[10px] shrink-0 ${cfg.color}`}>
+          <Icon className="w-3 h-3 mr-1" />{cfg.label}
+        </Badge>
+      </div>
+
+      <div className="bg-slate-50 rounded-lg p-3 flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Twoja oferta</p>
+          <p className="text-lg font-extrabold text-slate-800">{offer.offered_price} PLN</p>
+        </div>
+        {offer.counter_price && (
+          <>
+            <ChevronRight className="w-4 h-4 text-slate-300" />
+            <div className="text-right">
+              <p className="text-[10px] font-semibold text-amber-500 uppercase tracking-wide mb-0.5">Kontroferta</p>
+              <p className="text-lg font-extrabold text-amber-600">{offer.counter_price} PLN</p>
+            </div>
+          </>
+        )}
+      </div>
+
+      {offer.message && (
+        <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-600">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Twoja wiadomość</p>
+          {offer.message}
+        </div>
+      )}
+
+      {offer.status === "accepted" && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">
+          ✅ Twoja oferta została zaakceptowana! {offer.admin_reply && <span>— {offer.admin_reply}</span>}
+        </div>
+      )}
+      {offer.status === "rejected" && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+          ❌ Oferta odrzucona. {offer.admin_reply && <span>{offer.admin_reply}</span>}
+        </div>
+      )}
+      {offer.status === "countered" && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+          💬 Sprzedawca zaproponował cenę <strong>{offer.counter_price} PLN</strong>.
+          {offer.admin_reply && <span> {offer.admin_reply}</span>}
+        </div>
+      )}
+      {offer.status === "new" && (
+        <p className="text-xs text-slate-400 italic">Czekamy na odpowiedź sprzedawcy...</p>
+      )}
+    </div>
+  );
+}
+
+export default function CustomerMessagesPanel({ user, onClose }) {
+  const [tab, setTab] = useState("inquiries");
+
+  const { data: inquiries = [], isLoading: loadingInq } = useQuery({
+    queryKey: ["my_inquiries", user?.email],
+    queryFn: () => base44.entities.ProductInquiry.filter({ customer_email: user?.email }, "-created_date"),
+    enabled: !!user?.email,
+  });
+
+  const { data: offers = [], isLoading: loadingOffers } = useQuery({
+    queryKey: ["my_offers", user?.email],
+    queryFn: () => base44.entities.PurchaseOffer.filter({ customer_email: user?.email }, "-created_date"),
+    enabled: !!user?.email,
+  });
+
+  const newReplies = inquiries.filter(i => i.status === "replied").length;
+  const newOfferResponses = offers.filter(o => ["accepted", "rejected", "countered"].includes(o.status)).length;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-end">
+      <div className="w-full max-w-md h-full bg-slate-50 flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="bg-white border-b border-slate-200 px-5 py-4 flex items-center justify-between shrink-0">
+          <div>
+            <h2 className="font-bold text-slate-900">Moje wiadomości</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Zapytania i oferty zakupu</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-slate-200 bg-white shrink-0">
+          <button
+            onClick={() => setTab("inquiries")}
+            className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 border-b-2 transition-colors ${tab === "inquiries" ? "border-emerald-500 text-emerald-600" : "border-transparent text-slate-500"}`}
+          >
+            <MessageCircle className="w-4 h-4" />
+            Zapytania
+            {newReplies > 0 && <span className="bg-emerald-500 text-white text-[10px] rounded-full px-1.5 py-0.5 leading-none">{newReplies}</span>}
+          </button>
+          <button
+            onClick={() => setTab("offers")}
+            className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 border-b-2 transition-colors ${tab === "offers" ? "border-emerald-500 text-emerald-600" : "border-transparent text-slate-500"}`}
+          >
+            <HandCoins className="w-4 h-4" />
+            Oferty
+            {newOfferResponses > 0 && <span className="bg-amber-500 text-white text-[10px] rounded-full px-1.5 py-0.5 leading-none">{newOfferResponses}</span>}
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {tab === "inquiries" && (
+            loadingInq ? (
+              <div className="flex justify-center py-16"><div className="w-7 h-7 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin" /></div>
+            ) : inquiries.length === 0 ? (
+              <div className="text-center py-16">
+                <MessageCircle className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-400 text-sm">Brak wysłanych zapytań</p>
+              </div>
+            ) : (
+              inquiries.map(inq => <InquiryCard key={inq.id} inquiry={inq} />)
+            )
+          )}
+          {tab === "offers" && (
+            loadingOffers ? (
+              <div className="flex justify-center py-16"><div className="w-7 h-7 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin" /></div>
+            ) : offers.length === 0 ? (
+              <div className="text-center py-16">
+                <HandCoins className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-400 text-sm">Brak złożonych ofert</p>
+              </div>
+            ) : (
+              offers.map(offer => <OfferCard key={offer.id} offer={offer} />)
+            )
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

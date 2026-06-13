@@ -5,10 +5,11 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Package, Search, LogOut, SlidersHorizontal, X } from "lucide-react";
+import { Package, Search, LogOut, SlidersHorizontal, X, MessageCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { CATEGORY_GROUPS, getCategoryLabel } from "@/lib/categoryConfig";
 import ProductDetailModal from "@/components/catalog/ProductDetailModal";
+import CustomerMessagesPanel from "@/components/catalog/CustomerMessagesPanel";
 
 const CONDITION_LABELS = { new: "Nowy", like_new: "Jak nowy", used: "Używany" };
 const CONDITIONS = ["new", "like_new", "used"];
@@ -25,6 +26,7 @@ export default function CustomerCatalog() {
   const [showFilters, setShowFilters] = useState(false);
 
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showMessages, setShowMessages] = useState(false);
 
   const { data: products = [] } = useQuery({
     queryKey: ["catalog_products"],
@@ -79,8 +81,11 @@ export default function CustomerCatalog() {
             <span className="font-bold text-slate-900">Vintrix Market</span>
             <span className="text-xs text-slate-400 hidden sm:block">— Katalog produktów</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <span className="text-sm text-slate-600 hidden sm:block">Cześć, <strong>{user?.full_name}</strong></span>
+            <Button variant="ghost" size="sm" onClick={() => setShowMessages(true)} className="gap-1.5 text-slate-500">
+              <MessageCircle className="w-4 h-4" /> Wiadomości
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => logout()} className="gap-1.5 text-slate-500">
               <LogOut className="w-4 h-4" /> Wyloguj
             </Button>
@@ -237,6 +242,10 @@ export default function CustomerCatalog() {
           </div>
         </div>
       </div>
+
+      {showMessages && (
+        <CustomerMessagesPanel user={user} onClose={() => setShowMessages(false)} />
+      )}
 
       <ProductDetailModal
         product={selectedProduct}
