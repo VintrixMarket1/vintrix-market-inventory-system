@@ -37,7 +37,7 @@ export default function Inventory() {
       return next;
     });
   };
-  const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "all" });
+  const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "in_stock" });
   const [viewMode, setViewMode] = useState("grid");
 
   const { data: products = [], isLoading } = useQuery({

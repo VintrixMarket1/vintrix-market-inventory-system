@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, Search, FileText, Plus, ChevronDown, ChevronUp, Printer } from "lucide-react";
-import { exportPZ, exportRW, exportPW, exportDRP } from "@/lib/palletPdfExport";
+import { exportPZ, exportRW, exportPW, exportDRP, exportWZ } from "@/lib/palletPdfExport";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
 
@@ -42,6 +42,7 @@ function DocumentRow({ doc, pallets }) {
   const handleExportPDF = (e) => {
     e.stopPropagation();
     if (doc.document_type === "PZ") exportPZ(doc, pallet);
+    else if (doc.document_type === "WZ") exportWZ(doc);
     else if (doc.document_type === "RW") exportRW(doc, pallet);
     else if (doc.document_type === "PW") exportPW(doc, pallet);
     else if (doc.document_type === "DRP") exportDRP(pallet, [], [doc]);

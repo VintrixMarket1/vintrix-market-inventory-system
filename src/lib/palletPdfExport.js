@@ -220,6 +220,47 @@ export function exportPW(doc_data, pallet) {
   doc.save(`${doc_data.document_number.replace(/\//g, "-")}.pdf`);
 }
 
+export function exportWZ(doc_data) {
+  const doc = new jsPDF();
+  addPageHeader(doc, "WZ — WYDANIE ZEWNETRZNE", doc_data.document_number, doc_data.date);
+  let y = 38;
+  doc.setFontSize(9);
+  const rows = [
+    ["Kontrahent:", pl(doc_data.counterparty || "—"), "Platforma:", pl(doc_data.platform || "—")],
+    ["Numer sprzedazy:", doc_data.sale_id || "—", "Data:", doc_data.date || "—"],
+    ["Wystawil:", pl(doc_data.created_by_name || "—"), "Status:", doc_data.status === "confirmed" ? "Zatwierdzony" : "Roboczy"],
+  ];
+  for (const [l1, v1, l2, v2] of rows) {
+    doc.setFont("helvetica", "bold"); doc.text(l1, 14, y); doc.setFont("helvetica", "normal"); doc.text(v1, 50, y);
+    if (l2) { doc.setFont("helvetica", "bold"); doc.text(l2, 110, y); doc.setFont("helvetica", "normal"); doc.text(v2, 155, y); }
+    y += 6;
+  }
+  y += 4; doc.line(14, y, 196, y); y += 6;
+
+  doc.setFillColor(240, 240, 240); doc.rect(14, y, 182, 6, "F");
+  doc.setFontSize(8); doc.setFont("helvetica", "bold");
+  doc.text("Produkt", 15, y + 4); doc.text("SKU", 95, y + 4); doc.text("Ilosc", 130, y + 4); doc.text("Cena jedn.", 148, y + 4); doc.text("Wartosc", 172, y + 4);
+  y += 7;
+  doc.setFont("helvetica", "normal");
+  for (const item of (doc_data.items || [])) {
+    if (y > 270) { doc.addPage(); y = 20; }
+    doc.text(pl((item.product_name || "—").substring(0, 38)), 15, y + 3);
+    doc.text(item.internal_code || "—", 95, y + 3);
+    doc.text(`${item.quantity} szt.`, 130, y + 3);
+    doc.text(`${(item.unit_price || 0).toFixed(2)} PLN`, 148, y + 3);
+    doc.setFont("helvetica", "bold"); doc.text(`${(item.total_value || 0).toFixed(2)} PLN`, 172, y + 3); doc.setFont("helvetica", "normal");
+    doc.setDrawColor(220); doc.line(14, y + 8, 196, y + 8);
+    y += 9;
+  }
+  y += 6;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+  doc.text(`RAZEM: ${(doc_data.total_value || 0).toFixed(2)} PLN`, 14, y);
+  y += 12;
+  if (doc_data.notes) { doc.setFontSize(9); doc.setFont("helvetica", "italic"); doc.text(`Uwagi: ${pl(doc_data.notes)}`, 14, y); y += 10; }
+  addSignatureLine(doc, y);
+  doc.save(`${doc_data.document_number.replace(/\//g, "-")}.pdf`);
+}
+
 export function exportPZ(doc_data, pallet) {
   const doc = new jsPDF();
   addPageHeader(doc, "PZ — PRZYJĘCIE ZEWNĘTRZNE", doc_data.document_number, doc_data.date);
