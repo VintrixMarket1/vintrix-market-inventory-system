@@ -5,16 +5,19 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Package, Search, LogOut, SlidersHorizontal, X, MessageCircle } from "lucide-react";
+import { Package, Search, LogOut, SlidersHorizontal, X, MessageCircle, ShoppingCart } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { CATEGORY_GROUPS, getCategoryLabel } from "@/lib/categoryConfig";
 import ProductDetailModal from "@/components/catalog/ProductDetailModal";
 import CustomerMessagesPanel from "@/components/catalog/CustomerMessagesPanel";
+import CartPanel from "@/components/catalog/CartPanel";
+import CheckoutModal from "@/components/catalog/CheckoutModal";
+import { useCart } from "@/lib/CartContext.jsx";
 
 const CONDITION_LABELS = { new: "Nowy", like_new: "Jak nowy", used: "Używany" };
 const CONDITIONS = ["new", "like_new", "used"];
 
-export default function CustomerCatalog() {
+function CustomerCatalog() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
 
@@ -27,6 +30,9 @@ export default function CustomerCatalog() {
 
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showMessages, setShowMessages] = useState(false);
+  const [showCart, setShowCart] = useState(false);
+  const [directCheckoutProduct, setDirectCheckoutProduct] = useState(null);
+  const { addToCart, isInCart, cartItems } = useCart();
 
   const { data: products = [] } = useQuery({
     queryKey: ["catalog_products"],
@@ -85,6 +91,13 @@ export default function CustomerCatalog() {
             <span className="text-sm text-slate-600 hidden sm:block">Cześć, <strong>{user?.full_name}</strong></span>
             <Button variant="ghost" size="sm" onClick={() => setShowMessages(true)} className="gap-1.5 text-slate-500">
               <MessageCircle className="w-4 h-4" /> Wiadomości
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowCart(true)} className="gap-1.5 text-slate-500 relative">
+              <ShoppingCart className="w-4 h-4" />
+              Koszyk
+              {cartItems.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center leading-none font-bold">{cartItems.length}</span>
+              )}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => logout()} className="gap-1.5 text-slate-500">
               <LogOut className="w-4 h-4" /> Wyloguj
@@ -207,10 +220,9 @@ export default function CustomerCatalog() {
                 {filtered.map(product => (
                   <div
                     key={product.id}
-                    className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer group"
-                    onClick={() => setSelectedProduct(product)}
+                    className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all group flex flex-col"
                   >
-                    <div className="aspect-square bg-slate-100 overflow-hidden relative">
+                    <div className="aspect-square bg-slate-100 overflow-hidden relative cursor-pointer" onClick={() => setSelectedProduct(product)}>
                       {product.images?.[0] ? (
                         <img src={product.images[0]} alt={product.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       ) : (
@@ -220,7 +232,7 @@ export default function CustomerCatalog() {
                         <span className="absolute top-2 left-2 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide">Wystawiony</span>
                       )}
                     </div>
-                    <div className="p-3 space-y-1.5">
+                    <div className="p-3 space-y-1.5 flex-1 flex flex-col cursor-pointer" onClick={() => setSelectedProduct(product)}>
                       <p className="font-semibold text-sm text-slate-900 line-clamp-2">{product.product_name}</p>
                       <div className="flex flex-wrap gap-1">
                         {product.brand && <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{product.brand}</span>}
@@ -230,11 +242,38 @@ export default function CustomerCatalog() {
                         <p className="text-[10px] text-slate-400">{getCategoryLabel(product.category)}{product.size ? ` · r. ${product.size}` : ""}</p>
                       )}
                       {product.suggested_sale_price ? (
-                        <p className="text-sm font-bold text-emerald-600">{product.suggested_sale_price} PLN</p>
+                        <p className="text-sm font-bold text-emerald-600 mt-auto pt-1">{product.suggested_sale_price} PLN</p>
                       ) : (
-                        <p className="text-xs text-slate-400 italic">Cena na zapytanie</p>
+                        <p className="text-xs text-slate-400 italic mt-auto pt-1">Cena na zapytanie</p>
                       )}
                     </div>
+                    {product.suggested_sale_price && (
+                      <div className="px-3 pb-3 grid grid-cols-2 gap-1.5" onClick={e => e.stopPropagation()}>
+                        <Button
+                          size="sm"
+                          className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 gap-1"
+                          onClick={() => setDirectCheckoutProduct(product)}
+                        >
+                          <ShoppingCart className="w-3 h-3" /> Kup teraz
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className={`h-8 text-xs gap-1 ${isInCart(product.id) ? "border-emerald-400 text-emerald-600" : "border-slate-300 text-slate-600"}`}
+                          onClick={() => { addToCart(product); setShowCart(true); }}
+                        >
+                          <ShoppingCart className="w-3 h-3" />
+                          {isInCart(product.id) ? "W koszyku" : "+ Koszyk"}
+                        </Button>
+                      </div>
+                    )}
+                    {!product.suggested_sale_price && (
+                      <div className="px-3 pb-3" onClick={e => e.stopPropagation()}>
+                        <Button size="sm" variant="outline" className="w-full h-8 text-xs gap-1 border-slate-300 text-slate-600" onClick={() => setSelectedProduct(product)}>
+                          <MessageCircle className="w-3 h-3" /> Zapytaj o cenę
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

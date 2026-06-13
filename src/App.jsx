@@ -8,7 +8,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { LangProvider } from '@/lib/i18n';
 import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
-import CustomerCatalog from './pages/CustomerCatalog';
+import CustomerCatalogWrapper from './pages/CustomerCatalog.jsx';
 import Inquiries from './pages/Inquiries';
 
 import AppLayout from './components/layout/AppLayout';
@@ -59,7 +59,7 @@ const AuthenticatedApp = () => {
   if (user && user.role === 'user') {
     return (
       <Routes>
-        <Route path="*" element={<CustomerCatalog />} />
+        <Route path="*" element={<CustomerCatalogWrapper />} />
       </Routes>
     );
   }

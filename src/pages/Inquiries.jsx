@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, CheckCircle, Clock, XCircle, HandCoins, ThumbsUp, ThumbsDown, ArrowLeftRight } from "lucide-react";
+import { MessageCircle, CheckCircle, Clock, XCircle, HandCoins, ThumbsUp, ThumbsDown, ArrowLeftRight, Heart, Package } from "lucide-react";
 import { format } from "date-fns";
 
 const INQUIRY_STATUS = {
@@ -232,6 +232,55 @@ function OffersTab() {
   );
 }
 
+function FavoritesTab() {
+  const { data: favorites = [], isLoading } = useQuery({
+    queryKey: ["admin_favorites"],
+    queryFn: () => base44.entities.Favorite.list("-created_date"),
+  });
+
+  // Group by product
+  const grouped = favorites.reduce((acc, fav) => {
+    const key = fav.product_id;
+    if (!acc[key]) acc[key] = { product_name: fav.product_name, product_id: fav.product_id, customers: [] };
+    acc[key].customers.push({ name: fav.customer_name, email: fav.customer_email, date: fav.created_date });
+    return acc;
+  }, {});
+
+  if (isLoading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin" /></div>;
+
+  if (favorites.length === 0) return (
+    <div className="text-center py-20">
+      <Heart className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+      <p className="text-slate-400">Brak polubionych produktów</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-3">
+      {Object.values(grouped).map(group => (
+        <div key={group.product_id} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+            <p className="font-semibold text-slate-900">{group.product_name || "—"}</p>
+            <span className="ml-auto bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">{group.customers.length} ❤️</span>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {group.customers.map((c, i) => (
+              <div key={i} className="flex items-center justify-between py-2 text-sm">
+                <div>
+                  <span className="font-medium text-slate-800">{c.name || "Klient"}</span>
+                  {c.email && <span className="ml-2 text-xs text-slate-400">{c.email}</span>}
+                </div>
+                {c.date && <span className="text-xs text-slate-400">{format(new Date(c.date), "dd.MM.yyyy HH:mm")}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Inquiries() {
   const [tab, setTab] = useState("inquiries");
   const queryClient = useQueryClient();
@@ -239,8 +288,8 @@ export default function Inquiries() {
   const { data: inquiries = [] } = useQuery({ queryKey: ["inquiries"], queryFn: () => base44.entities.ProductInquiry.list("-created_date") });
   const { data: offers = [] } = useQuery({ queryKey: ["purchase_offers"], queryFn: () => base44.entities.PurchaseOffer.list("-created_date") });
   const { data: notifications = [] } = useQuery({ queryKey: ["admin_notifications_unread"], queryFn: () => base44.entities.AdminNotification.filter({ is_read: false }) });
+  const { data: favorites = [] } = useQuery({ queryKey: ["admin_favorites"], queryFn: () => base44.entities.Favorite.list("-created_date") });
 
-  // Mark all unread notifications as read when admin visits this page
   useEffect(() => {
     if (notifications.length === 0) return;
     Promise.all(notifications.map(n => base44.entities.AdminNotification.update(n.id, { is_read: true }))).then(() => {
@@ -255,10 +304,9 @@ export default function Inquiries() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Wiadomości od klientów</h1>
-        <p className="text-sm text-slate-500 mt-1">Zapytania i oferty zakupu z katalogu</p>
+        <p className="text-sm text-slate-500 mt-1">Zapytania, oferty zakupu i polubienia z katalogu</p>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-1 border-b border-slate-200">
         <button
           onClick={() => setTab("inquiries")}
@@ -276,9 +324,19 @@ export default function Inquiries() {
           Oferty zakupu
           {newOffers > 0 && <span className="bg-emerald-500 text-white text-[10px] rounded-full px-1.5 py-0.5 leading-none">{newOffers}</span>}
         </button>
+        <button
+          onClick={() => setTab("favorites")}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${tab === "favorites" ? "border-emerald-500 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+        >
+          <Heart className="w-4 h-4" />
+          Polubienia
+          {favorites.length > 0 && <span className="bg-red-400 text-white text-[10px] rounded-full px-1.5 py-0.5 leading-none">{favorites.length}</span>}
+        </button>
       </div>
 
-      {tab === "inquiries" ? <InquiriesTab /> : <OffersTab />}
+      {tab === "inquiries" && <InquiriesTab />}
+      {tab === "offers" && <OffersTab />}
+      {tab === "favorites" && <FavoritesTab />}
     </div>
   );
 }

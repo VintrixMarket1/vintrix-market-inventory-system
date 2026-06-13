@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Package, ChevronLeft, ChevronRight, MessageCircle, X, CheckCircle, Loader2, Tag, Palette, Ruler, ShoppingBag, HandCoins, Heart } from "lucide-react";
+import { Package, ChevronLeft, ChevronRight, MessageCircle, X, CheckCircle, Loader2, Tag, Palette, Ruler, ShoppingBag, HandCoins, Heart, ZoomIn } from "lucide-react";
 import { getCategoryLabel } from "@/lib/categoryConfig";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
