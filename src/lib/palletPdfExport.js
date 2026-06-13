@@ -2,6 +2,21 @@ import jsPDF from "jspdf";
 
 const COMPANY = "Vintrix Market";
 
+// jsPDF built-in fonts don't support Polish characters — normalize them
+function pl(str) {
+  if (!str) return str;
+  return String(str)
+    .replace(/ą/g, "a").replace(/Ą/g, "A")
+    .replace(/ć/g, "c").replace(/Ć/g, "C")
+    .replace(/ę/g, "e").replace(/Ę/g, "E")
+    .replace(/ł/g, "l").replace(/Ł/g, "L")
+    .replace(/ń/g, "n").replace(/Ń/g, "N")
+    .replace(/ó/g, "o").replace(/Ó/g, "O")
+    .replace(/ś/g, "s").replace(/Ś/g, "S")
+    .replace(/ź/g, "z").replace(/Ź/g, "Z")
+    .replace(/ż/g, "z").replace(/Ż/g, "Z");
+}
+
 function addPageHeader(doc, title, docNumber, date) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
@@ -9,11 +24,11 @@ function addPageHeader(doc, title, docNumber, date) {
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
-  doc.text(title, 14, 26);
+  doc.text(pl(title), 14, 26);
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.text(docNumber, 150, 18);
+  doc.text(pl(docNumber), 150, 18);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text(`Data: ${date}`, 150, 25);
@@ -32,7 +47,7 @@ function addSignatureLine(doc, y, label = "Podpis osoby odpowiedzialnej") {
   doc.line(14, y + 20, 90, y + 20);
   doc.setFontSize(8);
   doc.setTextColor(130);
-  doc.text(label, 14, y + 25);
+  doc.text(pl(label), 14, y + 25);
   doc.setTextColor(0);
   return y + 30;
 }
@@ -56,14 +71,14 @@ export function exportDRP(pallet, products, docs) {
   const infoRows = [
     ["Numer palety:", pallet.pallet_code, "Dostawca / Inwestor:", pallet.investor_name || "—"],
     ["Data zakupu:", pallet.purchase_date || "—", "Numer faktury:", pallet.invoice_number || "—"],
-    ["Wartość zakupowa:", `${(pallet.total_cost || 0).toFixed(2)} PLN`, "Koszty dodatkowe:", `${(pallet.additional_costs || 0).toFixed(2)} PLN`],
-    ["Wartość do rozliczenia:", `${totalValue.toFixed(2)} PLN`, "Metoda alokacji:", drpDoc?.allocation_method || pallet.allocation_method || "equal"],
+    ["Wartosc zakupowa:", `${(pallet.total_cost || 0).toFixed(2)} PLN`, "Koszty dodatkowe:", `${(pallet.additional_costs || 0).toFixed(2)} PLN`],
+    ["Wartosc do rozliczenia:", `${totalValue.toFixed(2)} PLN`, "Metoda alokacji:", drpDoc?.allocation_method || pallet.allocation_method || "equal"],
     ["Dokument PZ:", pzDoc?.document_number || "—", "Dokument RW:", rwDoc?.document_number || "—"],
-    ["Dokument PW:", pwDoc?.document_number || "—", "Zatwierdził:", pallet.exploded_by || "—"],
+    ["Dokument PW:", pwDoc?.document_number || "—", "Zatwierdzil:", pallet.exploded_by || "—"],
   ];
   for (const [l1, v1, l2, v2] of infoRows) {
-    doc.setFont("helvetica", "bold"); doc.text(l1, 14, y); doc.setFont("helvetica", "normal"); doc.text(v1, 55, y);
-    if (l2) { doc.setFont("helvetica", "bold"); doc.text(l2, 110, y); doc.setFont("helvetica", "normal"); doc.text(v2, 155, y); }
+    doc.setFont("helvetica", "bold"); doc.text(pl(l1), 14, y); doc.setFont("helvetica", "normal"); doc.text(pl(v1), 55, y);
+    if (l2) { doc.setFont("helvetica", "bold"); doc.text(pl(l2), 110, y); doc.setFont("helvetica", "normal"); doc.text(pl(v2), 155, y); }
     y += 6;
   }
   y += 4;
@@ -71,11 +86,11 @@ export function exportDRP(pallet, products, docs) {
 
   // Products table
   doc.setFont("helvetica", "bold"); doc.setFontSize(10);
-  doc.text("Lista produktów", 14, y); y += 5;
+  doc.text("Lista produktow", 14, y); y += 5;
 
   // Table header
   const cols = [14, 60, 95, 115, 140, 165, 196];
-  const headers = ["Produkt / SKU", "Kategoria", "Stan", "Ilość", "Cena spr.", "Koszt wł."];
+  const headers = ["Produkt / SKU", "Kategoria", "Stan", "Ilosc", "Cena spr.", "Koszt wl."];
   doc.setFillColor(240, 240, 240); doc.rect(14, y, 182, 6, "F");
   doc.setFontSize(8); doc.setFont("helvetica", "bold");
   headers.forEach((h, i) => doc.text(h, cols[i] + 1, y + 4));
@@ -86,12 +101,10 @@ export function exportDRP(pallet, products, docs) {
   for (const p of products) {
     if (y > 270) { doc.addPage(); y = 20; }
     const qty = p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1;
-    const name = (p.product_name || "—").substring(0, 28);
-    const sku = p.internal_code ? `\n${p.internal_code}` : "";
-    doc.text(name, cols[0] + 1, y + 3);
+    doc.text(pl((p.product_name || "—").substring(0, 28)), cols[0] + 1, y + 3);
     if (p.internal_code) { doc.setFontSize(7); doc.setTextColor(130); doc.text(p.internal_code, cols[0] + 1, y + 7); doc.setFontSize(8); doc.setTextColor(0); }
-    doc.text((p.category || "—"), cols[1] + 1, y + 3);
-    doc.text((p.condition || "—"), cols[2] + 1, y + 3);
+    doc.text(pl(p.category || "—"), cols[1] + 1, y + 3);
+    doc.text(pl(p.condition || "—"), cols[2] + 1, y + 3);
     doc.text(String(qty), cols[3] + 1, y + 3);
     doc.text(p.suggested_sale_price ? `${p.suggested_sale_price} PLN` : "—", cols[4] + 1, y + 3);
     doc.setFont("helvetica", "bold");
@@ -104,13 +117,13 @@ export function exportDRP(pallet, products, docs) {
 
   y += 4;
   doc.setFont("helvetica", "bold"); doc.setFontSize(10);
-  doc.text(`Suma produktów: ${totalAllocated.toFixed(2)} PLN`, 14, y);
-  doc.text(`Wartość palety: ${totalValue.toFixed(2)} PLN`, 120, y);
+  doc.text(`Suma produktow: ${totalAllocated.toFixed(2)} PLN`, 14, y);
+  doc.text(`Wartosc palety: ${totalValue.toFixed(2)} PLN`, 120, y);
   y += 6;
   const diff = totalValue - totalAllocated;
   if (Math.abs(diff) > 0.01) {
     doc.setTextColor(200, 80, 0);
-    doc.text(`Różnica zaokrąglenia: ${diff.toFixed(2)} PLN`, 14, y);
+    doc.text(`Roznica zaokraglenia: ${diff.toFixed(2)} PLN`, 14, y);
     doc.setTextColor(0);
     y += 6;
   }
@@ -118,7 +131,7 @@ export function exportDRP(pallet, products, docs) {
   doc.setFont("helvetica", "bold"); doc.setFontSize(11);
   doc.setFillColor(230, 255, 230);
   doc.rect(14, y, 182, 8, "F");
-  doc.text(`STATUS: ZATWIERDZONE ✓`, 14, y + 5.5);
+  doc.text("STATUS: ZATWIERDZONE", 14, y + 5.5);
   y += 14;
 
   addSignatureLine(doc, y);
@@ -131,9 +144,9 @@ export function exportRW(doc_data, pallet) {
   let y = 38;
   doc.setFontSize(9);
   const rows = [
-    ["Paleta:", pallet?.pallet_code || "—", "Dostawca:", pallet?.investor_name || doc_data.counterparty || "—"],
-    ["Powiązany PZ:", doc_data.related_pz_number || "—", "Data:", doc_data.date || "—"],
-    ["Wystawił:", doc_data.created_by_name || "—", "Powód:", "Rozbicie palety / dekompletacja"],
+    ["Paleta:", pallet?.pallet_code || "—", "Dostawca:", pl(pallet?.investor_name || doc_data.counterparty || "—")],
+    ["Powiazany PZ:", doc_data.related_pz_number || "—", "Data:", doc_data.date || "—"],
+    ["Wystawil:", pl(doc_data.created_by_name || "—"), "Powod:", "Rozbicie palety / dekompletacja"],
   ];
   for (const [l1, v1, l2, v2] of rows) {
     doc.setFont("helvetica", "bold"); doc.text(l1, 14, y); doc.setFont("helvetica", "normal"); doc.text(v1, 50, y);
@@ -145,11 +158,11 @@ export function exportRW(doc_data, pallet) {
   // Items
   doc.setFillColor(240, 240, 240); doc.rect(14, y, 182, 6, "F");
   doc.setFontSize(8); doc.setFont("helvetica", "bold");
-  doc.text("Pozycja", 15, y + 4); doc.text("Ilość", 130, y + 4); doc.text("Wartość", 165, y + 4);
+  doc.text("Pozycja", 15, y + 4); doc.text("Ilosc", 130, y + 4); doc.text("Wartosc", 165, y + 4);
   y += 7;
   doc.setFont("helvetica", "normal");
   for (const item of (doc_data.items || [])) {
-    doc.text(item.product_name || "—", 15, y + 3);
+    doc.text(pl(item.product_name || "—"), 15, y + 3);
     doc.text(`${item.quantity} szt.`, 130, y + 3);
     doc.setFont("helvetica", "bold"); doc.text(`${(item.total_value || 0).toFixed(2)} PLN`, 165, y + 3); doc.setFont("helvetica", "normal");
     doc.setDrawColor(220); doc.line(14, y + 8, 196, y + 8);
@@ -159,7 +172,7 @@ export function exportRW(doc_data, pallet) {
   doc.setFont("helvetica", "bold"); doc.setFontSize(11);
   doc.text(`RAZEM: ${(doc_data.total_value || 0).toFixed(2)} PLN`, 14, y);
   y += 12;
-  if (doc_data.notes) { doc.setFontSize(9); doc.setFont("helvetica", "italic"); doc.text(`Uwagi: ${doc_data.notes}`, 14, y); y += 10; }
+  if (doc_data.notes) { doc.setFontSize(9); doc.setFont("helvetica", "italic"); doc.text(`Uwagi: ${pl(doc_data.notes)}`, 14, y); y += 10; }
   addSignatureLine(doc, y);
   doc.save(`${doc_data.document_number.replace(/\//g, "-")}.pdf`);
 }
@@ -170,9 +183,9 @@ export function exportPW(doc_data, pallet) {
   let y = 38;
   doc.setFontSize(9);
   const rows = [
-    ["Paleta:", pallet?.pallet_code || "—", "Dostawca:", pallet?.investor_name || "—"],
-    ["Powiązany PZ:", doc_data.related_pz_number || "—", "Powiązany RW:", doc_data.related_rw_number || "—"],
-    ["Metoda alokacji:", doc_data.allocation_method || "equal", "Wystawił:", doc_data.created_by_name || "—"],
+    ["Paleta:", pallet?.pallet_code || "—", "Dostawca:", pl(pallet?.investor_name || "—")],
+    ["Powiazany PZ:", doc_data.related_pz_number || "—", "Powiazany RW:", doc_data.related_rw_number || "—"],
+    ["Metoda alokacji:", doc_data.allocation_method || "equal", "Wystawil:", pl(doc_data.created_by_name || "—")],
   ];
   for (const [l1, v1, l2, v2] of rows) {
     doc.setFont("helvetica", "bold"); doc.text(l1, 14, y); doc.setFont("helvetica", "normal"); doc.text(v1, 50, y);
@@ -182,7 +195,7 @@ export function exportPW(doc_data, pallet) {
   y += 4; doc.line(14, y, 196, y); y += 6;
 
   const cols = [14, 60, 100, 125, 152, 175];
-  const headers = ["Produkt", "SKU", "Kat./Stan", "Ilość", "Cena jedn.", "Wartość"];
+  const headers = ["Produkt", "SKU", "Kat./Stan", "Ilosc", "Cena jedn.", "Wartosc"];
   doc.setFillColor(240, 240, 240); doc.rect(14, y, 182, 6, "F");
   doc.setFontSize(8); doc.setFont("helvetica", "bold");
   headers.forEach((h, i) => doc.text(h, cols[i] + 1, y + 4));
@@ -190,9 +203,9 @@ export function exportPW(doc_data, pallet) {
   doc.setFont("helvetica", "normal");
   for (const item of (doc_data.items || [])) {
     if (y > 270) { doc.addPage(); y = 20; }
-    doc.text((item.product_name || "—").substring(0, 26), cols[0] + 1, y + 3);
+    doc.text(pl((item.product_name || "—").substring(0, 26)), cols[0] + 1, y + 3);
     doc.text(item.internal_code || "—", cols[1] + 1, y + 3);
-    doc.text(`${item.category || "—"}`, cols[2] + 1, y + 3);
+    doc.text(pl(item.category || "—"), cols[2] + 1, y + 3);
     doc.text(`${item.quantity}`, cols[3] + 1, y + 3);
     doc.text(`${(item.unit_price || 0).toFixed(2)}`, cols[4] + 1, y + 3);
     doc.setFont("helvetica", "bold"); doc.text(`${(item.total_value || 0).toFixed(2)}`, cols[5] + 1, y + 3); doc.setFont("helvetica", "normal");
@@ -213,9 +226,9 @@ export function exportPZ(doc_data, pallet) {
   let y = 38;
   doc.setFontSize(9);
   const rows = [
-    ["Paleta:", pallet?.pallet_code || "—", "Dostawca:", pallet?.investor_name || doc_data.counterparty || "—"],
+    ["Paleta:", pallet?.pallet_code || "—", "Dostawca:", pl(pallet?.investor_name || doc_data.counterparty || "—")],
     ["Numer faktury:", doc_data.reference_number || "—", "Data:", doc_data.date || "—"],
-    ["Wystawił:", doc_data.created_by_name || "—", "Status:", doc_data.status === "confirmed" ? "Zatwierdzony" : "Roboczy"],
+    ["Wystawil:", pl(doc_data.created_by_name || "—"), "Status:", doc_data.status === "confirmed" ? "Zatwierdzony" : "Roboczy"],
   ];
   for (const [l1, v1, l2, v2] of rows) {
     doc.setFont("helvetica", "bold"); doc.text(l1, 14, y); doc.setFont("helvetica", "normal"); doc.text(v1, 50, y);
@@ -226,11 +239,11 @@ export function exportPZ(doc_data, pallet) {
 
   doc.setFillColor(240, 240, 240); doc.rect(14, y, 182, 6, "F");
   doc.setFontSize(8); doc.setFont("helvetica", "bold");
-  doc.text("Produkt", 15, y + 4); doc.text("Ilość", 120, y + 4); doc.text("Cena jedn.", 145, y + 4); doc.text("Wartość", 172, y + 4);
+  doc.text("Produkt", 15, y + 4); doc.text("Ilosc", 120, y + 4); doc.text("Cena jedn.", 145, y + 4); doc.text("Wartosc", 172, y + 4);
   y += 7;
   doc.setFont("helvetica", "normal");
   for (const item of (doc_data.items || [])) {
-    doc.text((item.product_name || "—").substring(0, 40), 15, y + 3);
+    doc.text(pl((item.product_name || "—").substring(0, 40)), 15, y + 3);
     doc.text(`${item.quantity} szt.`, 120, y + 3);
     doc.text(`${(item.unit_price || 0).toFixed(2)} PLN`, 145, y + 3);
     doc.setFont("helvetica", "bold"); doc.text(`${(item.total_value || 0).toFixed(2)} PLN`, 172, y + 3); doc.setFont("helvetica", "normal");
