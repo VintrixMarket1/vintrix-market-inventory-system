@@ -12,23 +12,10 @@ import { compressImage } from "@/lib/compressImage";
 import { useQuery } from "@tanstack/react-query";
 import { SUBCATEGORIES } from "@/lib/subcategories";
 import { useLang } from "@/lib/i18n";
-
-const categories = ["clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
-
-const CATEGORY_PREFIXES = {
-  clothing: "CLO",
-  shoes: "SHO",
-  accessories: "ACC",
-  electronics: "ELC",
-  home: "HOM",
-  toys: "TOY",
-  sports: "SPT",
-  books: "BOK",
-  other: "OTH",
-};
+import { CATEGORY_GROUPS } from "@/lib/categoryConfig";
 
 const generateSKU = (category) => {
-  const prefix = CATEGORY_PREFIXES[category] || "OTH";
+  const prefix = (category || "other").slice(0, 3).toUpperCase();
   const num = Math.floor(Math.random() * 99999999).toString().padStart(8, "0");
   return `${prefix}-${num}`;
 };
@@ -249,8 +236,15 @@ Generate ONLY the ready HTML. Start with <p>.`;
               <Label>{t("pf_category")} *</Label>
               <Select value={form.category} onValueChange={v => handleChange("category", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {categories.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
+                <SelectContent className="max-h-72">
+                  {CATEGORY_GROUPS.map(group => (
+                    <React.Fragment key={group.group}>
+                      <div className="px-2 py-1 text-xs font-semibold text-slate-400 uppercase">{group.icon} {group.group}</div>
+                      {group.items.map(item => (
+                        <SelectItem key={item.value} value={item.value} className="pl-5">{item.label}</SelectItem>
+                      ))}
+                    </React.Fragment>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
