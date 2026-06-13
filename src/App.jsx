@@ -9,14 +9,13 @@ import { LangProvider } from '@/lib/i18n';
 import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
 import CustomerCatalogWrapper from './pages/CustomerCatalog.jsx';
-import { CartProvider } from './lib/CartContext';
 import Inquiries from './pages/Inquiries';
 
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Listings from './pages/Listings';
-import Sales from './pages/Sales';
+import Sales from './pages/Sales.jsx';
 import QuickAdd from './pages/QuickAdd';
 import Pallets from './pages/Pallets';
 import AddProduct from './pages/AddProduct';
@@ -59,11 +58,9 @@ const AuthenticatedApp = () => {
   // Klient (role: user) widzi tylko katalog
   if (user && user.role === 'user') {
     return (
-      <CartProvider>
-        <Routes>
-          <Route path="*" element={<CustomerCatalogWrapper />} />
-        </Routes>
-      </CartProvider>
+      <Routes>
+        <Route path="*" element={<CustomerCatalogWrapper />} />
+      </Routes>
     );
   }
 
