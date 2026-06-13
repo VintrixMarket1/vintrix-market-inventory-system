@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { X, CheckSquare, Tag, TrendingUp, Trash2, Loader2, ShoppingBag } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { X, CheckSquare, Tag, TrendingUp, Trash2, Loader2, ShoppingBag, Package } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
-export default function BulkActionsBar({ selectedIds, allProducts, onClear, onListSelected, onShopifyPublish }) {
+export default function BulkActionsBar({ selectedIds, allProducts, pallets = [], onClear, onListSelected, onShopifyPublish }) {
   const [loading, setLoading] = useState(false);
+  const [selectedPallet, setSelectedPallet] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const count = selectedIds.size;
@@ -19,6 +21,21 @@ export default function BulkActionsBar({ selectedIds, allProducts, onClear, onLi
     }
     queryClient.invalidateQueries({ queryKey: ["products"] });
     toast({ title: "Zaktualizowano", description: `Zmieniono status ${ids.length} produktów na "${status}"` });
+    setLoading(false);
+    onClear();
+  };
+
+  const bulkAssignPallet = async () => {
+    if (!selectedPallet) return;
+    setLoading(true);
+    const ids = [...selectedIds];
+    for (const id of ids) {
+      await base44.entities.Product.update(id, { pallet_id: selectedPallet });
+    }
+    queryClient.invalidateQueries({ queryKey: ["products"] });
+    const pallet = pallets.find(p => p.id === selectedPallet);
+    toast({ title: "Przypisano do palety", description: `${ids.length} produktów przypisano do ${pallet?.pallet_code || "palety"}` });
+    setSelectedPallet("");
     setLoading(false);
     onClear();
   };
@@ -59,6 +76,27 @@ export default function BulkActionsBar({ selectedIds, allProducts, onClear, onLi
           Sprzedane
         </Button>
       </div>
+
+      <div className="w-px h-5 bg-slate-600" />
+
+      {pallets.length > 0 && (
+        <div className="flex items-center gap-1.5">
+          <Package className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <Select value={selectedPallet} onValueChange={setSelectedPallet} disabled={loading}>
+            <SelectTrigger className="h-7 text-xs bg-slate-800 border-slate-600 text-slate-200 w-36">
+              <SelectValue placeholder="Przypisz paletę" />
+            </SelectTrigger>
+            <SelectContent>
+              {pallets.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.pallet_code} — {p.investor_name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" className="h-7 text-xs bg-amber-600 hover:bg-amber-700 text-white" onClick={bulkAssignPallet} disabled={loading || !selectedPallet}>
+            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : "OK"}
+          </Button>
+        </div>
+      )}
 
       <div className="w-px h-5 bg-slate-600" />
 

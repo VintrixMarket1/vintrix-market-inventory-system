@@ -319,6 +319,7 @@ export default function Inventory() {
         <BulkActionsBar
           selectedIds={bulkSelected}
           allProducts={products}
+          pallets={pallets}
           onClear={() => setBulkSelected(new Set())}
           onListSelected={(ids) => {
             const first = products.find(p => p.id === ids[0]);
