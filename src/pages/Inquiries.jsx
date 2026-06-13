@@ -5,8 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { MessageCircle, CheckCircle, Clock, XCircle, HandCoins, ThumbsUp, ThumbsDown, ArrowLeftRight, Heart, Package } from "lucide-react";
 import { format } from "date-fns";
+import { useToast } from "@/components/ui/use-toast";
 
 const INQUIRY_STATUS = {
   new: { label: "Nowe", color: "bg-blue-100 text-blue-700", icon: Clock },
@@ -233,10 +235,59 @@ function OffersTab() {
 }
 
 function FavoritesTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [actionId, setActionId] = useState(null);
+  const [offerPrice, setOfferPrice] = useState("");
+  const [offerMsg, setOfferMsg] = useState("");
+  const [saving, setSaving] = useState(false);
+
   const { data: favorites = [], isLoading } = useQuery({
     queryKey: ["admin_favorites"],
     queryFn: () => base44.entities.Favorite.list("-created_date"),
   });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ["favorites_products"],
+    queryFn: async () => {
+      const favs = await base44.entities.Favorite.list();
+      const productIds = [...new Set(favs.map(f => f.product_id))];
+      const prods = await Promise.all(productIds.map(id => base44.entities.Product.get(id).catch(() => null)));
+      return prods.filter(Boolean);
+    },
+  });
+
+  const handleSendOffer = async (product, customerEmail, customerName) => {
+    if (!offerPrice || Number(offerPrice) <= 0) return;
+    setSaving(true);
+    await base44.entities.PurchaseOffer.create({
+      product_id: product.id,
+      product_name: product.product_name,
+      offered_price: Number(offerPrice),
+      message: offerMsg || undefined,
+      customer_name: customerName || "Admin",
+      customer_email: customerEmail || "admin@vintrix.pl",
+      status: "new",
+    });
+    await base44.entities.AdminNotification.create({
+      type: "new_offer",
+      title: "Nowa oferta zakupu",
+      message: `Admin złożył ofertę ${offerPrice} PLN za "${product.product_name}".`,
+      product_id: product.id,
+      product_name: product.product_name,
+      customer_name: customerName || "Admin",
+      customer_email: customerEmail || "admin@vintrix.pl",
+      reference_id: product.id,
+      is_read: false,
+    });
+    queryClient.invalidateQueries({ queryKey: ["purchase_offers"] });
+    queryClient.invalidateQueries({ queryKey: ["admin_favorites"] });
+    setSaving(false);
+    setActionId(null);
+    setOfferPrice("");
+    setOfferMsg("");
+    toast({ title: "Oferta wysłana!", description: "Oferta została zapisana." });
+  };
 
   // Group by product
   const grouped = favorites.reduce((acc, fav) => {
@@ -245,6 +296,8 @@ function FavoritesTab() {
     acc[key].customers.push({ name: fav.customer_name, email: fav.customer_email, date: fav.created_date });
     return acc;
   }, {});
+
+  const getProduct = (productId) => products.find(p => p.id === productId);
 
   if (isLoading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin" /></div>;
 
@@ -257,26 +310,57 @@ function FavoritesTab() {
 
   return (
     <div className="space-y-3">
-      {Object.values(grouped).map(group => (
-        <div key={group.product_id} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <Heart className="w-4 h-4 text-red-500 fill-red-500" />
-            <p className="font-semibold text-slate-900">{group.product_name || "—"}</p>
-            <span className="ml-auto bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">{group.customers.length} ❤️</span>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {group.customers.map((c, i) => (
-              <div key={i} className="flex items-center justify-between py-2 text-sm">
-                <div>
-                  <span className="font-medium text-slate-800">{c.name || "Klient"}</span>
-                  {c.email && <span className="ml-2 text-xs text-slate-400">{c.email}</span>}
+      {Object.values(grouped).map(group => {
+        const product = getProduct(group.product_id);
+        return (
+          <div key={group.product_id} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+              <p className="font-semibold text-slate-900">{group.product_name || "—"}</p>
+              <span className="ml-auto bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">{group.customers.length} ❤️</span>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {group.customers.map((c, i) => (
+                <div key={i} className="flex items-center justify-between py-2 text-sm">
+                  <div>
+                    <span className="font-medium text-slate-800">{c.name || "Klient"}</span>
+                    {c.email && <span className="ml-2 text-xs text-slate-400">{c.email}</span>}
+                  </div>
+                  {c.date && <span className="text-xs text-slate-400">{format(new Date(c.date), "dd.MM.yyyy HH:mm")}</span>}
                 </div>
-                {c.date && <span className="text-xs text-slate-400">{format(new Date(c.date), "dd.MM.yyyy HH:mm")}</span>}
-              </div>
-            ))}
+              ))}
+            </div>
+            {product && product.suggested_sale_price && (
+              actionId === group.product_id ? (
+                <div className="border-t pt-3 space-y-3">
+                  <p className="text-xs font-semibold text-slate-600">Wyślij ofertę do wszystkich klientów:</p>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Cena (PLN)</Label>
+                    <div className="relative max-w-[160px]">
+                      <Input type="number" min={1} placeholder="np. 150" value={offerPrice} onChange={e => setOfferPrice(e.target.value)} className="pr-12" />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">PLN</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Wiadomość (opcjonalnie)</Label>
+                    <Textarea placeholder="Dodaj wiadomość..." value={offerMsg} onChange={e => setOfferMsg(e.target.value)} rows={2} className="text-sm resize-none" />
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={() => { setActionId(null); setOfferPrice(""); setOfferMsg(""); }}>Anuluj</Button>
+                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" disabled={saving || !offerPrice} onClick={() => {
+                      group.customers.forEach(c => handleSendOffer(product, c.email, c.name));
+                    }}>Wyślij ofertę do {group.customers.length} klientów</Button>
+                  </div>
+                </div>
+              ) : (
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setActionId(group.product_id)}>
+                  <HandCoins className="w-3.5 h-3.5" /> Wyślij ofertę
+                </Button>
+              )
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

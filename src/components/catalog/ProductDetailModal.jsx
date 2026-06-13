@@ -179,10 +179,20 @@ function ActionPanel({ product, user, onSendInquiry }) {
 function ImageLightbox({ images, startIndex, onClose }) {
   const [current, setCurrent] = useState(startIndex);
 
+  const goPrev = (e) => {
+    e.stopPropagation();
+    setCurrent(i => (i - 1 + images.length) % images.length);
+  };
+
+  const goNext = (e) => {
+    e.stopPropagation();
+    setCurrent(i => (i + 1) % images.length);
+  };
+
   React.useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "ArrowRight") setCurrent(i => (i + 1) % images.length);
-      if (e.key === "ArrowLeft") setCurrent(i => (i - 1 + images.length) % images.length);
+      if (e.key === "ArrowRight") goNext(e);
+      if (e.key === "ArrowLeft") goPrev(e);
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
@@ -191,27 +201,29 @@ function ImageLightbox({ images, startIndex, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center" onClick={onClose}>
-      <button onClick={onClose} className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white transition">
+      <button onClick={onClose} className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white transition z-[210]">
         <X className="w-5 h-5" />
       </button>
       {images.length > 1 && (
         <>
-          <button onClick={e => { e.stopPropagation(); setCurrent(i => (i - 1 + images.length) % images.length); }} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white transition">
+          <button onClick={goPrev} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white transition z-[210]">
             <ChevronLeft className="w-6 h-6" />
           </button>
-          <button onClick={e => { e.stopPropagation(); setCurrent(i => (i + 1) % images.length); }} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white transition">
+          <button onClick={goNext} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white transition z-[210]">
             <ChevronRight className="w-6 h-6" />
           </button>
         </>
       )}
-      <img
-        src={images[current]}
-        alt=""
-        className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
-        onClick={e => e.stopPropagation()}
-      />
+      <div className="relative max-h-[90vh] max-w-[90vw] flex items-center justify-center">
+        <img
+          src={images[current]}
+          alt=""
+          className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+          onClick={e => e.stopPropagation()}
+        />
+      </div>
       {images.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-[210]">
           {images.map((_, i) => (
             <button key={i} onClick={e => { e.stopPropagation(); setCurrent(i); }} className={`w-2 h-2 rounded-full transition-all ${i === current ? "bg-white w-5" : "bg-white/40"}`} />
           ))}
@@ -228,6 +240,11 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
   if (!product) return null;
 
   const images = product.images?.filter(Boolean) || [];
+
+  const handleOpenLightbox = (e) => {
+    e.stopPropagation();
+    setLightbox(true);
+  };
 
   const handleClose = () => { setActiveImg(0); onClose(); };
 
@@ -249,10 +266,10 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
                     src={images[activeImg]}
                     alt={product.product_name}
                     className="absolute inset-0 w-full h-full object-cover cursor-zoom-in"
-                    onClick={() => setLightbox(true)}
+                    onClick={handleOpenLightbox}
                   />
                   <button
-                    onClick={() => setLightbox(true)}
+                    onClick={handleOpenLightbox}
                     className="absolute bottom-3 right-3 bg-black/40 hover:bg-black/60 rounded-full p-1.5 text-white transition"
                     title="Powiększ"
                   >
