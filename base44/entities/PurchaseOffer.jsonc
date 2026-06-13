@@ -26,6 +26,11 @@
       "type": "string",
       "description": "Email kupuj\u0105cego"
     },
+    "is_from_admin": {
+      "type": "boolean",
+      "default": false,
+      "description": "Czy oferta zosta\u0142a wys\u0142ana przez admina do klienta"
+    },
     "status": {
       "type": "string",
       "enum": [

@@ -126,8 +126,8 @@ function OffersTab() {
   });
 
   // Rozróżnij oferty od klienta i oferty admina
-  const customerOffers = offers.filter(o => o.customer_email && !o.customer_email.includes("admin@vintrix"));
-  const adminOffers = offers.filter(o => o.customer_email && o.customer_email.includes("admin@vintrix"));
+  const customerOffers = offers.filter(o => !o.is_from_admin);
+  const adminOffers = offers.filter(o => o.is_from_admin);
 
   const updateOffer = async (offer, patch) => {
     setSaving(true);
@@ -305,18 +305,19 @@ function FavoritesTab() {
       product_name: product.product_name,
       offered_price: Number(offerPrice),
       message: offerMsg || undefined,
-      customer_name: customerName || "Admin",
-      customer_email: customerEmail || "admin@vintrix.pl",
+      customer_name: customerName,
+      customer_email: customerEmail,
+      is_from_admin: true,
       status: "new",
     });
     await base44.entities.AdminNotification.create({
       type: "new_offer",
-      title: "Nowa oferta zakupu",
-      message: `Admin złożył ofertę ${offerPrice} PLN za "${product.product_name}".`,
+      title: "Oferta wysłana do klienta",
+      message: `Wysłałeś ofertę ${offerPrice} PLN do ${customerName} za "${product.product_name}".`,
       product_id: product.id,
       product_name: product.product_name,
-      customer_name: customerName || "Admin",
-      customer_email: customerEmail || "admin@vintrix.pl",
+      customer_name: customerName,
+      customer_email: customerEmail,
       reference_id: product.id,
       is_read: false,
     });
@@ -326,7 +327,7 @@ function FavoritesTab() {
     setActionId(null);
     setOfferPrice("");
     setOfferMsg("");
-    toast({ title: "Oferta wysłana!", description: "Oferta została zapisana." });
+    toast({ title: "Oferta wysłana!", description: `Oferta wysłana do ${customerName}.` });
   };
 
   // Group by product
