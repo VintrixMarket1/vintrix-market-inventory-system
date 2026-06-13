@@ -249,8 +249,9 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
   const handleClose = () => { setActiveImg(0); onClose(); };
 
   return (
-    <Dialog open={!!product} onOpenChange={handleClose}>
-      <DialogContent className="p-0 max-w-3xl w-full max-h-[92vh] overflow-hidden flex flex-col rounded-2xl">
+    <>
+      <Dialog open={!!product} onOpenChange={handleClose}>
+        <DialogContent className="p-0 max-w-3xl w-full max-h-[92vh] overflow-hidden flex flex-col rounded-2xl">
         <button onClick={handleClose} className="absolute top-4 right-4 z-50 bg-white/90 hover:bg-white rounded-full p-1.5 shadow-md border border-slate-200 transition-all">
           <X className="w-4 h-4 text-slate-600" />
         </button>
@@ -365,5 +366,9 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
         </div>
       </DialogContent>
     </Dialog>
+    {lightbox && images.length > 0 && (
+      <ImageLightbox images={images} startIndex={activeImg} onClose={() => setLightbox(false)} />
+    )}
+  </>
   );
 }
