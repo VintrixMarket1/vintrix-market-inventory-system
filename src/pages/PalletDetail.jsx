@@ -181,7 +181,7 @@ export default function PalletDetail() {
               <Edit2 className="w-3.5 h-3.5" /> Edytuj dane
             </Button>
           )}
-          {(isAccepted || isSorting) && knownProducts.length > 0 && (
+          {(isAccepted || isSorting) && products.length > 0 && (
             <Button size="sm" variant="outline" className="gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50" onClick={handleMarkReady}>
               <CheckCircle2 className="w-3.5 h-3.5" /> Gotowa do rozbicia
             </Button>
@@ -415,7 +415,7 @@ export default function PalletDetail() {
           open={allocationModal}
           onClose={() => setAllocationModal(false)}
           pallet={{ ...pallet, total_value: totalValue }}
-          products={knownProducts}
+          products={products}
           onConfirm={handleExplode}
           loading={explodingLoading}
         />
