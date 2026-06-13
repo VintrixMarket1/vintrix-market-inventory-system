@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -57,11 +57,7 @@ const AuthenticatedApp = () => {
 
   // Klient (role: user) widzi tylko katalog
   if (user && user.role === 'user') {
-    return (
-      <Routes>
-        <Route path="*" element={<CustomerCatalogWrapper />} />
-      </Routes>
-    );
+    return <CustomerCatalogWrapper />;
   }
 
   // Admin — pełny dostęp
@@ -98,17 +94,29 @@ function App() {
       <LangProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <Routes>
-            <Route path="/ShopifyCallback" element={<ShopifyCallback />} />
-            <Route path="/AllegroCallback" element={<AllegroCallback />} />
-            <Route path="/*" element={<AuthenticatedApp />} />
-          </Routes>
+          <AppRoutes />
         </Router>
         <Toaster />
       </QueryClientProvider>
       </LangProvider>
     </AuthProvider>
   )
+}
+
+function AppRoutes() {
+  const location = useLocation();
+  const isCallback = location.pathname === "/ShopifyCallback" || location.pathname === "/AllegroCallback";
+  
+  if (isCallback) {
+    return (
+      <Routes>
+        <Route path="/ShopifyCallback" element={<ShopifyCallback />} />
+        <Route path="/AllegroCallback" element={<AllegroCallback />} />
+      </Routes>
+    );
+  }
+  
+  return <AuthenticatedApp />;
 }
 
 export default App
