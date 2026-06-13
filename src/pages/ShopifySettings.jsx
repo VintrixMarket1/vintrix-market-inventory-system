@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CheckCircle2, XCircle, Loader2, RefreshCw, Plug, ShoppingBag, ExternalLink, Info } from "lucide-react";
 
-export default function ShopifySettings() {
+export default function ShopifySettings({ embedded = false }) {
   const [status, setStatus] = useState(null);
   const [shopInfo, setShopInfo] = useState(null);
   const [lastError, setLastError] = useState(null);
@@ -64,14 +64,17 @@ export default function ShopifySettings() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <ShoppingBag className="w-6 h-6 text-emerald-600" />
-          <h1 className="text-2xl font-bold">Ustawienia Shopify</h1>
+    <div className="max-w-2xl space-y-6" style={embedded ? {} : { margin: "0 auto", padding: "1.5rem" }}>
+      {!embedded && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ShoppingBag className="w-6 h-6 text-emerald-600" />
+            <h1 className="text-2xl font-bold">Ustawienia Shopify</h1>
+          </div>
+          <StatusBadge />
         </div>
-        <StatusBadge />
-      </div>
+      )}
+      {embedded && <div className="flex justify-end"><StatusBadge /></div>}
 
       {/* Connected state */}
       {status === "connected" && shopInfo && (

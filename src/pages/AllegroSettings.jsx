@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Loader2, RefreshCw, ExternalLink } from "lucide-react";
 
-export default function AllegroSettings() {
+export default function AllegroSettings({ embedded = false }) {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -38,11 +38,13 @@ export default function AllegroSettings() {
   }, []);
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Ustawienia Allegro</h1>
-        <p className="text-slate-500 mt-1">Zarządzaj połączeniem z Allegro API</p>
-      </div>
+    <div className="max-w-2xl space-y-6" style={embedded ? {} : { margin: "0 auto", padding: "1.5rem" }}>
+      {!embedded && (
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Ustawienia Allegro</h1>
+          <p className="text-slate-500 mt-1">Zarządzaj połączeniem z Allegro API</p>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
