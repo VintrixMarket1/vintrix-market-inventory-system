@@ -73,11 +73,14 @@ export default function CheckoutModal({ offer, onClose }) {
 
     setLoading(true);
     setError("");
-    const response = await base44.functions.invoke("createCheckoutSession", {
-      offerId: offer.id,
-      shippingOption,
-      customerData: form,
-    });
+
+    // For direct Buy Now offers (id starts with "direct_"), pass productId separately
+    const isDirect = offer.id?.startsWith("direct_");
+    const payload = isDirect
+      ? { directProductId: offer.product_id, directPrice: offer.offered_price, shippingOption, customerData: form }
+      : { offerId: offer.id, shippingOption, customerData: form };
+
+    const response = await base44.functions.invoke("createCheckoutSession", payload);
 
     if (response.data?.url) {
       window.location.href = response.data.url;

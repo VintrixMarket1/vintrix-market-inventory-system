@@ -12,7 +12,7 @@ import ProductDetailModal from "@/components/catalog/ProductDetailModal";
 import CustomerMessagesPanel from "@/components/catalog/CustomerMessagesPanel";
 import CartPanel from "@/components/catalog/CartPanel";
 import CheckoutModal from "@/components/catalog/CheckoutModal";
-import { useCart } from "@/lib/CartContext.jsx";
+import { useCart, CartProvider } from "@/lib/CartContext.jsx";
 
 const CONDITION_LABELS = { new: "Nowy", like_new: "Jak nowy", used: "Używany" };
 const CONDITIONS = ["new", "like_new", "used"];
@@ -308,5 +308,9 @@ function CustomerCatalog() {
 }
 
 export default function CustomerCatalogWrapper() {
-  return <CustomerCatalog />;
+  return (
+    <CartProvider>
+      <CustomerCatalog />
+    </CartProvider>
+  );
 }
