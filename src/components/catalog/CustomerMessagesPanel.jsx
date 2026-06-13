@@ -255,14 +255,17 @@ export default function CustomerMessagesPanel({ user, onClose }) {
     enabled: !!user?.email,
   });
 
-  const { data: offers = [], isLoading: loadingOffers } = useQuery({
+  const { data: allOffers = [], isLoading: loadingOffers } = useQuery({
     queryKey: ["my_offers", user?.email],
-    queryFn: () => base44.entities.PurchaseOffer.filter({ customer_email: user?.email, is_from_admin: true }, "-created_date"),
+    queryFn: () => base44.entities.PurchaseOffer.filter({ customer_email: user?.email }, "-created_date"),
     enabled: !!user?.email,
   });
 
+  // Filtruj tylko oferty od admina (is_from_admin=true) lub stare rekordy bez tego pola (traktuj jako od admina)
+  const offers = allOffers.filter(o => o.is_from_admin !== false);
+
   const newReplies = inquiries.filter(i => i.status === "replied").length;
-  const pendingOffers = offers.filter(o => o.status === "countered").length;
+  const pendingOffers = offers.filter(o => o.status === "countered" || o.status === "new").length;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-end">
