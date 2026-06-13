@@ -160,7 +160,7 @@ export default function Pallets() {
         <PalletForm
           open={showForm}
           onClose={() => setShowForm(false)}
-          onSave={() => { setShowForm(false); refresh(); }}
+          onSaved={() => { setShowForm(false); refresh(); }}
         />
       )}
     </div>
