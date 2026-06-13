@@ -10,9 +10,8 @@ import AiChatAssistant from "@/components/ai/AiChatAssistant";
 import { Upload, X, Loader2, RefreshCw, Package, Sparkles, MessageSquare } from "lucide-react";
 import { compressImage } from "@/lib/compressImage";
 import { useQuery } from "@tanstack/react-query";
-import { SUBCATEGORIES } from "@/lib/subcategories";
 import { useLang } from "@/lib/i18n";
-import { CATEGORY_GROUPS } from "@/lib/categoryConfig";
+import { CATEGORY_GROUPS, SUBCATEGORIES_BY_CATEGORY } from "@/lib/categoryConfig";
 
 const generateSKU = (category) => {
   const prefix = (category || "other").slice(0, 3).toUpperCase();
@@ -252,9 +251,9 @@ Generate ONLY the ready HTML. Start with <p>.`;
               <Label>{t("pf_subcategory")}</Label>
               <Select value={form.subcategory || ""} onValueChange={v => handleChange("subcategory", v)}>
                 <SelectTrigger><SelectValue placeholder={t("common_select")} /></SelectTrigger>
-                <SelectContent>
-                  {(SUBCATEGORIES[form.category] || []).map(s => (
-                    <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+                <SelectContent className="max-h-64">
+                  {(SUBCATEGORIES_BY_CATEGORY[form.category] || []).map(s => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
