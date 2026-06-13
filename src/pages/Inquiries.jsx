@@ -160,6 +160,7 @@ function OffersTab() {
             {adminOffers.map(offer => {
               const cfg = OFFER_STATUS[offer.status] || OFFER_STATUS.new;
               const Icon = cfg.icon;
+              const canRespond = offer.status === "customer_countered";
               return (
                 <div key={offer.id} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
                   <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -182,7 +183,46 @@ function OffersTab() {
                   {offer.message && <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700">{offer.message}</div>}
                   {offer.status === "accepted" && <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">✅ Klient zaakceptował</div>}
                   {offer.status === "rejected" && <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">❌ Klient odrzucił</div>}
-                  {offer.status === "customer_countered" && <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-800">💬 Klient kontruje: {offer.offered_price} PLN</div>}
+                  {offer.status === "customer_countered" && (
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-800">
+                      💬 Klient kontruje: <strong>{offer.offered_price} PLN</strong>
+                    </div>
+                  )}
+                  {canRespond && (
+                    actionId === offer.id ? (
+                      <div className="space-y-3 border-t pt-3">
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-slate-500">Twoja odpowiedź (PLN)</p>
+                          <div className="relative max-w-[160px]">
+                            <Input type="number" min={1} placeholder="np. 180" value={counterPrice} onChange={e => setCounterPrice(e.target.value)} className="pr-12" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">PLN</span>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-slate-500">Wiadomość (opcjonalna)</p>
+                          <Textarea placeholder="Odpowiedź do klienta..." value={counterMsg} onChange={e => setCounterMsg(e.target.value)} rows={2} className="text-sm resize-none" />
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button variant="outline" size="sm" onClick={() => setActionId(null)}>Anuluj</Button>
+                          <Button size="sm" variant="destructive" disabled={saving} onClick={() => updateOffer(offer, { status: "customer_rejected", admin_reply: counterMsg || undefined })}>
+                            <ThumbsDown className="w-3.5 h-3.5 mr-1" /> Odrzuć
+                          </Button>
+                          {counterPrice && Number(counterPrice) > 0 && (
+                            <Button size="sm" className="bg-amber-500 hover:bg-amber-600" disabled={saving} onClick={() => updateOffer(offer, { status: "countered", counter_price: Number(counterPrice), admin_reply: counterMsg || undefined })}>
+                              <ArrowLeftRight className="w-3.5 h-3.5 mr-1" /> Wyślij kontrofertę
+                            </Button>
+                          )}
+                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" disabled={saving} onClick={() => updateOffer(offer, { status: "customer_accepted", admin_reply: counterMsg || undefined })}>
+                            <ThumbsUp className="w-3.5 h-3.5 mr-1" /> Akceptuj ofertę klienta
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setActionId(offer.id)}>
+                        <HandCoins className="w-3.5 h-3.5" /> Odpowiedz na kontrofertę
+                      </Button>
+                    )
+                  )}
                 </div>
               );
             })}
