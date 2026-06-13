@@ -75,9 +75,18 @@ function CustomerCatalog() {
     toast({ title: "Zapytanie wysłane!", description: "Skontaktujemy się z Tobą wkrótce." });
   };
 
+  const buildDirectOffer = (product) => ({
+    id: `direct_${product.id}`,
+    product_id: product.id,
+    product_name: product.product_name,
+    offered_price: product.suggested_sale_price || 0,
+    status: "accepted",
+    customer_name: user?.full_name || "",
+    customer_email: user?.email || "",
+  });
+
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -107,7 +116,6 @@ function CustomerCatalog() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Search bar + filter toggle */}
         <div className="flex gap-3 mb-6">
           <div className="relative flex-1 max-w-xl">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -128,11 +136,9 @@ function CustomerCatalog() {
         </div>
 
         <div className="flex gap-6">
-          {/* Sidebar filters */}
           {showFilters && (
             <aside className="w-64 shrink-0">
               <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-5 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
-                {/* Condition */}
                 <div>
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Stan</p>
                   <div className="space-y-1">
@@ -144,8 +150,6 @@ function CustomerCatalog() {
                     ))}
                   </div>
                 </div>
-
-                {/* Price range */}
                 <div>
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Cena (PLN)</p>
                   <div className="flex gap-2">
@@ -153,8 +157,6 @@ function CustomerCatalog() {
                     <Input type="number" placeholder="Do" value={priceMax} onChange={e => setPriceMax(e.target.value)} className="h-8 text-sm" />
                   </div>
                 </div>
-
-                {/* Categories */}
                 <div>
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Kategorie</p>
                   <div className="space-y-4">
@@ -182,7 +184,6 @@ function CustomerCatalog() {
             </aside>
           )}
 
-          {/* Products grid */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-xl font-bold text-slate-900">
@@ -191,7 +192,6 @@ function CustomerCatalog() {
               </h1>
             </div>
 
-            {/* Active filter chips */}
             {(selectedCategories.length > 0 || selectedConditions.length > 0) && (
               <div className="flex flex-wrap gap-1.5 mb-4">
                 {selectedConditions.map(c => (
@@ -286,6 +286,17 @@ function CustomerCatalog() {
         <CustomerMessagesPanel user={user} onClose={() => setShowMessages(false)} />
       )}
 
+      {showCart && (
+        <CartPanel user={user} onClose={() => setShowCart(false)} />
+      )}
+
+      {directCheckoutProduct && (
+        <CheckoutModal
+          offer={buildDirectOffer(directCheckoutProduct)}
+          onClose={() => setDirectCheckoutProduct(null)}
+        />
+      )}
+
       <ProductDetailModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
@@ -294,4 +305,8 @@ function CustomerCatalog() {
       />
     </div>
   );
+}
+
+export default function CustomerCatalogWrapper() {
+  return <CustomerCatalog />;
 }

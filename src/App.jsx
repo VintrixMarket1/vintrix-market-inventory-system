@@ -9,6 +9,7 @@ import { LangProvider } from '@/lib/i18n';
 import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
 import CustomerCatalogWrapper from './pages/CustomerCatalog.jsx';
+import { CartProvider } from './lib/CartContext';
 import Inquiries from './pages/Inquiries';
 
 import AppLayout from './components/layout/AppLayout';
@@ -58,9 +59,11 @@ const AuthenticatedApp = () => {
   // Klient (role: user) widzi tylko katalog
   if (user && user.role === 'user') {
     return (
-      <Routes>
-        <Route path="*" element={<CustomerCatalogWrapper />} />
-      </Routes>
+      <CartProvider>
+        <Routes>
+          <Route path="*" element={<CustomerCatalogWrapper />} />
+        </Routes>
+      </CartProvider>
     );
   }
 

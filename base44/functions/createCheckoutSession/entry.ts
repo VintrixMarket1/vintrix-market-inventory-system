@@ -9,34 +9,47 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { offerId, shippingOption, customerData } = await req.json();
+    const { offerId, directProductId, directPrice, shippingOption, customerData } = await req.json();
 
-    if (!offerId || !shippingOption || !customerData) {
+    if (!shippingOption || !customerData) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    const offer = await base44.asServiceRole.entities.PurchaseOffer.get(offerId);
-    if (!offer) {
-      return Response.json({ error: 'Offer not found' }, { status: 404 });
-    }
-
-    const validStatuses = ['accepted', 'customer_accepted'];
-    if (!validStatuses.includes(offer.status)) {
-      return Response.json({ error: 'Offer is not in accepted state' }, { status: 400 });
     }
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 
-    // Base product price from accepted offer
-    const basePrice = offer.status === 'customer_accepted' ? offer.counter_price : offer.offered_price;
+    let basePrice;
+    let productId;
+    let productName;
+
+    if (directProductId) {
+      // Direct Buy Now flow
+      const product = await base44.asServiceRole.entities.Product.get(directProductId);
+      if (!product) return Response.json({ error: 'Product not found' }, { status: 404 });
+      basePrice = directPrice || product.suggested_sale_price || product.purchase_price;
+      productId = directProductId;
+      productName = product.product_name;
+    } else if (offerId) {
+      // Offer-based flow
+      const offer = await base44.asServiceRole.entities.PurchaseOffer.get(offerId);
+      if (!offer) return Response.json({ error: 'Offer not found' }, { status: 404 });
+      const validStatuses = ['accepted', 'customer_accepted'];
+      if (!validStatuses.includes(offer.status)) {
+        return Response.json({ error: 'Offer is not in accepted state' }, { status: 400 });
+      }
+      basePrice = offer.status === 'customer_accepted' ? offer.counter_price : offer.offered_price;
+      productId = offer.product_id;
+      productName = offer.product_name;
+    } else {
+      return Response.json({ error: 'offerId or directProductId required' }, { status: 400 });
+    }
 
     const lineItems = [
       {
         price_data: {
           currency: 'pln',
           product_data: {
-            name: offer.product_name || 'Produkt',
-            description: `Oferta zakupu #${offerId.slice(0, 8)}`,
+            name: productName || 'Produkt',
+            description: offerId ? `Oferta zakupu #${offerId.slice(0, 8)}` : 'Zakup bezpośredni',
           },
           unit_amount: Math.round(basePrice * 100),
         },
@@ -76,8 +89,8 @@ Deno.serve(async (req) => {
       customer_email: customerData.email || user.email,
       metadata: {
         base44_app_id: Deno.env.get('BASE44_APP_ID'),
-        offer_id: offerId,
-        product_id: offer.product_id,
+        offer_id: offerId || '',
+        product_id: productId,
         customer_name: customerData.fullName || '',
         shipping_option: shippingOption,
         shipping_address: shippingOption !== 'personal' ? JSON.stringify({

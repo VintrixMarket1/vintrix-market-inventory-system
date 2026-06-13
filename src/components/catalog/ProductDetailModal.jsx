@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -176,8 +176,54 @@ function ActionPanel({ product, user, onSendInquiry }) {
   );
 }
 
+function ImageLightbox({ images, startIndex, onClose }) {
+  const [current, setCurrent] = useState(startIndex);
+
+  React.useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "ArrowRight") setCurrent(i => (i + 1) % images.length);
+      if (e.key === "ArrowLeft") setCurrent(i => (i - 1 + images.length) % images.length);
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [images.length, onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center" onClick={onClose}>
+      <button onClick={onClose} className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white transition">
+        <X className="w-5 h-5" />
+      </button>
+      {images.length > 1 && (
+        <>
+          <button onClick={e => { e.stopPropagation(); setCurrent(i => (i - 1 + images.length) % images.length); }} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white transition">
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <button onClick={e => { e.stopPropagation(); setCurrent(i => (i + 1) % images.length); }} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white transition">
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </>
+      )}
+      <img
+        src={images[current]}
+        alt=""
+        className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      />
+      {images.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+          {images.map((_, i) => (
+            <button key={i} onClick={e => { e.stopPropagation(); setCurrent(i); }} className={`w-2 h-2 rounded-full transition-all ${i === current ? "bg-white w-5" : "bg-white/40"}`} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProductDetailModal({ product, onClose, user, onSendInquiry }) {
   const [activeImg, setActiveImg] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
 
   if (!product) return null;
 
@@ -199,7 +245,19 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
             {images.length > 0 ? (
               <>
                 <div className="relative flex-1 min-h-[240px] md:min-h-0">
-                  <img src={images[activeImg]} alt={product.product_name} className="absolute inset-0 w-full h-full object-cover" />
+                  <img
+                    src={images[activeImg]}
+                    alt={product.product_name}
+                    className="absolute inset-0 w-full h-full object-cover cursor-zoom-in"
+                    onClick={() => setLightbox(true)}
+                  />
+                  <button
+                    onClick={() => setLightbox(true)}
+                    className="absolute bottom-3 right-3 bg-black/40 hover:bg-black/60 rounded-full p-1.5 text-white transition"
+                    title="Powiększ"
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
                   {images.length > 1 && (
                     <>
                       <button onClick={() => setActiveImg(i => (i - 1 + images.length) % images.length)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 rounded-full p-1.5 text-white transition">
