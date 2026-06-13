@@ -4,40 +4,174 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Package, ChevronLeft, ChevronRight, MessageCircle, X, CheckCircle, Loader2, Tag, Palette, Ruler, ShoppingBag } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Package, ChevronLeft, ChevronRight, MessageCircle, X, CheckCircle, Loader2, Tag, Palette, Ruler, ShoppingBag, HandCoins } from "lucide-react";
 import { getCategoryLabel } from "@/lib/categoryConfig";
+import { base44 } from "@/api/base44Client";
 
 const CONDITION_LABELS = { new: "Nowy", like_new: "Jak nowy", used: "Używany" };
 const GENDER_LABELS = { men: "Mężczyźni", women: "Kobiety", unisex: "Unisex", kids: "Dzieci" };
 
-export default function ProductDetailModal({ product, onClose, user, onSendInquiry }) {
-  const [activeImg, setActiveImg] = useState(0);
-  const [showInquiry, setShowInquiry] = useState(false);
+// Which action panel to show
+// null | "inquiry" | "offer"
+function ActionPanel({ product, user, onSendInquiry }) {
+  const [mode, setMode] = useState(null); // null | "inquiry" | "offer"
   const [message, setMessage] = useState("");
+  const [offeredPrice, setOfferedPrice] = useState(product.suggested_sale_price ? String(Math.round(product.suggested_sale_price * 0.9)) : "");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
-  if (!product) return null;
+  const reset = () => { setMode(null); setMessage(""); setSent(false); };
 
-  const images = product.images?.filter(Boolean) || [];
-
-  const handleSend = async () => {
+  const handleSendInquiry = async () => {
     if (!message.trim()) return;
     setSending(true);
     await onSendInquiry(product, message.trim());
     setSending(false);
     setSent(true);
-    setTimeout(() => {
-      setShowInquiry(false);
-      setMessage("");
-      setSent(false);
-    }, 2000);
+    setTimeout(reset, 2500);
   };
 
+  const handleSendOffer = async () => {
+    if (!offeredPrice || isNaN(Number(offeredPrice))) return;
+    setSending(true);
+    await base44.entities.PurchaseOffer.create({
+      product_id: product.id,
+      product_name: product.product_name,
+      offered_price: Number(offeredPrice),
+      message: message.trim() || undefined,
+      customer_name: user?.full_name || "",
+      customer_email: user?.email || "",
+      status: "new",
+    });
+    setSending(false);
+    setSent(true);
+    setTimeout(reset, 2500);
+  };
+
+  if (sent) {
+    return (
+      <div className="flex flex-col items-center py-4 gap-2">
+        <CheckCircle className="w-9 h-9 text-emerald-500" />
+        <p className="font-semibold text-slate-800 text-sm">
+          {mode === "offer" ? "Oferta wysłana!" : "Zapytanie wysłane!"}
+        </p>
+        <p className="text-xs text-slate-500 text-center">Skontaktujemy się z Tobą wkrótce.</p>
+      </div>
+    );
+  }
+
+  if (mode === null) {
+    return (
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          className="flex-1 h-11 text-sm font-semibold gap-2 border-slate-300"
+          onClick={() => setMode("inquiry")}
+        >
+          <MessageCircle className="w-4 h-4 text-slate-500" />
+          Zapytaj
+        </Button>
+        <Button
+          className="flex-1 h-11 text-sm font-semibold gap-2 bg-emerald-600 hover:bg-emerald-700"
+          onClick={() => setMode("offer")}
+        >
+          <HandCoins className="w-4 h-4" />
+          Złóż ofertę
+        </Button>
+      </div>
+    );
+  }
+
+  if (mode === "inquiry") {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 mb-1">
+          <MessageCircle className="w-4 h-4 text-slate-500" />
+          <span className="font-semibold text-sm text-slate-800">Zapytanie o produkt</span>
+        </div>
+        <Textarea
+          placeholder="Napisz czego chcesz się dowiedzieć — rozmiar, dostępność, możliwość rezerwacji..."
+          value={message}
+          onChange={e => setMessage(e.target.value)}
+          rows={3}
+          className="text-sm resize-none"
+        />
+        <div className="flex gap-2">
+          <Button variant="outline" className="flex-1" onClick={reset}>Anuluj</Button>
+          <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={handleSendInquiry} disabled={sending || !message.trim()}>
+            {sending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            Wyślij
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // mode === "offer"
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 mb-1">
+        <HandCoins className="w-4 h-4 text-emerald-600" />
+        <span className="font-semibold text-sm text-slate-800">Twoja oferta cenowa</span>
+      </div>
+
+      {product.suggested_sale_price && (
+        <div className="bg-slate-50 rounded-lg px-3 py-2 text-xs text-slate-500 flex items-center justify-between">
+          <span>Cena wywoławcza</span>
+          <span className="font-bold text-slate-700">{product.suggested_sale_price} PLN</span>
+        </div>
+      )}
+
+      <div className="space-y-1">
+        <Label className="text-xs">Twoja cena (PLN)</Label>
+        <div className="relative">
+          <Input
+            type="number"
+            min={1}
+            value={offeredPrice}
+            onChange={e => setOfferedPrice(e.target.value)}
+            className="pr-14 text-base font-bold"
+            placeholder="np. 150"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-medium">PLN</span>
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-xs">Wiadomość (opcjonalnie)</Label>
+        <Textarea
+          placeholder="Dodaj wiadomość do swojej oferty..."
+          value={message}
+          onChange={e => setMessage(e.target.value)}
+          rows={2}
+          className="text-sm resize-none"
+        />
+      </div>
+
+      <div className="flex gap-2">
+        <Button variant="outline" className="flex-1" onClick={reset}>Anuluj</Button>
+        <Button
+          className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+          onClick={handleSendOffer}
+          disabled={sending || !offeredPrice || isNaN(Number(offeredPrice)) || Number(offeredPrice) <= 0}
+        >
+          {sending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+          Wyślij ofertę
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export default function ProductDetailModal({ product, onClose, user, onSendInquiry }) {
+  const [activeImg, setActiveImg] = useState(0);
+
+  if (!product) return null;
+
+  const images = product.images?.filter(Boolean) || [];
+
   const handleClose = () => {
-    setShowInquiry(false);
-    setMessage("");
-    setSent(false);
     setActiveImg(0);
     onClose();
   };
@@ -88,7 +222,6 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
                     </>
                   )}
                 </div>
-                {/* Thumbnails */}
                 {images.length > 1 && (
                   <div className="flex gap-1.5 p-2 overflow-x-auto bg-slate-800">
                     {images.map((url, i) => (
@@ -182,47 +315,9 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
               )}
             </div>
 
-            {/* Inquiry section pinned at bottom */}
+            {/* Actions pinned at bottom */}
             <div className="border-t border-slate-100 p-4 bg-white">
-              {!showInquiry ? (
-                <Button
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 h-11 text-sm font-semibold gap-2"
-                  onClick={() => setShowInquiry(true)}
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Wyślij zapytanie o ten produkt
-                </Button>
-              ) : sent ? (
-                <div className="flex flex-col items-center py-3 gap-2">
-                  <CheckCircle className="w-8 h-8 text-emerald-500" />
-                  <p className="font-semibold text-slate-800 text-sm">Zapytanie wysłane!</p>
-                  <p className="text-xs text-slate-500">Skontaktujemy się z Tobą wkrótce.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Twoja wiadomość</Label>
-                  <Textarea
-                    placeholder="Napisz czego chcesz się dowiedzieć — rozmiar, dostępność, możliwość rezerwacji..."
-                    value={message}
-                    onChange={e => setMessage(e.target.value)}
-                    rows={3}
-                    className="text-sm resize-none"
-                  />
-                  <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1" onClick={() => { setShowInquiry(false); setMessage(""); }}>
-                      Anuluj
-                    </Button>
-                    <Button
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                      onClick={handleSend}
-                      disabled={sending || !message.trim()}
-                    >
-                      {sending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                      Wyślij
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <ActionPanel product={product} user={user} onSendInquiry={onSendInquiry} />
             </div>
           </div>
         </div>

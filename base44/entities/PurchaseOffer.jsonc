@@ -1,0 +1,53 @@
+{
+  "name": "PurchaseOffer",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "ID produktu"
+    },
+    "product_name": {
+      "type": "string",
+      "description": "Nazwa produktu (snapshot)"
+    },
+    "offered_price": {
+      "type": "number",
+      "description": "Proponowana cena zakupu (PLN)"
+    },
+    "message": {
+      "type": "string",
+      "description": "Dodatkowa wiadomo\u015b\u0107 od kupuj\u0105cego"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Imi\u0119 i nazwisko kupuj\u0105cego"
+    },
+    "customer_email": {
+      "type": "string",
+      "description": "Email kupuj\u0105cego"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "accepted",
+        "rejected",
+        "countered"
+      ],
+      "default": "new",
+      "description": "Status oferty"
+    },
+    "counter_price": {
+      "type": "number",
+      "description": "Kontroferta od admina (PLN)"
+    },
+    "admin_reply": {
+      "type": "string",
+      "description": "Odpowied\u017a admina"
+    }
+  },
+  "required": [
+    "product_id",
+    "offered_price"
+  ]
+}
