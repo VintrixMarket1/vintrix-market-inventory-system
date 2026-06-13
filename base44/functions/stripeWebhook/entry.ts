@@ -123,6 +123,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    // --- Notify admin about the sale ---
+    await base44.asServiceRole.entities.AdminNotification.create({
+      type: 'new_sale',
+      title: 'Dokonano sprzedaży',
+      message: `Sprzedano "${product.product_name}" za ${productSalePrice} PLN. Klient: ${customerName || session.customer_email || 'Anonim'}.`,
+      product_id: productId,
+      product_name: product.product_name,
+      customer_name: customerName || session.customer_email || '',
+      customer_email: session.customer_email || '',
+      reference_id: sale.id,
+      is_read: false,
+    });
+
     console.log(`Sale registered: ${sale.id}, product: ${productId}, WZ: ${wzNumber}`);
     return Response.json({ received: true, sale_id: sale.id, wz: wzNumber });
 

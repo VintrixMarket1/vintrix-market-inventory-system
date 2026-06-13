@@ -116,6 +116,17 @@ function CustomerCatalog() {
       customer_email: user?.email || "",
       status: "new",
     });
+    // Notify admin
+    await base44.entities.AdminNotification.create({
+      type: "new_inquiry",
+      title: "Nowe zapytanie o produkt",
+      message: `${user?.full_name || user?.email || "Klient"} pyta o "${product.product_name}".`,
+      product_id: product.id,
+      product_name: product.product_name,
+      customer_name: user?.full_name || "",
+      customer_email: user?.email || "",
+      is_read: false,
+    });
     toast({ title: "Zapytanie wysłane!", description: "Skontaktujemy się z Tobą wkrótce." });
   };
 

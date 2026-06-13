@@ -97,6 +97,18 @@ function ActionPanel({ product, user, onSendInquiry }) {
       customer_email: user?.email || "",
       status: "new",
     });
+    // Notify admin
+    await base44.entities.AdminNotification.create({
+      type: "new_offer",
+      title: "Nowa oferta zakupu",
+      message: `${user?.full_name || user?.email || "Klient"} złożył ofertę ${offeredPrice} PLN za "${product.product_name}".`,
+      product_id: product.id,
+      product_name: product.product_name,
+      customer_name: user?.full_name || "",
+      customer_email: user?.email || "",
+      reference_id: product.id,
+      is_read: false,
+    });
     setSending(false);
     setSent(true);
     setTimeout(reset, 2500);
