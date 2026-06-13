@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Package, Search, LogOut, SlidersHorizontal, X, MessageCircle, ShoppingCart } from "lucide-react";
+import { Package, Search, LogOut, SlidersHorizontal, X, MessageCircle, ShoppingCart, Heart } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { CATEGORY_GROUPS, getCategoryLabel } from "@/lib/categoryConfig";
 import ProductDetailModal from "@/components/catalog/ProductDetailModal";
@@ -32,7 +32,47 @@ function CustomerCatalog() {
   const [showMessages, setShowMessages] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [directCheckoutProduct, setDirectCheckoutProduct] = useState(null);
+  const [activeTab, setActiveTab] = useState("all");
   const { addToCart, isInCart, cartItems } = useCart();
+
+  const queryClient = useQueryClient();
+  const { data: favorites = [] } = useQuery({
+    queryKey: ["my_favorites", user?.email],
+    queryFn: () => base44.entities.Favorite.filter({ customer_email: user?.email }),
+    enabled: !!user?.email,
+  });
+
+  const favoriteProductIds = new Set(favorites.map(f => f.product_id));
+
+  const toggleFavorite = async (product, e) => {
+    e.stopPropagation();
+    const isFav = favoriteProductIds.has(product.id);
+    if (isFav) {
+      const fav = favorites.find(f => f.product_id === product.id);
+      if (fav) {
+        await base44.entities.Favorite.delete(fav.id);
+      }
+    } else {
+      await base44.entities.Favorite.create({
+        product_id: product.id,
+        product_name: product.product_name,
+        customer_name: user?.full_name || "",
+        customer_email: user?.email || "",
+      });
+      // Notify admin
+      await base44.entities.AdminNotification.create({
+        type: "favorite",
+        title: "Nowe polubienie produktu",
+        message: `${user?.full_name || user?.email || "Klient"} dodał "${product.product_name}" do ulubionych.`,
+        product_id: product.id,
+        product_name: product.product_name,
+        customer_name: user?.full_name || "",
+        customer_email: user?.email || "",
+        is_read: false,
+      });
+    }
+    queryClient.invalidateQueries({ queryKey: ["my_favorites"] });
+  };
 
   const { data: products = [] } = useQuery({
     queryKey: ["catalog_products"],
@@ -40,7 +80,7 @@ function CustomerCatalog() {
   });
 
   const filtered = useMemo(() => {
-    return products.filter(p => {
+    let result = products.filter(p => {
       if (p.status === "sold") return false;
       if (search && ![p.product_name, p.brand, p.category, p.subcategory].some(v => v?.toLowerCase().includes(search.toLowerCase()))) return false;
       if (selectedCategories.length > 0 && !selectedCategories.includes(p.category)) return false;
@@ -49,7 +89,11 @@ function CustomerCatalog() {
       if (priceMax !== "" && (p.suggested_sale_price ?? 0) > Number(priceMax)) return false;
       return true;
     });
-  }, [products, search, selectedCategories, selectedConditions, priceMin, priceMax]);
+    if (activeTab === "favorites") {
+      result = result.filter(p => favoriteProductIds.has(p.id));
+    }
+    return result;
+  }, [products, search, selectedCategories, selectedConditions, priceMin, priceMax, activeTab, favoriteProductIds]);
 
   const toggleCategory = (val) => setSelectedCategories(prev => prev.includes(val) ? prev.filter(c => c !== val) : [...prev, val]);
   const toggleCondition = (val) => setSelectedConditions(prev => prev.includes(val) ? prev.filter(c => c !== val) : [...prev, val]);
@@ -112,6 +156,24 @@ function CustomerCatalog() {
               <LogOut className="w-4 h-4" /> Wyloguj
             </Button>
           </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 flex gap-1 border-t border-slate-100">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === "all" ? "border-emerald-500 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+          >
+            <Package className="w-4 h-4" />
+            Wszystkie
+            <span className="bg-slate-100 text-slate-600 text-[10px] rounded-full px-1.5 py-0.5 leading-none">{filtered.length}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("favorites")}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === "favorites" ? "border-emerald-500 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+          >
+            <Heart className="w-4 h-4" />
+            Polubione
+            <span className="bg-red-100 text-red-600 text-[10px] rounded-full px-1.5 py-0.5 leading-none">{favoriteProductIds.size}</span>
+          </button>
         </div>
       </header>
 
@@ -228,6 +290,13 @@ function CustomerCatalog() {
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-3xl">📦</div>
                       )}
+                      <button
+                        onClick={(e) => toggleFavorite(product, e)}
+                        className={`absolute top-2 right-2 z-10 rounded-full p-2 shadow-md border transition-all ${favoriteProductIds.has(product.id) ? "bg-red-500 border-red-500 text-white" : "bg-white/90 border-slate-200 text-slate-400 hover:text-red-500"}`}
+                        title={favoriteProductIds.has(product.id) ? "Usuń z ulubionych" : "Dodaj do ulubionych"}
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${favoriteProductIds.has(product.id) ? "fill-current" : ""}`} />
+                      </button>
                       {product.status === "listed" && (
                         <span className="absolute top-2 left-2 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide">Wystawiony</span>
                       )}
