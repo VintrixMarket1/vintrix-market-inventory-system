@@ -125,6 +125,10 @@ function OffersTab() {
     queryFn: () => base44.entities.PurchaseOffer.list("-created_date"),
   });
 
+  // Rozróżnij oferty od klienta i oferty admina
+  const customerOffers = offers.filter(o => o.customer_email && !o.customer_email.includes("admin@vintrix"));
+  const adminOffers = offers.filter(o => o.customer_email && o.customer_email.includes("admin@vintrix"));
+
   const updateOffer = async (offer, patch) => {
     setSaving(true);
     await base44.entities.PurchaseOffer.update(offer.id, patch);
@@ -137,99 +141,135 @@ function OffersTab() {
 
   if (isLoading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin" /></div>;
 
-  if (offers.length === 0) return (
+  if (customerOffers.length === 0 && adminOffers.length === 0) return (
     <div className="text-center py-20">
       <HandCoins className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-      <p className="text-slate-400">Brak ofert zakupu od klientów</p>
+      <p className="text-slate-400">Brak ofert</p>
     </div>
   );
 
   return (
-    <div className="space-y-3">
-      {offers.map(offer => {
-        const cfg = OFFER_STATUS[offer.status] || OFFER_STATUS.new;
-        const Icon = cfg.icon;
-        const isActive = offer.status === "new";
-        return (
-          <div key={offer.id} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-slate-900">{offer.customer_name || "Klient"}</span>
-                  {offer.customer_email && <span className="text-xs text-slate-400">{offer.customer_email}</span>}
-                  <Badge className={`text-[10px] ${cfg.color}`}><Icon className="w-3 h-3 mr-1" />{cfg.label}</Badge>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Produkt: <span className="font-medium text-slate-600">{offer.product_name || "—"}</span>
-                  {offer.created_date && <span className="ml-2">{format(new Date(offer.created_date), "dd.MM.yyyy HH:mm")}</span>}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-xl font-extrabold text-emerald-600">{offer.offered_price} PLN</p>
-                <p className="text-[10px] text-slate-400">Oferta klienta</p>
-              </div>
-            </div>
-
-            {offer.message && (
-              <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700">{offer.message}</div>
-            )}
-
-            {offer.counter_price && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
-                <p className="text-xs font-semibold text-amber-600 mb-1">Twoja kontroferta: <span className="text-amber-700 font-bold">{offer.counter_price} PLN</span></p>
-                {offer.admin_reply && <p className="text-amber-800">{offer.admin_reply}</p>}
-              </div>
-            )}
-
-            {offer.status === "accepted" && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">
-                ✅ Oferta zaakceptowana{offer.admin_reply ? ` — ${offer.admin_reply}` : ""}
-              </div>
-            )}
-            {offer.status === "rejected" && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">
-                ❌ Oferta odrzucona{offer.admin_reply ? ` — ${offer.admin_reply}` : ""}
-              </div>
-            )}
-
-            {isActive && (
-              actionId === offer.id ? (
-                <div className="space-y-3 border-t pt-3">
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-slate-500">Kontroferta (PLN) — zostaw puste, aby nie proponować</p>
-                    <div className="relative max-w-[160px]">
-                      <Input type="number" min={1} placeholder="np. 180" value={counterPrice} onChange={e => setCounterPrice(e.target.value)} className="pr-12" />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">PLN</span>
+    <div className="space-y-6">
+      {adminOffers.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Twoje oferty do klientów
+          </h3>
+          <div className="space-y-3">
+            {adminOffers.map(offer => {
+              const cfg = OFFER_STATUS[offer.status] || OFFER_STATUS.new;
+              const Icon = cfg.icon;
+              return (
+                <div key={offer.id} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-slate-900">Do: {offer.customer_name || "Klient"}</span>
+                        {offer.customer_email && <span className="text-xs text-slate-400">{offer.customer_email}</span>}
+                        <Badge className={`text-[10px] ${cfg.color}`}><Icon className="w-3 h-3 mr-1" />{cfg.label}</Badge>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Produkt: <span className="font-medium text-slate-600">{offer.product_name || "—"}</span>
+                        {offer.created_date && <span className="ml-2">{format(new Date(offer.created_date), "dd.MM.yyyy HH:mm")}</span>}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-extrabold text-emerald-600">{offer.offered_price} PLN</p>
+                      <p className="text-[10px] text-slate-400">Twoja oferta</p>
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-slate-500">Wiadomość (opcjonalna)</p>
-                    <Textarea placeholder="Odpowiedź do klienta..." value={counterMsg} onChange={e => setCounterMsg(e.target.value)} rows={2} className="text-sm resize-none" />
-                  </div>
-                  <div className="flex gap-2 flex-wrap">
-                    <Button variant="outline" size="sm" onClick={() => setActionId(null)}>Anuluj</Button>
-                    <Button size="sm" variant="destructive" disabled={saving} onClick={() => updateOffer(offer, { status: "rejected", admin_reply: counterMsg || undefined })}>
-                      <ThumbsDown className="w-3.5 h-3.5 mr-1" /> Odrzuć
-                    </Button>
-                    {counterPrice && Number(counterPrice) > 0 && (
-                      <Button size="sm" className="bg-amber-500 hover:bg-amber-600" disabled={saving} onClick={() => updateOffer(offer, { status: "countered", counter_price: Number(counterPrice), admin_reply: counterMsg || undefined })}>
-                        <ArrowLeftRight className="w-3.5 h-3.5 mr-1" /> Wyślij kontrofertę
-                      </Button>
-                    )}
-                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" disabled={saving} onClick={() => updateOffer(offer, { status: "accepted", admin_reply: counterMsg || undefined })}>
-                      <ThumbsUp className="w-3.5 h-3.5 mr-1" /> Akceptuj
-                    </Button>
-                  </div>
+                  {offer.message && <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700">{offer.message}</div>}
+                  {offer.status === "accepted" && <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">✅ Klient zaakceptował</div>}
+                  {offer.status === "rejected" && <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">❌ Klient odrzucił</div>}
+                  {offer.status === "customer_countered" && <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-800">💬 Klient kontruje: {offer.offered_price} PLN</div>}
                 </div>
-              ) : (
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setActionId(offer.id)}>
-                  <HandCoins className="w-3.5 h-3.5" /> Odpowiedz na ofertę
-                </Button>
-              )
-            )}
+              );
+            })}
           </div>
-        );
-      })}
+        </div>
+      )}
+
+      {customerOffers.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+            Oferty od klientów
+          </h3>
+          <div className="space-y-3">
+            {customerOffers.map(offer => {
+              const cfg = OFFER_STATUS[offer.status] || OFFER_STATUS.new;
+              const Icon = cfg.icon;
+              const isActive = offer.status === "new";
+              return (
+                <div key={offer.id} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-slate-900">{offer.customer_name || "Klient"}</span>
+                        {offer.customer_email && <span className="text-xs text-slate-400">{offer.customer_email}</span>}
+                        <Badge className={`text-[10px] ${cfg.color}`}><Icon className="w-3 h-3 mr-1" />{cfg.label}</Badge>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Produkt: <span className="font-medium text-slate-600">{offer.product_name || "—"}</span>
+                        {offer.created_date && <span className="ml-2">{format(new Date(offer.created_date), "dd.MM.yyyy HH:mm")}</span>}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-extrabold text-emerald-600">{offer.offered_price} PLN</p>
+                      <p className="text-[10px] text-slate-400">Oferta klienta</p>
+                    </div>
+                  </div>
+                  {offer.message && <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700">{offer.message}</div>}
+                  {offer.counter_price && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                      <p className="text-xs font-semibold text-amber-600 mb-1">Twoja kontroferta: <span className="text-amber-700 font-bold">{offer.counter_price} PLN</span></p>
+                      {offer.admin_reply && <p className="text-amber-800">{offer.admin_reply}</p>}
+                    </div>
+                  )}
+                  {offer.status === "accepted" && <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">✅ Oferta zaakceptowana{offer.admin_reply ? ` — ${offer.admin_reply}` : ""}</div>}
+                  {offer.status === "rejected" && <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">❌ Oferta odrzucona{offer.admin_reply ? ` — ${offer.admin_reply}` : ""}</div>}
+                  {isActive && (
+                    actionId === offer.id ? (
+                      <div className="space-y-3 border-t pt-3">
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-slate-500">Kontroferta (PLN)</p>
+                          <div className="relative max-w-[160px]">
+                            <Input type="number" min={1} placeholder="np. 180" value={counterPrice} onChange={e => setCounterPrice(e.target.value)} className="pr-12" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">PLN</span>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-slate-500">Wiadomość (opcjonalna)</p>
+                          <Textarea placeholder="Odpowiedź do klienta..." value={counterMsg} onChange={e => setCounterMsg(e.target.value)} rows={2} className="text-sm resize-none" />
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button variant="outline" size="sm" onClick={() => setActionId(null)}>Anuluj</Button>
+                          <Button size="sm" variant="destructive" disabled={saving} onClick={() => updateOffer(offer, { status: "rejected", admin_reply: counterMsg || undefined })}>
+                            <ThumbsDown className="w-3.5 h-3.5 mr-1" /> Odrzuć
+                          </Button>
+                          {counterPrice && Number(counterPrice) > 0 && (
+                            <Button size="sm" className="bg-amber-500 hover:bg-amber-600" disabled={saving} onClick={() => updateOffer(offer, { status: "countered", counter_price: Number(counterPrice), admin_reply: counterMsg || undefined })}>
+                              <ArrowLeftRight className="w-3.5 h-3.5 mr-1" /> Wyślij kontrofertę
+                            </Button>
+                          )}
+                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" disabled={saving} onClick={() => updateOffer(offer, { status: "accepted", admin_reply: counterMsg || undefined })}>
+                            <ThumbsUp className="w-3.5 h-3.5 mr-1" /> Akceptuj
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setActionId(offer.id)}>
+                        <HandCoins className="w-3.5 h-3.5" /> Odpowiedz na ofertę
+                      </Button>
+                    )
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
