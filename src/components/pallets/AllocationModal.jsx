@@ -57,7 +57,7 @@ export default function AllocationModal({ open, onClose, pallet, products, onCon
 
   const validation = {
     hasProducts: products.length > 0,
-    allNamed: products.every(p => p.product_name && p.product_name !== "Nieznany produkt"),
+    allNamed: products.every(p => p.product_name && p.product_name.trim() !== ''),
     hasTotalValue: totalValue > 0,
     noPropIssue: !missingPrices,
   };
@@ -88,7 +88,7 @@ export default function AllocationModal({ open, onClose, pallet, products, onCon
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Walidacja</p>
             {[
               { ok: validation.hasProducts, label: `Produkty przypisane (${products.length} szt.)` },
-              { ok: validation.allNamed, label: "Wszystkie produkty mają nazwy" },
+              { ok: validation.allNamed, label: `Wszystkie produkty mają nazwy (nieznane dozwolone)` },
               { ok: validation.hasTotalValue, label: `Wartość palety: ${totalValue.toFixed(2)} PLN` },
               { ok: validation.noPropIssue, label: method === "proportional" ? "Wszystkie produkty mają ceny sprzedaży" : "Metoda alokacji OK" },
             ].map((v, i) => (
