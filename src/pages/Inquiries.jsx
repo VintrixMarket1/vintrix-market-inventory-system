@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,10 @@ const OFFER_STATUS = {
   new: { label: "Nowa", color: "bg-blue-100 text-blue-700", icon: Clock },
   accepted: { label: "Zaakceptowana", color: "bg-emerald-100 text-emerald-700", icon: ThumbsUp },
   rejected: { label: "Odrzucona", color: "bg-red-100 text-red-700", icon: ThumbsDown },
-  countered: { label: "Kontroferta", color: "bg-amber-100 text-amber-700", icon: ArrowLeftRight },
+  countered: { label: "Kontroferta →", color: "bg-amber-100 text-amber-700", icon: ArrowLeftRight },
+  customer_countered: { label: "Kontra klienta", color: "bg-purple-100 text-purple-700", icon: ArrowLeftRight },
+  customer_accepted: { label: "Klient akceptuje", color: "bg-emerald-100 text-emerald-700", icon: ThumbsUp },
+  customer_rejected: { label: "Klient odrzucił", color: "bg-red-100 text-red-700", icon: ThumbsDown },
 };
 
 function InquiriesTab() {
@@ -231,9 +234,19 @@ function OffersTab() {
 
 export default function Inquiries() {
   const [tab, setTab] = useState("inquiries");
+  const queryClient = useQueryClient();
 
   const { data: inquiries = [] } = useQuery({ queryKey: ["inquiries"], queryFn: () => base44.entities.ProductInquiry.list("-created_date") });
   const { data: offers = [] } = useQuery({ queryKey: ["purchase_offers"], queryFn: () => base44.entities.PurchaseOffer.list("-created_date") });
+  const { data: notifications = [] } = useQuery({ queryKey: ["admin_notifications_unread"], queryFn: () => base44.entities.AdminNotification.filter({ is_read: false }) });
+
+  // Mark all unread notifications as read when admin visits this page
+  useEffect(() => {
+    if (notifications.length === 0) return;
+    Promise.all(notifications.map(n => base44.entities.AdminNotification.update(n.id, { is_read: true }))).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["admin_notifications_unread"] });
+    });
+  }, [notifications.length]);
 
   const newInquiries = inquiries.filter(i => i.status === "new").length;
   const newOffers = offers.filter(o => o.status === "new").length;

@@ -1,0 +1,25 @@
+{
+  "name": "Favorite",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "ID produktu"
+    },
+    "product_name": {
+      "type": "string",
+      "description": "Nazwa produktu (snapshot)"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Imi\u0119 i nazwisko klienta"
+    },
+    "customer_email": {
+      "type": "string",
+      "description": "Email klienta"
+    }
+  },
+  "required": [
+    "product_id"
+  ]
+}

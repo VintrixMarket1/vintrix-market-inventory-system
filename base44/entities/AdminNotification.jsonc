@@ -1,0 +1,50 @@
+{
+  "name": "AdminNotification",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "favorite",
+        "offer_response",
+        "new_inquiry",
+        "new_offer"
+      ],
+      "description": "Typ powiadomienia"
+    },
+    "title": {
+      "type": "string",
+      "description": "Tytu\u0142 powiadomienia"
+    },
+    "message": {
+      "type": "string",
+      "description": "Tre\u015b\u0107 powiadomienia"
+    },
+    "product_id": {
+      "type": "string",
+      "description": "Powi\u0105zany produkt"
+    },
+    "product_name": {
+      "type": "string"
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "customer_email": {
+      "type": "string"
+    },
+    "reference_id": {
+      "type": "string",
+      "description": "ID powi\u0105zanego rekordu (oferta, zapytanie)"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "type",
+    "title",
+    "message"
+  ]
+}

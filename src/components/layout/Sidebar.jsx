@@ -5,11 +5,20 @@ import {
   Menu, X, ChevronRight, Layers, BookOpen, Settings, FileText, MessageCircle
 } from "lucide-react";
 import { useLang } from "@/lib/i18n";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 export default function Sidebar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useLang();
+
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["admin_notifications_unread"],
+    queryFn: () => base44.entities.AdminNotification.filter({ is_read: false }),
+    refetchInterval: 30000,
+  });
+  const unreadCount = notifications.length;
 
   const navItems = [
     { path: "/Dashboard", labelKey: "nav_dashboard", icon: LayoutDashboard },
@@ -54,7 +63,11 @@ export default function Sidebar() {
           >
             <item.icon className={`w-4.5 h-4.5 ${isActive(item.path) ? "text-emerald-400" : "text-slate-500 group-hover:text-slate-300"}`} />
             {item.label || t(item.labelKey)}
-            {isActive(item.path) && <ChevronRight className="w-3.5 h-3.5 ml-auto text-emerald-400" />}
+            {item.path === "/Inquiries" && unreadCount > 0 && (
+              <span className="ml-auto bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5 leading-none font-bold">{unreadCount}</span>
+            )}
+            {isActive(item.path) && unreadCount === 0 && <ChevronRight className="w-3.5 h-3.5 ml-auto text-emerald-400" />}
+            {isActive(item.path) && unreadCount > 0 && item.path !== "/Inquiries" && <ChevronRight className="w-3.5 h-3.5 ml-auto text-emerald-400" />}
           </Link>
         ))}
       </nav>
