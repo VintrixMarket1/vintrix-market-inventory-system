@@ -5,12 +5,10 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Package, Search, MessageCircle, Loader2, CheckCircle, LogOut, SlidersHorizontal, X } from "lucide-react";
+import { Package, Search, LogOut, SlidersHorizontal, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { CATEGORY_GROUPS, getCategoryLabel } from "@/lib/categoryConfig";
+import ProductDetailModal from "@/components/catalog/ProductDetailModal";
 
 const CONDITION_LABELS = { new: "Nowy", like_new: "Jak nowy", used: "Używany" };
 const CONDITIONS = ["new", "like_new", "used"];
@@ -26,18 +24,16 @@ export default function CustomerCatalog() {
   const [priceMax, setPriceMax] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  const [inquiryProduct, setInquiryProduct] = useState(null);
-  const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const { data: products = [] } = useQuery({
     queryKey: ["catalog_products"],
-    queryFn: () => base44.entities.Product.filter({ status: "in_stock" }, "-created_date"),
+    queryFn: () => base44.entities.Product.list("-created_date"),
   });
 
   const filtered = useMemo(() => {
     return products.filter(p => {
+      if (p.status === "sold") return false;
       if (search && ![p.product_name, p.brand, p.category, p.subcategory].some(v => v?.toLowerCase().includes(search.toLowerCase()))) return false;
       if (selectedCategories.length > 0 && !selectedCategories.includes(p.category)) return false;
       if (selectedConditions.length > 0 && !selectedConditions.includes(p.condition)) return false;
@@ -59,20 +55,15 @@ export default function CustomerCatalog() {
     setPriceMax("");
   };
 
-  const handleSendInquiry = async () => {
-    if (!message.trim()) return;
-    setSending(true);
+  const handleSendInquiry = async (product, message) => {
     await base44.entities.ProductInquiry.create({
-      product_id: inquiryProduct.id,
-      product_name: inquiryProduct.product_name,
-      message: message.trim(),
+      product_id: product.id,
+      product_name: product.product_name,
+      message,
       customer_name: user?.full_name || "",
       customer_email: user?.email || "",
       status: "new",
     });
-    setSending(false);
-    setSent(true);
-    setTimeout(() => { setInquiryProduct(null); setMessage(""); setSent(false); }, 2000);
     toast({ title: "Zapytanie wysłane!", description: "Skontaktujemy się z Tobą wkrótce." });
   };
 
@@ -209,12 +200,19 @@ export default function CustomerCatalog() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
                 {filtered.map(product => (
-                  <div key={product.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
-                    <div className="aspect-square bg-slate-100 overflow-hidden">
+                  <div
+                    key={product.id}
+                    className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer group"
+                    onClick={() => setSelectedProduct(product)}
+                  >
+                    <div className="aspect-square bg-slate-100 overflow-hidden relative">
                       {product.images?.[0] ? (
-                        <img src={product.images[0]} alt={product.product_name} className="w-full h-full object-cover" />
+                        <img src={product.images[0]} alt={product.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-3xl">📦</div>
+                      )}
+                      {product.status === "listed" && (
+                        <span className="absolute top-2 left-2 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide">Wystawiony</span>
                       )}
                     </div>
                     <div className="p-3 space-y-1.5">
@@ -226,16 +224,11 @@ export default function CustomerCatalog() {
                       {product.category && (
                         <p className="text-[10px] text-slate-400">{getCategoryLabel(product.category)}{product.size ? ` · r. ${product.size}` : ""}</p>
                       )}
-                      {product.suggested_sale_price && (
+                      {product.suggested_sale_price ? (
                         <p className="text-sm font-bold text-emerald-600">{product.suggested_sale_price} PLN</p>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">Cena na zapytanie</p>
                       )}
-                      <Button
-                        size="sm"
-                        className="w-full text-xs h-7 bg-emerald-600 hover:bg-emerald-700"
-                        onClick={() => { setInquiryProduct(product); setSent(false); setMessage(""); }}
-                      >
-                        <MessageCircle className="w-3 h-3 mr-1" /> Zapytaj
-                      </Button>
                     </div>
                   </div>
                 ))}
@@ -245,46 +238,12 @@ export default function CustomerCatalog() {
         </div>
       </div>
 
-      {/* Inquiry dialog */}
-      <Dialog open={!!inquiryProduct} onOpenChange={() => setInquiryProduct(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Zapytaj o produkt</DialogTitle>
-          </DialogHeader>
-          {sent ? (
-            <div className="flex flex-col items-center py-8 gap-3">
-              <CheckCircle className="w-12 h-12 text-emerald-500" />
-              <p className="font-semibold text-slate-900">Zapytanie wysłane!</p>
-              <p className="text-sm text-slate-500 text-center">Skontaktujemy się z Tobą wkrótce.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="bg-slate-50 rounded-lg p-3 text-sm">
-                <p className="font-medium text-slate-900">{inquiryProduct?.product_name}</p>
-                {inquiryProduct?.suggested_sale_price && (
-                  <p className="text-emerald-600 font-semibold mt-0.5">{inquiryProduct.suggested_sale_price} PLN</p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label>Twoja wiadomość</Label>
-                <Textarea
-                  placeholder="Napisz czego chcesz się dowiedzieć — rozmiar, dostępność, możliwość rezerwacji..."
-                  value={message}
-                  onChange={e => setMessage(e.target.value)}
-                  rows={4}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setInquiryProduct(null)} className="flex-1">Anuluj</Button>
-                <Button onClick={handleSendInquiry} disabled={sending || !message.trim()} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                  {sending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Wyślij zapytanie
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ProductDetailModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        user={user}
+        onSendInquiry={handleSendInquiry}
+      />
     </div>
   );
 }
