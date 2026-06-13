@@ -62,7 +62,9 @@ function OfferCard({ offer, queryClient }) {
   const [saving, setSaving] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
 
+  const isNew = offer.status === "new";
   const isCountered = offer.status === "countered";
+  const canRespond = isNew || isCountered;
   const isFinal = ["accepted", "rejected", "customer_countered", "customer_accepted", "customer_rejected"].includes(offer.status);
   const canCheckout = offer.status === "accepted" || offer.status === "customer_accepted";
 
@@ -156,7 +158,41 @@ function OfferCard({ offer, queryClient }) {
       )}
       {offer.status === "customer_rejected" && <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">❌ Odrzuciłeś kontrofertę.</div>}
       {offer.status === "customer_countered" && <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-800">💬 Wysłałeś kontrofertę {offer.offered_price} PLN. Czekamy na odpowiedź sprzedawcy.</div>}
-      {offer.status === "new" && <p className="text-xs text-slate-400 italic">Czekamy na odpowiedź sprzedawcy...</p>}
+      {offer.status === "new" && (
+        <div className="space-y-2">
+          <p className="text-xs text-slate-400 italic">Sprzedawca wysłał Ci ofertę. Wybierz co chcesz zrobić:</p>
+          {showReply ? (
+            <div className="border-t pt-3 space-y-3">
+              <p className="text-xs font-semibold text-slate-600">Twoja odpowiedź na ofertę <strong>{offer.offered_price} PLN</strong>:</p>
+              <div className="space-y-1">
+                <Label className="text-xs">Twoja kontroferta (PLN) — opcjonalnie</Label>
+                <div className="relative max-w-[160px]">
+                  <Input type="number" min={1} placeholder="np. 170" value={counterPrice} onChange={e => setCounterPrice(e.target.value)} className="pr-12" />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">PLN</span>
+                </div>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <Button variant="outline" size="sm" onClick={() => setShowReply(false)}>Anuluj</Button>
+                <Button size="sm" variant="destructive" disabled={saving} onClick={() => handleAction("reject")}>
+                  {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <ThumbsDown className="w-3.5 h-3.5 mr-1" />} Odrzuć
+                </Button>
+                {counterPrice && Number(counterPrice) > 0 && (
+                  <Button size="sm" className="bg-purple-600 hover:bg-purple-700" disabled={saving} onClick={() => handleAction("counter")}>
+                    {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <ArrowLeftRight className="w-3.5 h-3.5 mr-1" />} Kontruj
+                  </Button>
+                )}
+                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" disabled={saving} onClick={() => handleAction("accept")}>
+                  {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <ThumbsUp className="w-3.5 h-3.5 mr-1" />} Akceptuj
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button variant="outline" size="sm" className="gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50" onClick={() => setShowReply(true)}>
+              <HandCoins className="w-3.5 h-3.5" /> Odpowiedz na ofertę
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Checkout button for accepted offers */}
       {canCheckout && (
@@ -172,7 +208,7 @@ function OfferCard({ offer, queryClient }) {
         <CheckoutModal offer={offer} onClose={() => setShowCheckout(false)} />
       )}
 
-      {/* Customer can respond to countered offer */}
+      {/* Customer can respond to countered offer (already responded to new offers above) */}
       {isCountered && !isFinal && (
         showReply ? (
           <div className="border-t pt-3 space-y-3">
