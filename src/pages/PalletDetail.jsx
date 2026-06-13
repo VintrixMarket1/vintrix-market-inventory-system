@@ -314,17 +314,27 @@ export default function PalletDetail() {
           )}
         </div>
 
-        {products.length === 0 ? (
-          <div className="text-center py-10 text-slate-400">
-            <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Brak produktów w tej palecie</p>
-            {!isExploded && (
-              <Button size="sm" className="mt-3 bg-emerald-600 hover:bg-emerald-700" onClick={() => navigate(`/AddProduct?pallet_id=${palletId}`)}>
-                Dodaj pierwszy produkt
-              </Button>
-            )}
-          </div>
-        ) : (
+        {(() => {
+          const unknownCount = products.filter(p => p.product_name === "Nieznany produkt").length;
+          const visibleProducts = products.filter(p => p.product_name !== "Nieznany produkt");
+          return products.length === 0 ? (
+            <div className="text-center py-10 text-slate-400">
+              <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Brak produktów w tej palecie</p>
+              {!isExploded && (
+                <Button size="sm" className="mt-3 bg-emerald-600 hover:bg-emerald-700" onClick={() => navigate(`/AddProduct?pallet_id=${palletId}`)}>
+                  Dodaj pierwszy produkt
+                </Button>
+              )}
+            </div>
+          ) : (
+            <>
+              {unknownCount > 0 && (
+                <div className="mb-3 flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  <PackageSearch className="w-3.5 h-3.5 shrink-0" />
+                  <span>{unknownCount} {unknownCount === 1 ? "nieznany przedmiot ukryty" : "nieznane przedmioty ukryte"} — uzupełnij dane w sekcji Magazyn</span>
+                </div>
+              )}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -339,16 +349,12 @@ export default function PalletDetail() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {products.map(p => {
+                {visibleProducts.map(p => {
                   const qty = p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1;
-                  const isUnknown = p.product_name === "Nieznany produkt";
                   return (
-                    <tr key={p.id} className={`hover:bg-slate-50 cursor-pointer ${isUnknown ? "opacity-70" : ""}`} onClick={() => navigate(`/Inventory?edit=${p.id}`)}>
+                    <tr key={p.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => navigate(`/Inventory?edit=${p.id}`)}>
                       <td className="py-2 pr-3">
-                        <div className="flex items-center gap-1.5">
-                          <p className={`font-medium truncate max-w-[180px] ${isUnknown ? "text-amber-600 italic" : "text-slate-900"}`}>{p.product_name}</p>
-                          {isUnknown && <span className="text-[10px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full whitespace-nowrap">uzupełnij →</span>}
-                        </div>
+                        <p className="font-medium truncate max-w-[180px] text-slate-900">{p.product_name}</p>
                         {p.internal_code && <p className="text-xs text-slate-400 font-mono">{p.internal_code}</p>}
                       </td>
                       <td className="py-2 text-xs text-slate-500">{p.category || "—"}</td>
@@ -388,7 +394,9 @@ export default function PalletDetail() {
               </tfoot>
             </table>
           </div>
-        )}
+            </>
+          );
+        })()}
       </div>
 
       {/* Notes */}
