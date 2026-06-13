@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Search, FileText, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { Download, Search, FileText, Plus, ChevronDown, ChevronUp, Printer } from "lucide-react";
+import { exportPZ, exportRW, exportPW, exportDRP } from "@/lib/palletPdfExport";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
 
@@ -13,21 +14,38 @@ const TYPE_COLORS = {
   PZ: "bg-blue-100 text-blue-700",
   WZ: "bg-emerald-100 text-emerald-700",
   RW: "bg-orange-100 text-orange-700",
-  MM: "bg-purple-100 text-purple-700",
+  PW: "bg-teal-100 text-teal-700",
+  DRP: "bg-purple-100 text-purple-700",
+  MM: "bg-indigo-100 text-indigo-700",
   IN: "bg-slate-100 text-slate-700",
+  "KOR-RW": "bg-red-100 text-red-700",
+  "KOR-PW": "bg-red-100 text-red-700",
 };
 
 const TYPE_LABELS = {
   PZ: "Przyjęcie Zewnętrzne",
   WZ: "Wydanie Zewnętrzne",
   RW: "Rozchód Wewnętrzny",
+  PW: "Przyjęcie Wewnętrzne",
+  DRP: "Protokół Rozbicia Palety",
   MM: "Przesunięcie Między-mag.",
   IN: "Inwentaryzacja",
+  "KOR-RW": "Korekta RW",
+  "KOR-PW": "Korekta PW",
 };
 
-function DocumentRow({ doc }) {
+function DocumentRow({ doc, pallets }) {
   const [expanded, setExpanded] = useState(false);
   const items = doc.items || [];
+  const pallet = pallets?.find(p => p.id === doc.pallet_id);
+
+  const handleExportPDF = (e) => {
+    e.stopPropagation();
+    if (doc.document_type === "PZ") exportPZ(doc, pallet);
+    else if (doc.document_type === "RW") exportRW(doc, pallet);
+    else if (doc.document_type === "PW") exportPW(doc, pallet);
+    else if (doc.document_type === "DRP") exportDRP(pallet, [], [doc]);
+  };
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -58,7 +76,14 @@ function DocumentRow({ doc }) {
           <p className="font-bold text-slate-900">{(doc.total_value || 0).toFixed(2)} PLN</p>
           <p className="text-[10px] text-slate-400 mt-0.5">wartość</p>
         </div>
-        <div className="shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={handleExportPDF}
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+            title="Eksportuj PDF"
+          >
+            <Printer className="w-4 h-4" />
+          </button>
           {expanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
         </div>
       </div>
@@ -111,6 +136,11 @@ export default function WarehouseDocuments() {
     queryFn: () => base44.entities.WarehouseDocument.list("-created_date"),
   });
 
+  const { data: pallets = [] } = useQuery({
+    queryKey: ["pallets"],
+    queryFn: () => base44.entities.Pallet.list(),
+  });
+
   const filtered = docs.filter(d => {
     const searchMatch = !search ||
       d.document_number?.toLowerCase().includes(search.toLowerCase()) ||
@@ -125,6 +155,8 @@ export default function WarehouseDocuments() {
 
   const totalPZ = filtered.filter(d => d.document_type === "PZ").reduce((s, d) => s + (d.total_value || 0), 0);
   const totalWZ = filtered.filter(d => d.document_type === "WZ").reduce((s, d) => s + (d.total_value || 0), 0);
+  const totalRW = filtered.filter(d => d.document_type === "RW").reduce((s, d) => s + (d.total_value || 0), 0);
+  const totalPW = filtered.filter(d => d.document_type === "PW").reduce((s, d) => s + (d.total_value || 0), 0);
 
   const exportExcel = () => {
     const rows = [];
@@ -166,21 +198,29 @@ export default function WarehouseDocuments() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <p className="text-xs text-slate-400 uppercase tracking-wider">Dokumenty</p>
           <p className="text-xl font-bold text-slate-900 mt-1">{filtered.length}</p>
         </div>
         <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
-          <p className="text-xs text-blue-500 uppercase tracking-wider">Przyjęcia (PZ)</p>
+          <p className="text-xs text-blue-500 uppercase tracking-wider">PZ</p>
           <p className="text-xl font-bold text-blue-700 mt-1">{totalPZ.toFixed(0)} PLN</p>
         </div>
         <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-4">
-          <p className="text-xs text-emerald-500 uppercase tracking-wider">Wydania (WZ)</p>
+          <p className="text-xs text-emerald-500 uppercase tracking-wider">WZ</p>
           <p className="text-xl font-bold text-emerald-700 mt-1">{totalWZ.toFixed(0)} PLN</p>
         </div>
+        <div className="bg-orange-50 rounded-xl border border-orange-200 p-4">
+          <p className="text-xs text-orange-500 uppercase tracking-wider">RW</p>
+          <p className="text-xl font-bold text-orange-700 mt-1">{totalRW.toFixed(0)} PLN</p>
+        </div>
+        <div className="bg-teal-50 rounded-xl border border-teal-200 p-4">
+          <p className="text-xs text-teal-500 uppercase tracking-wider">PW</p>
+          <p className="text-xl font-bold text-teal-700 mt-1">{totalPW.toFixed(0)} PLN</p>
+        </div>
         <div className={`rounded-xl border p-4 ${(totalPZ - totalWZ) >= 0 ? "bg-slate-50 border-slate-200" : "bg-red-50 border-red-200"}`}>
-          <p className="text-xs text-slate-400 uppercase tracking-wider">Wartość zapasów</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wider">Zapasy (netto)</p>
           <p className={`text-xl font-bold mt-1 ${(totalPZ - totalWZ) >= 0 ? "text-slate-700" : "text-red-700"}`}>
             {(totalPZ - totalWZ).toFixed(0)} PLN
           </p>
@@ -194,14 +234,18 @@ export default function WarehouseDocuments() {
           <Input className="pl-9" placeholder="Szukaj po numerze, produkcie, kontrahencie..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Typ dokumentu" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-52"><SelectValue placeholder="Typ dokumentu" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Wszystkie typy</SelectItem>
-            <SelectItem value="PZ">PZ — Przyjęcie</SelectItem>
-            <SelectItem value="WZ">WZ — Wydanie</SelectItem>
-            <SelectItem value="RW">RW — Rozchód Wew.</SelectItem>
+            <SelectItem value="PZ">PZ — Przyjęcie Zewnętrzne</SelectItem>
+            <SelectItem value="WZ">WZ — Wydanie Zewnętrzne</SelectItem>
+            <SelectItem value="RW">RW — Rozchód Wewnętrzny</SelectItem>
+            <SelectItem value="PW">PW — Przyjęcie Wewnętrzne</SelectItem>
+            <SelectItem value="DRP">DRP — Protokół Rozbicia</SelectItem>
             <SelectItem value="MM">MM — Przesunięcie</SelectItem>
             <SelectItem value="IN">IN — Inwentaryzacja</SelectItem>
+            <SelectItem value="KOR-RW">KOR-RW — Korekta</SelectItem>
+            <SelectItem value="KOR-PW">KOR-PW — Korekta</SelectItem>
           </SelectContent>
         </Select>
         <Input type="date" className="w-full sm:w-36 h-9 text-sm" value={dateFrom} onChange={e => setDateFrom(e.target.value)} placeholder="Od" />
@@ -223,7 +267,7 @@ export default function WarehouseDocuments() {
       ) : (
         <div className="space-y-2">
           {filtered.map(doc => (
-            <DocumentRow key={doc.id} doc={doc} />
+            <DocumentRow key={doc.id} doc={doc} pallets={pallets} />
           ))}
         </div>
       )}

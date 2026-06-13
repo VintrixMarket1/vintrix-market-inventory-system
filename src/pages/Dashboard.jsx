@@ -26,7 +26,7 @@ export default function Dashboard() {
   });
 
   // Nieskalkulowane palety — traktowane jako produkty zbiorcze na stanie
-  const unsettledPallets = pallets.filter(p => p.status !== "processed");
+  const unsettledPallets = pallets.filter(p => !["exploded", "processed", "closed"].includes(p.status));
   const unsettledPalletIds = new Set(unsettledPallets.map(p => p.id));
 
   // Produkty z skalkulowanych palet (lub bez palety)

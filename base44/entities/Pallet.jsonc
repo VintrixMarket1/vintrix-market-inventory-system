@@ -8,7 +8,7 @@
     },
     "investor_name": {
       "type": "string",
-      "description": "Nazwa inwestora finansuj\u0105cego palet\u0119"
+      "description": "Nazwa inwestora / dostawcy finansuj\u0105cego palet\u0119"
     },
     "purchase_date": {
       "type": "string",
@@ -17,25 +17,73 @@
     },
     "total_cost": {
       "type": "number",
-      "description": "Ca\u0142kowity koszt palety (PLN)"
+      "description": "Warto\u015b\u0107 zakupowa palety (PLN)"
+    },
+    "additional_costs": {
+      "type": "number",
+      "description": "Koszty dodatkowe: transport, roz\u0142adunek itp. (PLN)",
+      "default": 0
+    },
+    "total_value": {
+      "type": "number",
+      "description": "\u0141\u0105czna warto\u015b\u0107 palety do rozliczenia (total_cost + additional_costs)"
+    },
+    "invoice_number": {
+      "type": "string",
+      "description": "Numer faktury zakupowej"
     },
     "status": {
       "type": "string",
       "enum": [
-        "active",
-        "processing",
-        "processed"
+        "accepted",
+        "sorting",
+        "ready",
+        "exploded",
+        "closed"
       ],
-      "default": "active",
-      "description": "Status palety: active = nowa, processing = w trakcie rozpakowywania, processed = zako\u0144czona (ceny obliczone)"
+      "default": "accepted",
+      "description": "Status palety: accepted=Przyj\u0119ta, sorting=W trakcie sortowania, ready=Gotowa do rozbicia, exploded=Rozbita, closed=Zamkni\u0119ta"
     },
     "product_count": {
       "type": "number",
-      "description": "Liczba produkt\u00f3w na palecie (uzupe\u0142niana automatycznie po przetworzeniu)"
+      "description": "Liczba produkt\u00f3w na palecie"
     },
     "calculated_unit_price": {
       "type": "number",
-      "description": "Obliczona cena jednostkowa (total_cost / product_count)"
+      "description": "Obliczona cena jednostkowa"
+    },
+    "allocation_method": {
+      "type": "string",
+      "enum": [
+        "equal",
+        "proportional",
+        "category_weight"
+      ],
+      "description": "Metoda alokacji warto\u015bci: equal=R\u00f3wna, proportional=Proporcjonalna, category_weight=Wagi kategorii"
+    },
+    "pz_document_id": {
+      "type": "string",
+      "description": "ID dokumentu PZ"
+    },
+    "rw_document_id": {
+      "type": "string",
+      "description": "ID dokumentu RW"
+    },
+    "pw_document_id": {
+      "type": "string",
+      "description": "ID dokumentu PW"
+    },
+    "drp_document_id": {
+      "type": "string",
+      "description": "ID protoko\u0142u rozbicia (DRP)"
+    },
+    "exploded_at": {
+      "type": "string",
+      "description": "Data i czas zatwierdzenia rozbicia (ISO)"
+    },
+    "exploded_by": {
+      "type": "string",
+      "description": "Email osoby zatwierdzaj\u0105cej rozbicie"
     },
     "notes": {
       "type": "string",

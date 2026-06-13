@@ -147,6 +147,14 @@ If you cannot determine something from photos — use null.`,
       ai_verified: true,
       status: "in_stock",
     });
+    // Auto-update pallet status to sorting if still accepted
+    if (palletId) {
+      const pallets = await base44.entities.Pallet.filter({ id: palletId });
+      const p = pallets?.[0];
+      if (p && (p.status === "accepted" || p.status === "active")) {
+        await base44.entities.Pallet.update(palletId, { status: "sorting" });
+      }
+    }
     setStep(STEPS.DONE);
   };
 

@@ -12,10 +12,14 @@
         "PZ",
         "WZ",
         "RW",
+        "PW",
+        "DRP",
         "MM",
-        "IN"
+        "IN",
+        "KOR-RW",
+        "KOR-PW"
       ],
-      "description": "Typ dokumentu: PZ=Przyj\u0119cie Zewn\u0119trzne, WZ=Wydanie Zewn\u0119trzne, RW=Rozch\u00f3d Wewn\u0119trzny, MM=Przesuni\u0119cie Mi\u0119dzymagazynowe, IN=Inwentaryzacja"
+      "description": "Typ dokumentu"
     },
     "date": {
       "type": "string",
@@ -29,7 +33,7 @@
         "confirmed"
       ],
       "default": "confirmed",
-      "description": "Status dokumentu: draft=roboczy, confirmed=zatwierdzony"
+      "description": "Status dokumentu"
     },
     "items": {
       "type": "array",
@@ -45,16 +49,20 @@
           "internal_code": {
             "type": "string"
           },
+          "category": {
+            "type": "string"
+          },
+          "condition": {
+            "type": "string"
+          },
           "quantity": {
             "type": "number"
           },
           "unit_price": {
-            "type": "number",
-            "description": "Cena jednostkowa w momencie operacji (PLN)"
+            "type": "number"
           },
           "total_value": {
-            "type": "number",
-            "description": "Warto\u015b\u0107 pozycji (qty * unit_price)"
+            "type": "number"
           }
         }
       },
@@ -70,7 +78,7 @@
     },
     "reference_number": {
       "type": "string",
-      "description": "Numer referencyjny (np. numer faktury zakupowej, numer zam\u00f3wienia)"
+      "description": "Numer referencyjny / numer faktury zakupowej"
     },
     "platform": {
       "type": "string",
@@ -87,11 +95,31 @@
     },
     "pallet_id": {
       "type": "string",
-      "description": "Referencja do palety (dla PZ)"
+      "description": "Referencja do palety"
     },
     "sale_id": {
       "type": "string",
       "description": "Referencja do rekordu Sale (dla WZ)"
+    },
+    "related_pz_number": {
+      "type": "string",
+      "description": "Numer powi\u0105zanego dokumentu PZ"
+    },
+    "related_rw_number": {
+      "type": "string",
+      "description": "Numer powi\u0105zanego dokumentu RW"
+    },
+    "related_pw_number": {
+      "type": "string",
+      "description": "Numer powi\u0105zanego dokumentu PW"
+    },
+    "related_drp_number": {
+      "type": "string",
+      "description": "Numer powi\u0105zanego protoko\u0142u DRP"
+    },
+    "allocation_method": {
+      "type": "string",
+      "description": "Metoda alokacji warto\u015bci (dla DRP)"
     },
     "notes": {
       "type": "string",

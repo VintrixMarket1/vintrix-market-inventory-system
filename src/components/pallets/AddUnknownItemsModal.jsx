@@ -26,6 +26,10 @@ export default function AddUnknownItemsModal({ open, onClose, pallet, onSaved })
     for (const item of items) {
       await base44.entities.Product.create(item);
     }
+    // Auto-update pallet status to sorting if still accepted
+    if (pallet.status === "accepted" || pallet.status === "active") {
+      await base44.entities.Pallet.update(pallet.id, { status: "sorting" });
+    }
     setSaving(false);
     onSaved?.();
     onClose();

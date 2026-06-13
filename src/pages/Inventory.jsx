@@ -51,7 +51,7 @@ export default function Inventory() {
   const palletsMap = Object.fromEntries(pallets.map(p => [p.id, p]));
 
   // Palety nieskalkulowane (bez cen) — wyświetlane jako karty zbiorcze
-  const unsettledPallets = pallets.filter(p => p.status !== "processed");
+  const unsettledPallets = pallets.filter(p => !["exploded", "processed", "closed"].includes(p.status));
   // IDs palet nieskalkulowanych — produkty z tych palet NIE trafiają na listę
   const unsettledPalletIds = new Set(unsettledPallets.map(p => p.id));
 

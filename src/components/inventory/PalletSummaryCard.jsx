@@ -4,8 +4,14 @@ import { useNavigate } from "react-router-dom";
 
 export default function PalletSummaryCard({ pallet, productCount }) {
   const navigate = useNavigate();
-  const statusLabel = pallet.status === "processing" ? "W trakcie" : "Nowa";
-  const statusClass = pallet.status === "processing" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700";
+  const statusMap = {
+    accepted: { label: "Przyjęta", cls: "bg-blue-100 text-blue-700" },
+    active: { label: "Przyjęta", cls: "bg-blue-100 text-blue-700" },
+    sorting: { label: "W sortowaniu", cls: "bg-amber-100 text-amber-700" },
+    processing: { label: "W sortowaniu", cls: "bg-amber-100 text-amber-700" },
+    ready: { label: "Gotowa", cls: "bg-emerald-100 text-emerald-700" },
+  };
+  const { label: statusLabel, cls: statusClass } = statusMap[pallet.status] || { label: "Nowa", cls: "bg-blue-100 text-blue-700" };
 
   return (
     <div
