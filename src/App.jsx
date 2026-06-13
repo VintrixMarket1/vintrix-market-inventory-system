@@ -7,6 +7,9 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { LangProvider } from '@/lib/i18n';
 import Settings from './pages/Settings';
+import Onboarding from './pages/Onboarding';
+import CustomerCatalog from './pages/CustomerCatalog';
+import Inquiries from './pages/Inquiries';
 
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
@@ -28,7 +31,7 @@ import WarehouseDocuments from './pages/WarehouseDocuments';
 import PalletDetail from './pages/PalletDetail';
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, user } = useAuth();
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -47,6 +50,21 @@ const AuthenticatedApp = () => {
     }
   }
 
+  // Wymuszamy uzupełnienie imienia i nazwiska
+  if (user && !user.full_name) {
+    return <Onboarding onComplete={() => window.location.reload()} />;
+  }
+
+  // Klient (role: user) widzi tylko katalog
+  if (user && user.role === 'user') {
+    return (
+      <Routes>
+        <Route path="*" element={<CustomerCatalog />} />
+      </Routes>
+    );
+  }
+
+  // Admin — pełny dostęp
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/Dashboard" replace />} />
@@ -66,6 +84,7 @@ const AuthenticatedApp = () => {
         <Route path="/Settings" element={<Settings />} />
         <Route path="/WarehouseDocuments" element={<WarehouseDocuments />} />
         <Route path="/PalletDetail" element={<PalletDetail />} />
+        <Route path="/Inquiries" element={<Inquiries />} />
       </Route>
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="*" element={<PageNotFound />} />

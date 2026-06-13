@@ -1,0 +1,44 @@
+{
+  "name": "ProductInquiry",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "ID produktu, o kt\u00f3ry pyta klient"
+    },
+    "product_name": {
+      "type": "string",
+      "description": "Nazwa produktu (snapshot)"
+    },
+    "message": {
+      "type": "string",
+      "description": "Tre\u015b\u0107 zapytania od klienta"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Imi\u0119 i nazwisko klienta"
+    },
+    "customer_email": {
+      "type": "string",
+      "description": "Email klienta"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "replied",
+        "closed"
+      ],
+      "default": "new",
+      "description": "Status zapytania"
+    },
+    "admin_reply": {
+      "type": "string",
+      "description": "Odpowied\u017a admina"
+    }
+  },
+  "required": [
+    "product_id",
+    "message"
+  ]
+}

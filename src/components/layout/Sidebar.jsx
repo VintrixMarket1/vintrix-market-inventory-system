@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Package, Tag, DollarSign, Zap, 
-  Menu, X, ChevronRight, Layers, BookOpen, ShoppingBag, Store, Settings, FileText
+  Menu, X, ChevronRight, Layers, BookOpen, ShoppingBag, Store, Settings, FileText, MessageCircle
 } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 
@@ -19,6 +19,7 @@ export default function Sidebar() {
     { path: "/Listings", labelKey: "nav_listings", icon: Tag },
     { path: "/Sales", labelKey: "nav_sales", icon: DollarSign },
     { path: "/WarehouseDocuments", label: "Dokumenty Mag.", icon: FileText },
+    { path: "/Inquiries", label: "Zapytania klientów", icon: MessageCircle },
     { path: "/QuickAdd", labelKey: "nav_quick_add", icon: Zap },
     { path: "/ShopifySettings", labelKey: "nav_shopify", icon: ShoppingBag },
     { path: "/AllegroSettings", labelKey: "nav_allegro", icon: Store },
