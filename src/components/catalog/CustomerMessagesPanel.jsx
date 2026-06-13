@@ -221,7 +221,7 @@ export default function CustomerMessagesPanel({ user, onClose }) {
 
   const { data: offers = [], isLoading: loadingOffers } = useQuery({
     queryKey: ["my_offers", user?.email],
-    queryFn: () => base44.entities.PurchaseOffer.filter({ customer_email: user?.email }, "-created_date"),
+    queryFn: () => base44.entities.PurchaseOffer.filter({ customer_email: user?.email, is_from_admin: true }, "-created_date"),
     enabled: !!user?.email,
   });
 
