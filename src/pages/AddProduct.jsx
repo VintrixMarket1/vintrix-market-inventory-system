@@ -8,6 +8,7 @@ import AiChatAssistant from "@/components/ai/AiChatAssistant";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MessageSquare } from "lucide-react";
 import { useLang } from "@/lib/i18n";
+import { generateDocumentNumber } from "@/lib/documentNumber";
 
 const STEPS = {
   UPLOAD: "upload",
@@ -24,6 +25,7 @@ export default function AddProduct() {
   const [aiData, setAiData] = useState(null);
   const [showChat, setShowChat] = useState(false);
   const [aiNotes, setAiNotes] = useState("");
+  const [savedProduct, setSavedProduct] = useState(null);
 
   const handleImagesReady = (urls) => {
     setUploadedImages(urls);
@@ -135,10 +137,10 @@ If you cannot determine something from photos — use null.`,
     }
   };
 
-  const handleSave = async (formData, palletId) => {
+  const handleSave = async (formData, palletId, generatePZ) => {
     const internalCode = formData.internal_code?.trim()
       || `${(formData.category || "OTH").slice(0, 3).toUpperCase()}-${Date.now().toString().slice(-8)}`;
-    await base44.entities.Product.create({
+    const product = await base44.entities.Product.create({
       ...formData,
       internal_code: internalCode,
       images: uploadedImages,
@@ -155,6 +157,34 @@ If you cannot determine something from photos — use null.`,
         await base44.entities.Pallet.update(palletId, { status: "sorting" });
       }
     }
+    // Generate PZ document if requested (only when no pallet)
+    let pzNumber = null;
+    if (generatePZ && !palletId && product?.id) {
+      const today = new Date().toISOString().split("T")[0];
+      pzNumber = await generateDocumentNumber("PZ");
+      const qty = formData.is_multi_item && formData.stock_quantity > 0 ? formData.stock_quantity : 1;
+      const unitPrice = formData.purchase_price || 0;
+      await base44.entities.WarehouseDocument.create({
+        document_number: pzNumber,
+        document_type: "PZ",
+        date: today,
+        status: "confirmed",
+        counterparty: formData.brand || "—",
+        notes: `Przyjęcie produktu: ${formData.product_name}`,
+        items: [{
+          product_id: product.id,
+          product_name: formData.product_name,
+          internal_code: internalCode,
+          category: formData.category || "",
+          condition: formData.condition || "",
+          quantity: qty,
+          unit_price: unitPrice,
+          total_value: unitPrice * qty,
+        }],
+        total_value: unitPrice * qty,
+      });
+    }
+    setSavedProduct({ pzNumber });
     setStep(STEPS.DONE);
   };
 
@@ -213,8 +243,14 @@ If you cannot determine something from photos — use null.`,
           <div className="text-center py-16 space-y-4">
             <div className="text-6xl">✅</div>
             <h2 className="text-xl font-semibold">{t("ap_saved")}</h2>
+            {savedProduct?.pzNumber && (
+              <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-sm text-blue-800">
+                <span>📄</span>
+                <span>Wygenerowano PZ: <strong className="font-mono">{savedProduct.pzNumber}</strong></span>
+              </div>
+            )}
             <div className="flex gap-3 justify-center flex-wrap">
-              <Button onClick={() => { setStep(STEPS.UPLOAD); setUploadedImages([]); setAiData(null); }}>
+              <Button onClick={() => { setStep(STEPS.UPLOAD); setUploadedImages([]); setAiData(null); setSavedProduct(null); }}>
                 {t("ap_add_another")}
               </Button>
               {palletId && (

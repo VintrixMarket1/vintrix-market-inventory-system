@@ -17,6 +17,7 @@ import { Sparkles, CheckCircle, ArrowLeft } from "lucide-react";
 import AiConfidenceBadge from "./AiConfidenceBadge";
 import { SUBCATEGORIES } from "@/lib/subcategories";
 import { useLang } from "@/lib/i18n";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const CATEGORIES = ["clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
 const CONDITIONS = ["new", "like_new", "used"];
@@ -60,6 +61,7 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
   });
   const [selectedPallet, setSelectedPallet] = useState("");
   const [saving, setSaving] = useState(false);
+  const [generatePZ, setGeneratePZ] = useState(false);
 
   const { data: pallets = [] } = useQuery({
     queryKey: ["pallets"],
@@ -96,7 +98,8 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
         suggested_sale_price: parseFloat(form.suggested_sale_price) || 0,
         purchase_price: parseFloat(form.purchase_price) || 0,
       },
-      selectedPallet || null
+      selectedPallet || null,
+      generatePZ
     );
     setSaving(false);
   };
@@ -245,6 +248,20 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Generate PZ option — only when no pallet assigned */}
+        {!selectedPallet && (
+          <div className="flex items-center gap-2.5 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+            <Checkbox
+              id="generatePZ"
+              checked={generatePZ}
+              onCheckedChange={(v) => setGeneratePZ(!!v)}
+            />
+            <label htmlFor="generatePZ" className="text-sm font-medium text-blue-800 cursor-pointer select-none">
+              {isPolish ? "Wygeneruj dokument PZ po zapisaniu" : "Generate PZ document after saving"}
+            </label>
+          </div>
+        )}
 
         {/* Listing fields */}
         <div className="space-y-1.5 pt-2 border-t">
