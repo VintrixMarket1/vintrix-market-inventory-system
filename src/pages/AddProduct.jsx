@@ -207,20 +207,28 @@ If you cannot determine something from photos — use null.`,
         />
       )}
 
-      {step === STEPS.DONE && (
-        <div className="text-center py-16 space-y-4">
-          <div className="text-6xl">✅</div>
-          <h2 className="text-xl font-semibold">{t("ap_saved")}</h2>
-          <div className="flex gap-3 justify-center">
-            <Button onClick={() => { setStep(STEPS.UPLOAD); setUploadedImages([]); setAiData(null); }}>
-              {t("ap_add_another")}
-            </Button>
-            <Button variant="outline" onClick={() => navigate("/Inventory")}>
-              {t("ap_go_inventory")}
-            </Button>
+      {step === STEPS.DONE && (() => {
+        const palletId = new URLSearchParams(window.location.search).get("pallet_id");
+        return (
+          <div className="text-center py-16 space-y-4">
+            <div className="text-6xl">✅</div>
+            <h2 className="text-xl font-semibold">{t("ap_saved")}</h2>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <Button onClick={() => { setStep(STEPS.UPLOAD); setUploadedImages([]); setAiData(null); }}>
+                {t("ap_add_another")}
+              </Button>
+              {palletId && (
+                <Button variant="outline" onClick={() => navigate(`/PalletDetail?id=${palletId}`)}>
+                  ← Wróć do palety
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => navigate("/Inventory")}>
+                {t("ap_go_inventory")}
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {showChat && step === STEPS.VERIFY && (
         <AiChatAssistant 
