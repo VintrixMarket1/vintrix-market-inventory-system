@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, Search, FileText, Plus, ChevronDown, ChevronUp, Printer } from "lucide-react";
 import { exportPZ, exportRW, exportPW, exportDRP, exportWZ } from "@/lib/palletPdfExport";
+import { exportDptPdf } from "@/lib/dptPdfExport";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
 
@@ -20,6 +21,7 @@ const TYPE_COLORS = {
   IN: "bg-slate-100 text-slate-700",
   "KOR-RW": "bg-red-100 text-red-700",
   "KOR-PW": "bg-red-100 text-red-700",
+  DPT: "bg-amber-100 text-amber-700",
 };
 
 const TYPE_LABELS = {
@@ -32,6 +34,7 @@ const TYPE_LABELS = {
   IN: "Inwentaryzacja",
   "KOR-RW": "Korekta RW",
   "KOR-PW": "Korekta PW",
+  DPT: "Dokument Przeklasyfikowania Towaru",
 };
 
 function DocumentRow({ doc, pallets }) {
@@ -46,6 +49,7 @@ function DocumentRow({ doc, pallets }) {
     else if (doc.document_type === "RW") exportRW(doc, pallet);
     else if (doc.document_type === "PW") exportPW(doc, pallet);
     else if (doc.document_type === "DRP") exportDRP(pallet, [], [doc]);
+    else if (doc.document_type === "DPT") exportDptPdf({ dptDoc: doc, sourceProduct: { product_name: doc.items?.[0]?.product_name, internal_code: doc.items?.[0]?.internal_code, category: doc.items?.[0]?.category, condition: doc.items?.[0]?.condition, purchase_price: doc.items?.[0]?.unit_price }, newProduct: { product_name: doc.items?.[1]?.product_name, internal_code: doc.items?.[1]?.internal_code, brand: null, category: doc.items?.[1]?.category, condition: doc.items?.[1]?.condition, stock_quantity: doc.items?.[1]?.quantity, purchase_price: doc.items?.[1]?.unit_price, suggested_sale_price: null }, pallet, user: null });
   };
 
   return (
@@ -247,6 +251,7 @@ export default function WarehouseDocuments() {
             <SelectItem value="IN">IN — Inwentaryzacja</SelectItem>
             <SelectItem value="KOR-RW">KOR-RW — Korekta</SelectItem>
             <SelectItem value="KOR-PW">KOR-PW — Korekta</SelectItem>
+            <SelectItem value="DPT">DPT — Przeklasyfikowanie</SelectItem>
           </SelectContent>
         </Select>
         <Input type="date" className="w-full sm:w-36 h-9 text-sm" value={dateFrom} onChange={e => setDateFrom(e.target.value)} placeholder="Od" />
