@@ -33,13 +33,16 @@ export default function ReturnModal({ product, onClose, onReturned }) {
     const docNumber = await generateDocumentNumber("PW");
 
     // 3. Utwórz dokument PW — Przyjęcie Wewnętrzne (zwrot)
+    const notesText = [`ZWROT TOWARU`, `Powod: ${reason}`];
+    if (notes) notesText.push(notes);
+    if (saleRecord?.wz_document_number) notesText.push(`Powiazany WZ: ${saleRecord.wz_document_number}`);
+
     const docData = {
       document_number: docNumber,
       document_type: "PW",
       date: returnDate,
       status: "confirmed",
-      notes: `ZWROT TOWARU — Powód: ${reason}${notes ? ". " + notes : ""}${saleRecord?.wz_document_number ? `. Powiązany WZ: ${saleRecord.wz_document_number}` : ""}`,
-      related_pw_number: docNumber,
+      notes: notesText.join(". "),
       counterparty: saleRecord?.customer_name || "Klient",
       items: [{
         product_id: product.id,
@@ -52,7 +55,7 @@ export default function ReturnModal({ product, onClose, onReturned }) {
         total_value: product.purchase_price || 0,
       }],
       total_value: product.purchase_price || 0,
-      created_by_name: "System — Zwrot klienta",
+      created_by_name: "System - Zwrot klienta",
     };
 
     const createdDoc = await base44.entities.WarehouseDocument.create(docData);
@@ -68,7 +71,7 @@ export default function ReturnModal({ product, onClose, onReturned }) {
     queryClient.invalidateQueries({ queryKey: ["sales"] });
 
     setLoading(false);
-    onReturned && onReturned(createdDoc);
+    onReturned?.();
     onClose();
   };
 
