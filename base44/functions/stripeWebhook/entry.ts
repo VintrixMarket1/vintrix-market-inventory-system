@@ -71,6 +71,25 @@ Deno.serve(async (req) => {
     }
     const wzNumber = `${prefix}${String(maxNum + 1).padStart(3, '0')}`;
 
+    // --- Find related PZ document number ---
+    let relatedPzNumber = null;
+    if (product.pallet_id) {
+      try {
+        const pallets = await base44.asServiceRole.entities.Pallet.filter({ id: product.pallet_id });
+        const pallet = pallets?.[0];
+        if (pallet?.pz_document_id) {
+          const pzDocs = await base44.asServiceRole.entities.WarehouseDocument.filter({ id: pallet.pz_document_id });
+          relatedPzNumber = pzDocs?.[0]?.document_number || null;
+        }
+      } catch (_) {}
+    } else {
+      try {
+        const allPz = await base44.asServiceRole.entities.WarehouseDocument.filter({ document_type: 'PZ' });
+        const match = allPz.find(d => d.items?.some(i => i.product_id === productId));
+        relatedPzNumber = match?.document_number || null;
+      } catch (_) {}
+    }
+
     // --- Create WZ warehouse document ---
     const wzDoc = await base44.asServiceRole.entities.WarehouseDocument.create({
       document_number: wzNumber,
@@ -79,6 +98,8 @@ Deno.serve(async (req) => {
       status: 'confirmed',
       platform: 'internal',
       counterparty: customerName || session.customer_email || 'Klient sklepu internetowego',
+      related_pz_number: relatedPzNumber || undefined,
+      created_by_name: 'Aplikacja Internetowa',
       items: [
         {
           product_id: productId,

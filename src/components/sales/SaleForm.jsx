@@ -8,6 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { generateDocumentNumber } from "@/lib/documentNumber";
+import { useAuth } from "@/lib/AuthContext";
 
 const platforms = [
   { value: "vinted", label: "Vinted" },
@@ -18,6 +19,7 @@ const platforms = [
 ];
 
 export default function SaleForm({ open, onClose, product, listing, onSaved }) {
+  const { userDisplayName } = useAuth();
   const isMulti = product?.is_multi_item && (product?.stock_quantity > 0);
   const maxQty = isMulti ? (product?.stock_quantity || 1) : 1;
 
@@ -52,6 +54,27 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
     // Auto-generate WZ document
     const unitPrice = parseFloat(form.purchase_price) || 0;
     const wzNumber = await generateDocumentNumber("WZ");
+
+    // Find related PZ document number from product's pallet or warehouse docs
+    let relatedPzNumber = null;
+    if (product?.pallet_id) {
+      try {
+        const pallets = await base44.entities.Pallet.filter({ id: product.pallet_id });
+        const pallet = pallets?.[0];
+        if (pallet?.pz_document_id) {
+          const pzDocs = await base44.entities.WarehouseDocument.filter({ id: pallet.pz_document_id });
+          relatedPzNumber = pzDocs?.[0]?.document_number || null;
+        }
+      } catch (_) {}
+    } else {
+      // Product added without pallet — look for a PZ with this product_id in items
+      try {
+        const allPz = await base44.entities.WarehouseDocument.filter({ document_type: "PZ" });
+        const match = allPz.find(d => d.items?.some(i => i.product_id === product?.id));
+        relatedPzNumber = match?.document_number || null;
+      } catch (_) {}
+    }
+
     await base44.entities.WarehouseDocument.create({
       document_number: wzNumber,
       document_type: "WZ",
@@ -60,6 +83,8 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
       platform: form.platform,
       sale_id: saleRecord?.id || "",
       counterparty: form.platform ? `Sprzedaż — ${form.platform}` : "Sprzedaż",
+      related_pz_number: relatedPzNumber || undefined,
+      created_by_name: userDisplayName,
       items: [{
         product_id: product?.id || "",
         product_name: product?.product_name || form.product_name,
