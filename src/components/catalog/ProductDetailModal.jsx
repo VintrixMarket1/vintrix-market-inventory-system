@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -38,7 +37,6 @@ function FavoriteButton({ product, user }) {
         customer_name: user?.full_name || "",
         customer_email: user?.email || "",
       });
-      // Notify admin
       await base44.entities.AdminNotification.create({
         type: "favorite",
         title: "Nowe polubienie produktu",
@@ -98,7 +96,6 @@ function ActionPanel({ product, user, onSendInquiry }) {
       customer_email: user?.email || "",
       status: "new",
     });
-    // Notify admin
     await base44.entities.AdminNotification.create({
       type: "new_offer",
       title: "Nowa oferta zakupu",
@@ -145,7 +142,7 @@ function ActionPanel({ product, user, onSendInquiry }) {
           <MessageCircle className="w-4 h-4 text-slate-500" />
           <span className="font-semibold text-sm text-slate-800">Zapytanie o produkt</span>
         </div>
-        <Textarea placeholder="Napisz czego chcesz się dowiedzieć — rozmiar, dostępność, możliwość rezerwacji..." value={message} onChange={e => setMessage(e.target.value)} rows={3} className="text-sm resize-none" />
+        <Textarea placeholder="Napisz czego chcesz się dowiedzieć..." value={message} onChange={e => setMessage(e.target.value)} rows={3} className="text-sm resize-none" />
         <div className="flex gap-2">
           <Button variant="outline" className="flex-1" onClick={reset}>Anuluj</Button>
           <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={handleSendInquiry} disabled={sending || !message.trim()}>
@@ -189,6 +186,7 @@ function ActionPanel({ product, user, onSendInquiry }) {
   );
 }
 
+// Standalone lightbox — no Radix involved, pure DOM portal
 function ImageLightbox({ images, startIndex, onClose }) {
   const [current, setCurrent] = useState(startIndex);
   const touchStartX = useRef(null);
@@ -198,64 +196,73 @@ function ImageLightbox({ images, startIndex, onClose }) {
 
   useEffect(() => {
     const onKey = (e) => {
+      if (e.key === "Escape") { e.stopImmediatePropagation(); onClose(); }
       if (e.key === "ArrowRight") goNext();
       if (e.key === "ArrowLeft") goPrev();
-      if (e.key === "Escape") { e.stopPropagation(); onClose(); }
     };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [images.length, onClose]);
+    // capture=true so we get it before anything else
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, []);
 
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e) => {
+  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e) => {
     if (touchStartX.current === null) return;
     const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) {
-      diff > 0 ? goNext() : goPrev();
-    }
+    if (Math.abs(diff) > 50) diff > 0 ? goNext() : goPrev();
     touchStartX.current = null;
   };
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[500] bg-black/95 flex items-center justify-center"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
+      style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.95)", display: "flex", alignItems: "center", justifyContent: "center" }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
     >
-      {/* Close button — large touch target */}
+      {/* Close */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 rounded-full p-3 text-white transition z-[510] touch-manipulation"
+        style={{ position: "absolute", top: 16, right: 16, zIndex: 10000, background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "white" }}
       >
-        <X className="w-6 h-6" />
+        <X size={24} />
       </button>
 
+      {/* Prev */}
       {images.length > 1 && (
-        <>
-          <button onClick={goPrev} className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-3 text-white transition z-[510] touch-manipulation">
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <button onClick={goNext} className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-3 text-white transition z-[510] touch-manipulation">
-            <ChevronRight className="w-6 h-6" />
-          </button>
-        </>
+        <button
+          onClick={goPrev}
+          style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 10000, background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "white" }}
+        >
+          <ChevronLeft size={24} />
+        </button>
       )}
 
-      <div className="relative max-h-[90vh] max-w-[90vw] flex items-center justify-center">
-        <img
-          src={images[current]}
-          alt=""
-          className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
-        />
-      </div>
-
+      {/* Next */}
       {images.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-[510]">
+        <button
+          onClick={goNext}
+          style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", zIndex: 10000, background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "white" }}
+        >
+          <ChevronRight size={24} />
+        </button>
+      )}
+
+      {/* Image */}
+      <img
+        src={images[current]}
+        alt=""
+        style={{ maxHeight: "90vh", maxWidth: "90vw", objectFit: "contain", borderRadius: 12 }}
+      />
+
+      {/* Dots */}
+      {images.length > 1 && (
+        <div style={{ position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 8, zIndex: 10000 }}>
           {images.map((_, i) => (
-            <button key={i} onClick={() => setCurrent(i)} className={`h-2 rounded-full transition-all touch-manipulation ${i === current ? "bg-white w-6" : "bg-white/40 w-2"}`} />
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              style={{ height: 8, width: i === current ? 24 : 8, background: i === current ? "white" : "rgba(255,255,255,0.35)", border: "none", borderRadius: 99, cursor: "pointer", padding: 0 }}
+            />
           ))}
         </div>
       )}
@@ -264,148 +271,161 @@ function ImageLightbox({ images, startIndex, onClose }) {
   );
 }
 
+// Simple custom modal — no Radix, no focus trap, no pointer-events overlay
 export default function ProductDetailModal({ product, onClose, user, onSendInquiry }) {
   const [activeImg, setActiveImg] = useState(0);
   const [lightbox, setLightbox] = useState(false);
 
-  // Reset state when product changes
   useEffect(() => {
     setActiveImg(0);
     setLightbox(false);
   }, [product?.id]);
 
+  // Close on ESC only when lightbox is NOT open (lightbox handles its own ESC)
+  useEffect(() => {
+    if (!product) return;
+    const onKey = (e) => {
+      if (e.key === "Escape" && !lightbox) onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [product, lightbox, onClose]);
+
   if (!product) return null;
 
   const images = product.images?.filter(Boolean) || [];
 
-  const handleOpenLightbox = (e) => {
-    e.stopPropagation();
-    setLightbox(true);
-  };
-
-  const handleClose = () => { setActiveImg(0); onClose(); };
-
-  return (
+  return createPortal(
     <>
-      <Dialog open={!!product} onOpenChange={handleClose}>
-        <DialogContent className="p-0 max-w-3xl w-full max-h-[92vh] overflow-hidden flex flex-col rounded-2xl">
-        <button onClick={handleClose} className="absolute top-4 right-4 z-50 bg-white/90 hover:bg-white rounded-full p-1.5 shadow-md border border-slate-200 transition-all">
-          <X className="w-4 h-4 text-slate-600" />
-        </button>
+      {/* Backdrop */}
+      <div
+        style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.6)" }}
+        onClick={onClose}
+      />
 
-        <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-          {/* Left: gallery */}
-          <div className="md:w-[45%] bg-slate-900 flex flex-col shrink-0 relative">
-            {user && <FavoriteButton product={product} user={user} />}
-            {images.length > 0 ? (
-              <>
-                <div className="relative flex-1 min-h-[240px] md:min-h-0">
-                  <img
-                    src={images[activeImg]}
-                    alt={product.product_name}
-                    className="absolute inset-0 w-full h-full object-cover cursor-zoom-in"
-                    onClick={handleOpenLightbox}
-                  />
-                  <button
-                    onClick={handleOpenLightbox}
-                    className="absolute bottom-3 right-3 bg-black/40 hover:bg-black/60 rounded-full p-1.5 text-white transition"
-                    title="Powiększ"
-                  >
-                    <ZoomIn className="w-4 h-4" />
-                  </button>
+      {/* Modal panel */}
+      <div
+        style={{ position: "fixed", inset: 0, zIndex: 201, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, pointerEvents: "none" }}
+      >
+        <div
+          style={{ background: "white", borderRadius: 16, width: "100%", maxWidth: 768, maxHeight: "92vh", overflow: "hidden", display: "flex", flexDirection: "column", pointerEvents: "auto", position: "relative" }}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            style={{ position: "absolute", top: 12, right: 12, zIndex: 10, background: "rgba(255,255,255,0.9)", border: "1px solid #e2e8f0", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+          >
+            <X size={16} color="#475569" />
+          </button>
+
+          <div style={{ display: "flex", flexDirection: "row", flex: 1, overflow: "hidden", minHeight: 0 }}>
+            {/* Left: gallery */}
+            <div style={{ width: "45%", background: "#0f172a", display: "flex", flexDirection: "column", flexShrink: 0, position: "relative" }}>
+              {user && <FavoriteButton product={product} user={user} />}
+              {images.length > 0 ? (
+                <>
+                  <div style={{ flex: 1, minHeight: 240, position: "relative" }}>
+                    <img
+                      src={images[activeImg]}
+                      alt={product.product_name}
+                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", cursor: "zoom-in" }}
+                      onClick={() => setLightbox(true)}
+                    />
+                    <button
+                      onClick={() => setLightbox(true)}
+                      style={{ position: "absolute", bottom: 12, right: 12, background: "rgba(0,0,0,0.4)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "white" }}
+                    >
+                      <ZoomIn size={16} />
+                    </button>
+                    {images.length > 1 && (
+                      <>
+                        <button onClick={() => setActiveImg(i => (i - 1 + images.length) % images.length)} style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.4)", border: "none", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "white" }}>
+                          <ChevronLeft size={16} />
+                        </button>
+                        <button onClick={() => setActiveImg(i => (i + 1) % images.length)} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.4)", border: "none", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "white" }}>
+                          <ChevronRight size={16} />
+                        </button>
+                      </>
+                    )}
+                  </div>
                   {images.length > 1 && (
-                    <>
-                      <button onClick={() => setActiveImg(i => (i - 1 + images.length) % images.length)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 rounded-full p-1.5 text-white transition">
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => setActiveImg(i => (i + 1) % images.length)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 rounded-full p-1.5 text-white transition">
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                        {images.map((_, i) => (
-                          <button key={i} onClick={() => setActiveImg(i)} className={`w-1.5 h-1.5 rounded-full transition-all ${i === activeImg ? "bg-white w-4" : "bg-white/50"}`} />
-                        ))}
-                      </div>
-                    </>
+                    <div style={{ display: "flex", gap: 6, padding: 8, overflowX: "auto", background: "#1e293b" }}>
+                      {images.map((url, i) => (
+                        <button key={i} onClick={() => setActiveImg(i)} style={{ width: 48, height: 48, borderRadius: 8, overflow: "hidden", flexShrink: 0, border: `2px solid ${i === activeImg ? "#34d399" : "transparent"}`, opacity: i === activeImg ? 1 : 0.6, cursor: "pointer", padding: 0 }}>
+                          <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        </button>
+                      ))}
+                    </div>
                   )}
-                </div>
-                {images.length > 1 && (
-                  <div className="flex gap-1.5 p-2 overflow-x-auto bg-slate-800">
-                    {images.map((url, i) => (
-                      <button key={i} onClick={() => setActiveImg(i)} className={`w-12 h-12 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${i === activeImg ? "border-emerald-400" : "border-transparent opacity-60 hover:opacity-90"}`}>
-                        <img src={url} alt="" className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center min-h-[240px]">
-                <Package className="w-16 h-16 text-slate-600" />
-              </div>
-            )}
-          </div>
-
-          {/* Right: details */}
-          <div className="flex-1 overflow-y-auto flex flex-col">
-            <div className="p-6 flex-1 space-y-5">
-              <div>
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">{getCategoryLabel(product.category)}</Badge>
-                  {product.subcategory && <Badge variant="outline" className="text-xs">{product.subcategory}</Badge>}
-                  {product.condition && <Badge className="bg-slate-100 text-slate-600 border-0 text-xs">{CONDITION_LABELS[product.condition] || product.condition}</Badge>}
-                </div>
-                <h2 className="text-xl font-bold text-slate-900 leading-snug">{product.product_name}</h2>
-                {product.suggested_sale_price
-                  ? <p className="text-2xl font-extrabold text-emerald-600 mt-1">{product.suggested_sale_price} PLN</p>
-                  : <p className="text-sm text-slate-400 mt-1 italic">Cena na zapytanie</p>}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {product.brand && (
-                  <div className="bg-slate-50 rounded-xl p-3">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1 mb-0.5"><Tag className="w-3 h-3" /> Marka</p>
-                    <p className="font-semibold text-slate-800 text-sm">{product.brand}</p>
-                  </div>
-                )}
-                {product.size && (
-                  <div className="bg-slate-50 rounded-xl p-3">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1 mb-0.5"><Ruler className="w-3 h-3" /> Rozmiar</p>
-                    <p className="font-semibold text-slate-800 text-sm">{product.size}</p>
-                  </div>
-                )}
-                {product.color && (
-                  <div className="bg-slate-50 rounded-xl p-3">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1 mb-0.5"><Palette className="w-3 h-3" /> Kolor</p>
-                    <p className="font-semibold text-slate-800 text-sm">{product.color}</p>
-                  </div>
-                )}
-                {product.gender && product.gender !== "none" && GENDER_LABELS[product.gender] && (
-                  <div className="bg-slate-50 rounded-xl p-3">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1 mb-0.5"><ShoppingBag className="w-3 h-3" /> Przeznaczenie</p>
-                    <p className="font-semibold text-slate-800 text-sm">{GENDER_LABELS[product.gender]}</p>
-                  </div>
-                )}
-              </div>
-
-              {product.listing_description && (
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Opis</p>
-                  <div className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none bg-slate-50 rounded-xl p-4" dangerouslySetInnerHTML={{ __html: product.listing_description }} />
+                </>
+              ) : (
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 240 }}>
+                  <Package size={64} color="#475569" />
                 </div>
               )}
             </div>
 
-            <div className="border-t border-slate-100 p-4 bg-white">
-              <ActionPanel product={product} user={user} onSendInquiry={onSendInquiry} />
+            {/* Right: details */}
+            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+              <div style={{ padding: 24, flex: 1 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                  <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">{getCategoryLabel(product.category)}</Badge>
+                  {product.subcategory && <Badge variant="outline" className="text-xs">{product.subcategory}</Badge>}
+                  {product.condition && <Badge className="bg-slate-100 text-slate-600 border-0 text-xs">{CONDITION_LABELS[product.condition] || product.condition}</Badge>}
+                </div>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a", lineHeight: 1.3, marginBottom: 4 }}>{product.product_name}</h2>
+                {product.suggested_sale_price
+                  ? <p style={{ fontSize: 24, fontWeight: 800, color: "#059669", margin: "4px 0 16px" }}>{product.suggested_sale_price} PLN</p>
+                  : <p style={{ fontSize: 13, color: "#94a3b8", fontStyle: "italic", margin: "4px 0 16px" }}>Cena na zapytanie</p>}
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                  {product.brand && (
+                    <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 12px" }}>
+                      <p style={{ fontSize: 10, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Marka</p>
+                      <p style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{product.brand}</p>
+                    </div>
+                  )}
+                  {product.size && (
+                    <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 12px" }}>
+                      <p style={{ fontSize: 10, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Rozmiar</p>
+                      <p style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{product.size}</p>
+                    </div>
+                  )}
+                  {product.color && (
+                    <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 12px" }}>
+                      <p style={{ fontSize: 10, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Kolor</p>
+                      <p style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{product.color}</p>
+                    </div>
+                  )}
+                  {product.gender && product.gender !== "none" && GENDER_LABELS[product.gender] && (
+                    <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 12px" }}>
+                      <p style={{ fontSize: 10, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Przeznaczenie</p>
+                      <p style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{GENDER_LABELS[product.gender]}</p>
+                    </div>
+                  )}
+                </div>
+
+                {product.listing_description && (
+                  <div style={{ marginBottom: 8 }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Opis</p>
+                    <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.6, background: "#f8fafc", borderRadius: 12, padding: 16 }} dangerouslySetInnerHTML={{ __html: product.listing_description }} />
+                  </div>
+                )}
+              </div>
+
+              <div style={{ borderTop: "1px solid #f1f5f9", padding: 16, background: "white" }}>
+                <ActionPanel product={product} user={user} onSendInquiry={onSendInquiry} />
+              </div>
             </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
-    {lightbox && images.length > 0 && (
-      <ImageLightbox images={images} startIndex={activeImg} onClose={() => setLightbox(false)} />
-    )}
-  </>
+      </div>
+
+      {lightbox && images.length > 0 && (
+        <ImageLightbox images={images} startIndex={activeImg} onClose={() => setLightbox(false)} />
+      )}
+    </>,
+    document.body
   );
 }
