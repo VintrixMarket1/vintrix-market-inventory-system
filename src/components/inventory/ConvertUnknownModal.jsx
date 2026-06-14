@@ -143,31 +143,19 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
     setAnalyzing(true);
     setAiError(null);
 
-    const prompt = `Jesteś ekspertem od identyfikacji i wyceny produktów na rynku wtórnym.
-Przeanalizuj zdjęcia i/lub opis, a następnie odpowiedz w JSON o następującej strukturze:
-{
-  "product_name": "pełna nazwa produktu",
-  "brand": "marka (lub null)",
-  "model": "model (lub null)",
-  "category": "kategoria z listy (clothing_men/women/kids, shoes_men/women/kids, electronics_phones/tablets/laptops/audio/tv/cameras/gaming/accessories, home_furniture/kitchen/agd_large/agd_cleaning/agd_personal/agd_laundry/bedding/decor/tools, toys_kids/board_games/lego, sports_fitness, beauty_cosmetics/perfumes, automotive_parts/accessories, other)",
-  "subcategory": "podkategoria (lub null)",
-  "condition": "new/like_new/used",
-  "color": "kolor (lub null)",
-  "size": "rozmiar (lub null)",
-  "listing_title": "gotowy tytuł ogłoszenia sprzedażowego po polsku (max 75 znaków)",
-  "listing_description": "opis HTML produktu po polsku (kilka akapitów, cechy, stan, zastosowanie)",
-  "suggested_sale_price": liczba_PLN,
-  "visible_damage": "opis widocznych uszkodzeń (lub null)",
-  "missing_parts": "brakujące elementy (lub null)",
-  "warnings": "ostrzeżenia jeśli identyfikacja niepewna (lub null)",
-  "ai_summary": "krótkie podsumowanie analizy po polsku (2-3 zdania)"
-}
+    // Step 1: Identify product (vision + structured JSON)
+    const identifyPrompt = `Jesteś ekspertem od identyfikacji i wyceny produktów na rynku wtórnym (OLX, Vinted, Allegro).
+Przeanalizuj zdjęcia i/lub opis, a następnie zidentyfikuj produkt i odpowiedz w JSON.
 
 Uwagi od operatora: ${analysisNotes || "(brak uwag)"}
-${images.length === 0 ? "Brak zdjęć — opieraj się wyłącznie na uwagach operatora." : ""}`;
+${images.length === 0 ? "Brak zdjęć — opieraj się wyłącznie na uwagach operatora." : ""}
 
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt,
+Kategorie do wyboru: clothing_men, clothing_women, clothing_kids, clothing_sport, shoes_men, shoes_women, shoes_kids, shoes_sport, accessories_bags, accessories_belts, accessories_hats, accessories_scarves, accessories_jewelry, accessories_watches, accessories_sunglasses, accessories_wallets, electronics_phones, electronics_tablets, electronics_laptops, electronics_audio, electronics_tv, electronics_cameras, electronics_gaming, electronics_accessories, home_furniture, home_kitchen, home_agd_large, home_agd_cleaning, home_agd_personal, home_agd_laundry, home_bedding, home_decor, home_lighting, home_garden, home_tools, home_bathroom, toys_kids, toys_board_games, toys_outdoor, toys_educational, toys_lego, toys_dolls, sports_fitness, sports_cycling, sports_winter, sports_water, sports_team, sports_outdoor, books_fiction, books_nonfiction, books_kids, books_comics, books_textbooks, beauty_cosmetics, beauty_perfumes, beauty_haircare, beauty_skincare, automotive_parts, automotive_accessories, automotive_tools, pet_food, pet_accessories, pet_clothing, food_supplements, health_medical, music_instruments, music_vinyl, art_paintings, art_collectibles, other
+
+Zwróć dokładne dane identyfikacyjne produktu.`;
+
+    const identified = await base44.integrations.Core.InvokeLLM({
+      prompt: identifyPrompt,
       file_urls: images.length > 0 ? images : undefined,
       response_json_schema: {
         type: "object",
@@ -180,8 +168,6 @@ ${images.length === 0 ? "Brak zdjęć — opieraj się wyłącznie na uwagach op
           condition: { type: "string" },
           color: { type: "string" },
           size: { type: "string" },
-          listing_title: { type: "string" },
-          listing_description: { type: "string" },
           suggested_sale_price: { type: "number" },
           visible_damage: { type: "string" },
           missing_parts: { type: "string" },
@@ -190,6 +176,60 @@ ${images.length === 0 ? "Brak zdjęć — opieraj się wyłącznie na uwagach op
         }
       }
     });
+
+    // Step 2: Generate listing title + rich HTML description (same approach as ProductForm)
+    const conditionLabel = { new: "nowy", like_new: "jak nowy / powystawowy", used: "używany" }[identified.condition] || identified.condition || "jak nowy";
+
+    const descriptionPrompt = `Jesteś ekspertem copywritingu e-commerce specjalizującym się w sprzedaży second-hand na OLX/Vinted/Allegro. Twój opis ma SPRZEDAĆ produkt — szybko i skutecznie.
+
+=== DANE PRODUKTU ===
+- Nazwa: ${identified.product_name || "Produkt"}
+- Marka: ${identified.brand || "nieznana"}
+- Stan: ${conditionLabel}
+- Rozmiar: ${identified.size || "nie podano"}
+- Kolor: ${identified.color || "nie podano"}
+- Kategoria: ${identified.category || "other"}${identified.subcategory ? ` / ${identified.subcategory}` : ""}
+- Notatki sprzedawcy: ${analysisNotes || "brak"}
+${identified.visible_damage ? `- Widoczne uszkodzenia: ${identified.visible_damage}` : ""}
+${identified.missing_parts ? `- Brakujące elementy: ${identified.missing_parts}` : ""}
+
+=== ZASADY COPYWRITINGU ===
+- Zacznij od najmocniejszej cechy produktu — tej, która przyciąga uwagę kupującego
+- Używaj konkretnych, opisowych przymiotników zamiast ogólników ("głęboka czerń, matowe wykończenie" zamiast "czarny")
+- Podkreśl wartość (co kupujący zyska) a nie tylko cechy
+- Stan opisz szczerze ale pozytywnie — co jest w dobrym stanie, co działa perfekcyjnie
+- NIE wspominaj o wysyłce, zwrotach, negocjacjach
+- NIE używaj nagłówków HTML (h1/h2/h3), emoji ani myślników
+- Pisz naturalnie, jak osoba polecająca produkt znajomemu
+
+=== WYMAGANIA TECHNICZNE ===
+- Dozwolone tagi: p, ul, li, b, br
+- BRAK atrybutów w tagach (żadnych class, style, id)
+- BRAK h1, h2, h3, div, span, CSS, img
+- Czysty HTML — bez komentarzy, bez wstępów
+
+=== STRUKTURA ===
+1. <p> — 2-3 zdania haczyka: co to jest + dlaczego warto kupić (podkreśl markę jeśli znana, wyjątkową cechę)
+2. <p> — szczery opis stanu: co sprawdzono, co jest jak nowe, ewentualne drobne ślady użytkowania widoczne na zdjęciach
+3. <ul> "Parametry:" — kluczowe dane w formacie <b>parametr:</b> wartość (rozmiar, kolor, materiał, model itp.)
+
+Wygeneruj WYŁĄCZNIE gotowy HTML. Zacznij od <p>.
+
+Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, gotowy na Allegro/OLX.`;
+
+    const copyResult = await base44.integrations.Core.InvokeLLM({
+      prompt: descriptionPrompt,
+      model: "gpt_5_5",
+      response_json_schema: {
+        type: "object",
+        properties: {
+          listing_title: { type: "string" },
+          listing_description: { type: "string" },
+        }
+      }
+    });
+
+    const result = { ...identified, ...copyResult };
 
     setAiResult(result);
     setForm(prev => ({
