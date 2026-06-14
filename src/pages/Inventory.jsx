@@ -18,6 +18,7 @@ import BulkActionsBar from "../components/inventory/BulkActionsBar";
 import ShopifyBulkPublishModal from "../components/shopify/ShopifyBulkPublishModal";
 import PalletSummaryCard from "../components/inventory/PalletSummaryCard";
 import ConvertUnknownModal from "../components/inventory/ConvertUnknownModal";
+import ReturnModal from "../components/inventory/ReturnModal";
 
 export default function Inventory() {
   const { t } = useLang();
@@ -33,6 +34,7 @@ export default function Inventory() {
   const [bulkSelected, setBulkSelected] = useState(new Set());
   const [shopifyBulkProducts, setShopifyBulkProducts] = useState(null);
   const [convertProduct, setConvertProduct] = useState(null);
+  const [returnProduct, setReturnProduct] = useState(null);
 
   const toggleBulkSelect = (id) => {
     setBulkSelected(prev => {
@@ -211,6 +213,9 @@ export default function Inventory() {
                 {product.product_name !== "Nieznany produkt" && ((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && product.status !== "reclassified" && (
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                 )}
+                {product.status === "sold" && !product.is_multi_item && (
+                  <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ Zwrot</Button>
+                )}
               </div>
             </div>
           ))}
@@ -286,6 +291,9 @@ export default function Inventory() {
                   {product.product_name !== "Nieznany produkt" && ((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && product.status !== "reclassified" && (
                     <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-emerald-600 border-emerald-200" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                   )}
+                  {product.status === "sold" && !product.is_multi_item && (
+                    <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ Zwrot</Button>
+                  )}
                 </div>
               </div>
             );
@@ -353,6 +361,13 @@ export default function Inventory() {
           onClose={() => setShopifyBulkProducts(null)}
           products={shopifyBulkProducts}
           onDone={() => { refresh(); setBulkSelected(new Set()); setShopifyBulkProducts(null); }}
+        />
+      )}
+      {returnProduct && (
+        <ReturnModal
+          product={returnProduct}
+          onClose={() => setReturnProduct(null)}
+          onReturned={() => { refresh(); setReturnProduct(null); }}
         />
       )}
       {convertProduct && (
