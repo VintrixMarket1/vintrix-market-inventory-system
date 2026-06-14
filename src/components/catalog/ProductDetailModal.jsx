@@ -226,18 +226,18 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
   return createPortal(
     <>
       <div className="fixed inset-0 bg-black/60" style={{ zIndex: 500 }} onClick={onClose} />
-      <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 501, pointerEvents: "none" }}>
-        <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[92vh] overflow-hidden flex flex-col md:flex-row relative" style={{ pointerEvents: "auto" }} onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 flex items-end md:items-center justify-center md:p-4" style={{ zIndex: 501, pointerEvents: "none" }}>
+        <div className="bg-white md:rounded-2xl rounded-t-2xl w-full max-w-3xl h-[92vh] md:max-h-[92vh] md:h-auto overflow-hidden flex flex-col md:flex-row relative" style={{ pointerEvents: "auto" }} onClick={e => e.stopPropagation()}>
           <button onClick={onClose} className="absolute top-3 right-3 z-10 bg-white/90 hover:bg-white rounded-full p-1.5 shadow-md border border-slate-200 transition-all">
             <X className="w-4 h-4 text-slate-600" />
           </button>
 
           {/* Left: gallery */}
-          <div className="md:w-[45%] bg-slate-900 flex flex-col shrink-0 relative">
+          <div className="md:w-[45%] bg-slate-900 flex flex-col shrink-0 relative" style={{ flexBasis: "auto" }}>
             {user && <FavoriteButton product={product} user={user} />}
             {images.length > 0 ? (
               <>
-                <div className="relative flex-1 min-h-[240px]">
+                <div className="relative md:flex-1" style={{ height: "clamp(200px, 55vw, 320px)" }}>
                   <img src={images[activeImg]} alt={product.product_name}
                     className="absolute inset-0 w-full h-full object-cover cursor-zoom-in"
                     onClick={() => setLightbox(true)} />
@@ -271,7 +271,7 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
           </div>
 
           {/* Right: details */}
-          <div className="flex-1 overflow-y-auto flex flex-col">
+          <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
             <div className="p-6 flex-1 space-y-5">
               <div>
                 <div className="flex flex-wrap gap-1.5 mb-2">
