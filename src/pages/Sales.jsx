@@ -166,10 +166,13 @@ function SaleSummaryCards({ filtered }) {
   );
 }
 
-function SaleRow({ sale, onEdit }) {
+function SaleRow({ sale, onEdit, index }) {
   const profit = (sale.sale_price || 0) - (sale.purchase_price || 0);
+  const datePrefix = sale.sale_date ? sale.sale_date.replace(/-/g, "") : "000000";
+  const saleNumber = `${datePrefix}-${String(index + 1).padStart(3, "0")}`;
   return (
     <div className="bg-white rounded-xl border border-slate-200/60 p-4 flex items-center gap-4">
+      <div className="flex-shrink-0 text-[10px] font-mono text-slate-400 w-28 hidden sm:block">{saleNumber}</div>
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold text-sm text-slate-900 truncate">{sale.product_name || "Produkt"}</h3>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -217,7 +220,7 @@ function SalesList({ sales, isLoading, onEdit, emptyMessage }) {
   }
   return (
     <div className="space-y-2">
-      {sales.map(sale => <SaleRow key={sale.id} sale={sale} onEdit={onEdit} />)}
+      {sales.map((sale, i) => <SaleRow key={sale.id} sale={sale} onEdit={onEdit} index={i} />)}
     </div>
   );
 }
