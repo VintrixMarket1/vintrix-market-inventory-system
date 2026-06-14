@@ -66,13 +66,6 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
           relatedPzNumber = pzDocs?.[0]?.document_number || null;
         }
       } catch (_) {}
-    } else {
-      // Product added without pallet — look for a PZ with this product_id in items
-      try {
-        const allPz = await base44.entities.WarehouseDocument.filter({ document_type: "PZ" });
-        const match = allPz.find(d => d.items?.some(i => i.product_id === product?.id));
-        relatedPzNumber = match?.document_number || null;
-      } catch (_) {}
     }
 
     await base44.entities.WarehouseDocument.create({
