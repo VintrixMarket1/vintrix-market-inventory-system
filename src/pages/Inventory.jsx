@@ -61,11 +61,12 @@ export default function Inventory() {
       if (product) {
         setEditProduct(product);
         setShowForm(true);
-        // Clean up URL param without reload
         window.history.replaceState({}, "", "/Inventory");
       }
     }
   }, [products]);
+
+  const returnTo = new URLSearchParams(window.location.search).get("return_to");
   const { data: pallets = [] } = useQuery({
     queryKey: ["pallets"],
     queryFn: () => base44.entities.Pallet.list(),
@@ -304,9 +305,16 @@ export default function Inventory() {
       {showForm && (
         <ProductForm
           open={showForm}
-          onClose={() => { setShowForm(false); setEditProduct(null); }}
+          onClose={() => {
+            setShowForm(false);
+            setEditProduct(null);
+            if (returnTo) navigate(returnTo);
+          }}
           product={editProduct}
-          onSaved={refresh}
+          onSaved={() => {
+            refresh();
+            if (returnTo) navigate(returnTo);
+          }}
         />
       )}
       {listingProduct && (

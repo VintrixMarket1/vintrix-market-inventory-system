@@ -365,7 +365,7 @@ export default function PalletDetail() {
                 {visibleProducts.map(p => {
                   const qty = p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1;
                   return (
-                    <tr key={p.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => navigate(`/Inventory?edit=${p.id}`)}>
+                    <tr key={p.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => navigate(`/Inventory?edit=${p.id}&return_to=/PalletDetail?id=${palletId}`)}>
                       <td className="py-2 pr-3">
                         <p className="font-medium truncate max-w-[180px] text-slate-900">{p.product_name}</p>
                         {p.internal_code && <p className="text-xs text-slate-400 font-mono">{p.internal_code}</p>}
