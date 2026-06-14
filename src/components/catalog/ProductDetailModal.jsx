@@ -196,14 +196,14 @@ function ImageLightbox({ images, startIndex, onClose }) {
   const goPrev = () => setCurrent(i => (i - 1 + images.length) % images.length);
   const goNext = () => setCurrent(i => (i + 1) % images.length);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const onKey = (e) => {
       if (e.key === "ArrowRight") goNext();
       if (e.key === "ArrowLeft") goPrev();
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") { e.stopPropagation(); onClose(); }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [images.length, onClose]);
 
   const handleTouchStart = (e) => {
@@ -267,6 +267,12 @@ function ImageLightbox({ images, startIndex, onClose }) {
 export default function ProductDetailModal({ product, onClose, user, onSendInquiry }) {
   const [activeImg, setActiveImg] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+
+  // Reset state when product changes
+  useEffect(() => {
+    setActiveImg(0);
+    setLightbox(false);
+  }, [product?.id]);
 
   if (!product) return null;
 
