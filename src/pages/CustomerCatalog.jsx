@@ -168,9 +168,9 @@ function CustomerCatalog() {
 
       {/* Mobile filter drawer */}
       {showFilters && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-[100] md:hidden">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowFilters(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-stone-900 rounded-t-3xl max-h-[88vh] flex flex-col border-t border-stone-700">
+          <div className="absolute bottom-0 left-0 right-0 bg-stone-900 rounded-t-3xl max-h-[88vh] flex flex-col border-t border-stone-700" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-stone-800 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-white tracking-wide">Filtry</span>
@@ -178,14 +178,14 @@ function CustomerCatalog() {
               </div>
               <div className="flex items-center gap-3">
                 {activeFiltersCount > 0 && <button onClick={clearFilters} className="text-sm text-amber-400 font-medium">Wyczyść</button>}
-                <button onClick={() => setShowFilters(false)} className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700">
-                  <X className="w-4 h-4 text-stone-400" />
+                <button onClick={() => setShowFilters(false)} className="p-2 rounded-lg bg-stone-800 hover:bg-stone-700 touch-manipulation">
+                  <X className="w-5 h-5 text-stone-300" />
                 </button>
               </div>
             </div>
             <div className="overflow-y-auto p-5 flex-1"><FiltersContent /></div>
             <div className="p-4 border-t border-stone-800 shrink-0">
-              <button className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 rounded-xl transition-colors" onClick={() => setShowFilters(false)}>
+              <button className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 rounded-xl transition-colors touch-manipulation" onClick={() => setShowFilters(false)}>
                 Pokaż wyniki ({filtered.length})
               </button>
             </div>

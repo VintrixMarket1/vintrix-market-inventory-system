@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -190,54 +190,71 @@ function ActionPanel({ product, user, onSendInquiry }) {
 
 function ImageLightbox({ images, startIndex, onClose }) {
   const [current, setCurrent] = useState(startIndex);
+  const touchStartX = useRef(null);
 
-  const goPrev = (e) => {
-    e.stopPropagation();
-    setCurrent(i => (i - 1 + images.length) % images.length);
-  };
-
-  const goNext = (e) => {
-    e.stopPropagation();
-    setCurrent(i => (i + 1) % images.length);
-  };
+  const goPrev = () => setCurrent(i => (i - 1 + images.length) % images.length);
+  const goNext = () => setCurrent(i => (i + 1) % images.length);
 
   React.useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "ArrowRight") goNext(e);
-      if (e.key === "ArrowLeft") goPrev(e);
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [images.length, onClose]);
 
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? goNext() : goPrev();
+    }
+    touchStartX.current = null;
+  };
+
   return (
-    <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center" onClick={onClose}>
-      <button onClick={onClose} className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white transition z-[210]">
-        <X className="w-5 h-5" />
+    <div
+      className="fixed inset-0 z-[500] bg-black/95 flex items-center justify-center"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Close button — large touch target */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 rounded-full p-3 text-white transition z-[510] touch-manipulation"
+      >
+        <X className="w-6 h-6" />
       </button>
+
       {images.length > 1 && (
         <>
-          <button onClick={goPrev} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white transition z-[210]">
+          <button onClick={goPrev} className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-3 text-white transition z-[510] touch-manipulation">
             <ChevronLeft className="w-6 h-6" />
           </button>
-          <button onClick={goNext} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white transition z-[210]">
+          <button onClick={goNext} className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-3 text-white transition z-[510] touch-manipulation">
             <ChevronRight className="w-6 h-6" />
           </button>
         </>
       )}
+
       <div className="relative max-h-[90vh] max-w-[90vw] flex items-center justify-center">
         <img
           src={images[current]}
           alt=""
           className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
-          onClick={e => e.stopPropagation()}
         />
       </div>
+
       {images.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-[210]">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-[510]">
           {images.map((_, i) => (
-            <button key={i} onClick={e => { e.stopPropagation(); setCurrent(i); }} className={`w-2 h-2 rounded-full transition-all ${i === current ? "bg-white w-5" : "bg-white/40"}`} />
+            <button key={i} onClick={() => setCurrent(i)} className={`h-2 rounded-full transition-all touch-manipulation ${i === current ? "bg-white w-6" : "bg-white/40 w-2"}`} />
           ))}
         </div>
       )}
