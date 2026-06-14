@@ -99,6 +99,8 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
       ? { new: "nowy", like_new: "jak nowy / powystawowy", used: "używany" }[form.condition] || form.condition
       : { new: "new", like_new: "like new / display model", used: "used" }[form.condition] || form.condition;
 
+    const isClothing = form.category?.startsWith("clothing") || form.category?.startsWith("shoes") || form.category?.startsWith("accessories");
+
     const prompt = isPolish
       ? `Jesteś ekspertem copywritingu e-commerce specjalizującym się w sprzedaży second-hand na OLX/Vinted/Allegro. Twój opis ma SPRZEDAĆ produkt — szybko i skutecznie.
 
@@ -113,23 +115,47 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
 
 === ZASADY COPYWRITINGU ===
 - Zacznij od najmocniejszej cechy produktu — tej, która przyciąga uwagę kupującego
-- Używaj konkretnych, opisowych przymiotników zamiast ogólników ("głęboka czerń, matowe wykończenie" zamiast "czarny")
+- Używaj konkretnych, opisowych przymiotników zamiast ogólników
 - Podkreśl wartość (co kupujący zyska) a nie tylko cechy
-- Stan opisz szczerze ale pozytywnie — co jest w dobrym stanie, co działą perfekcyjnie
-- NIE wspominaj o wysyłce, zwrotach, negocjacjach
-- NIE używaj nagłówków HTML (h1/h2/h3), emoji ani myślników
-- Pisz naturalnie, jak osoba polecająca produkt znajomemu
+- Stan opisz szczerze ale pozytywnie
+- Używaj emoji tam gdzie pasują — ✨ 🚀 📦 itp.
+- Pisz naturalnie, angażująco — jak do znajomego
 
 === WYMAGANIA TECHNICZNE ===
 - Dozwolone tagi: p, ul, li, b, br
 - BRAK atrybutów w tagach (żadnych class, style, id)
 - BRAK h1, h2, h3, div, span, CSS, img
-- Czysty HTML — bez komentarzy, bez wstępów
+- Czysty HTML — bez komentarzy, bez wstępów${isClothing ? `
+
+=== FORMAT DLA ODZIEŻY/OBUWIA (OBOWIĄZKOWY) ===
+Wzoruj się DOKŁADNIE na tym formacie:
+
+<p>Proszę sprawdzić wymiary przed zakupem!</p>
+<p>[Chwytliwy, emocjonalny opis produktu — co to jest, dlaczego wyróżnia się z tłumu, na jakie okazje idealny (festiwale, imprezy, koncerty, itp.) ✨]</p>
+<p><b>Rozmiar na metce:</b> [rozmiar]<br><b>Rzeczywisty krój:</b> [np. ok. M/L, w zależności od pożądanego dopasowania]</p>
+<p><b>Wymiary:</b></p>
+<ul>
+<li>Talia/Klatka/Ramiona: [X] cm na płasko</li>
+<li>Długość: [X] cm</li>
+<li>[inne wymiary pasujące do produktu]</li>
+</ul>
+<p><b>Cechy:</b></p>
+<ul>
+<li>[cecha 1 — konkretna i atrakcyjna]</li>
+<li>[cecha 2]</li>
+<li>[cecha 3]</li>
+<li>[cecha 4]</li>
+<li>[cecha 5 — opcjonalnie: okazje/stylizacje]</li>
+</ul>
+<p>[Zdanie zamykające — zachęcające, opisujące kiedy warto kupić, z emoji] ✨</p>
+<p>Szybka wysyłka 🚀📦</p>
+
+WAŻNE: Jeśli nie znasz wymiarów (brak w notatkach), pomiń sekcję wymiarów, ale zachowaj resztę struktury.` : `
 
 === STRUKTURA ===
-1. <p> — 2-3 zdania haczyka: co to jest + dlaczego warto kupić (podkreśl markę jeśli znana, wyjątkową cechę)
-2. <p> — szczery opis stanu: co sprawdzono, co jest jak nowe, ewentualne drobne ślady użytkowania widoczne na zdjęciach
-3. <ul> "Parametry:" — kluczowe dane w formacie <b>parametr:</b> wartość (rozmiar, kolor, materiał, model itp.)
+1. <p> — 2-3 zdania haczyka: co to jest + dlaczego warto kupić
+2. <p> — szczery opis stanu: co sprawdzono, co jest jak nowe
+3. <ul> "Parametry:" — kluczowe dane w formacie <b>parametr:</b> wartość`}
 
 Wygeneruj WYŁĄCZNIE gotowy HTML. Zacznij od <p>.`
       : `You are an e-commerce copywriting expert specializing in second-hand sales on OLX/Vinted/eBay. Your description must SELL the product — quickly and effectively.
@@ -145,23 +171,47 @@ Wygeneruj WYŁĄCZNIE gotowy HTML. Zacznij od <p>.`
 
 === COPYWRITING RULES ===
 - Open with the strongest feature — the one that grabs the buyer's attention
-- Use specific, descriptive adjectives instead of generics ("deep matte black" not just "black")
+- Use specific, descriptive adjectives instead of generics
 - Highlight value (what the buyer gains) not just features
-- Describe condition honestly but positively — what's in great shape, what works perfectly
-- Do NOT mention shipping, returns, negotiations
-- Do NOT use HTML headings (h1/h2/h3), emojis or dash lists
-- Write naturally, like recommending a product to a friend
+- Describe condition honestly but positively
+- Use emojis where fitting — ✨ 🚀 📦 etc.
+- Write naturally and engagingly — like to a friend${isClothing ? `
+
+=== FORMAT FOR CLOTHING/SHOES (MANDATORY) ===
+Follow this format EXACTLY:
+
+<p>Please check measurements before purchasing!</p>
+<p>[Catchy, emotional product description — what it is, why it stands out, what occasions it's perfect for (festivals, parties, concerts, etc.) ✨]</p>
+<p><b>Label size:</b> [size]<br><b>Actual fit:</b> [e.g. approx. M/L depending on desired fit]</p>
+<p><b>Measurements:</b></p>
+<ul>
+<li>Waist/Chest/Shoulders: [X] cm flat</li>
+<li>Length: [X] cm</li>
+<li>[other measurements relevant to the item]</li>
+</ul>
+<p><b>Features:</b></p>
+<ul>
+<li>[feature 1 — specific and appealing]</li>
+<li>[feature 2]</li>
+<li>[feature 3]</li>
+<li>[feature 4]</li>
+<li>[feature 5 — optional: occasions/styling tips]</li>
+</ul>
+<p>[Closing sentence — encouraging, describing when to buy, with emoji] ✨</p>
+<p>Fast shipping 🚀📦</p>
+
+IMPORTANT: If you don't know the measurements (not in notes), skip the measurements section but keep the rest of the structure.` : `
+
+=== STRUCTURE ===
+1. <p> — 2-3 hook sentences: what it is + why it's worth buying
+2. <p> — honest condition description: what was checked, what's like new
+3. <ul> "Specs:" — key data in format <b>spec:</b> value`}
 
 === TECHNICAL REQUIREMENTS ===
 - Allowed tags: p, ul, li, b, br
 - NO attributes in tags (no class, style, id)
 - NO h1, h2, h3, div, span, CSS, img
 - Clean HTML — no comments, no preamble
-
-=== STRUCTURE ===
-1. <p> — 2-3 hook sentences: what it is + why it's worth buying (highlight brand if known, unique feature)
-2. <p> — honest condition description: what was checked, what's like new, any minor wear visible in photos
-3. <ul> "Specs:" — key data in format <b>spec:</b> value (size, color, material, model etc.)
 
 Generate ONLY the ready HTML. Start with <p>.`;
 
