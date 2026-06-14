@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthContext";
-import { Globe, Check, ShoppingBag, Store, LogOut } from "lucide-react";
+import { Globe, Check, ShoppingBag, Store, LogOut, User } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { base44 } from "@/api/base44Client";
 import ShopifySettings from "./ShopifySettings";
 import AllegroSettings from "./AllegroSettings";
 
@@ -11,6 +14,17 @@ export default function Settings() {
   const { logout, user } = useAuth();
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState(lang);
+  const [displayName, setDisplayName] = useState(user?.display_name || user?.full_name || "");
+  const [nameSaved, setNameSaved] = useState(false);
+  const [nameSaving, setNameSaving] = useState(false);
+
+  const handleSaveName = async () => {
+    setNameSaving(true);
+    await base44.auth.updateMe({ display_name: displayName });
+    setNameSaving(false);
+    setNameSaved(true);
+    setTimeout(() => setNameSaved(false), 2000);
+  };
 
   const handleSave = () => {
     setLang(pending);
@@ -33,6 +47,33 @@ export default function Settings() {
 
         {/* General */}
         <TabsContent value="general" className="space-y-4">
+
+          {/* Display Name */}
+          <div className="bg-white rounded-xl border border-slate-200/60 p-6 space-y-4 max-w-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-slate-100 rounded-lg flex items-center justify-center">
+                <User className="w-5 h-5 text-slate-600" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">Imię i nazwisko</h2>
+                <p className="text-xs text-slate-500">Wyświetlane w dokumentach magazynowych</p>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Wyświetlane imię i nazwisko</Label>
+              <Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="np. Patryk Rezner" />
+            </div>
+            <button
+              onClick={handleSaveName}
+              disabled={nameSaving}
+              className={`w-full py-2 rounded-lg text-sm font-medium transition-all ${
+                nameSaved ? "bg-emerald-100 text-emerald-700" : "bg-emerald-600 hover:bg-emerald-700 text-white"
+              }`}
+            >
+              {nameSaved ? "✓ Zapisano" : nameSaving ? "Zapisywanie..." : "Zapisz imię"}
+            </button>
+          </div>
+
           <div className="bg-white rounded-xl border border-slate-200/60 p-6 space-y-5 max-w-xl">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-slate-100 rounded-lg flex items-center justify-center">

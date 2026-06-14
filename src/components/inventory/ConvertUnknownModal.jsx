@@ -326,7 +326,7 @@ Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, goto
       related_dpt_target_id: newProduct.id,
       dpt_ai_summary: aiSummary || undefined,
       notes: form.notes || undefined,
-      created_by_name: user?.full_name || user?.email || "Nieznany",
+      created_by_name: user?.display_name || user?.full_name || user?.email || "Nieznany",
       items: [
         {
           product_id: product?.id,

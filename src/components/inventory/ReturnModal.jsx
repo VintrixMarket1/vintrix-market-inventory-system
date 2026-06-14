@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RotateCcw, X, FileText } from "lucide-react";
 import { generateDocumentNumber } from "@/lib/documentNumber";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function ReturnModal({ product, onClose, onReturned }) {
+  const { userDisplayName } = useAuth();
   const queryClient = useQueryClient();
   const [returnDate, setReturnDate] = useState(new Date().toISOString().split("T")[0]);
   const [reason, setReason] = useState("reklamacja");
@@ -55,7 +57,7 @@ export default function ReturnModal({ product, onClose, onReturned }) {
         total_value: product.purchase_price || 0,
       }],
       total_value: product.purchase_price || 0,
-      created_by_name: "System - Zwrot klienta",
+      created_by_name: userDisplayName,
     };
 
     const createdDoc = await base44.entities.WarehouseDocument.create(docData);

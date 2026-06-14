@@ -128,6 +128,8 @@ export const AuthProvider = ({ children }) => {
     base44.auth.redirectToLogin(window.location.href);
   };
 
+  const userDisplayName = user?.display_name || user?.full_name || user?.email || "Patryk Rezner";
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -138,7 +140,8 @@ export const AuthProvider = ({ children }) => {
       appPublicSettings,
       logout,
       navigateToLogin,
-      checkAppState
+      checkAppState,
+      userDisplayName
     }}>
       {children}
     </AuthContext.Provider>

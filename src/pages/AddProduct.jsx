@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, MessageSquare } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { generateDocumentNumber } from "@/lib/documentNumber";
+import { useAuth } from "@/lib/AuthContext";
 
 const STEPS = {
   UPLOAD: "upload",
@@ -20,6 +21,7 @@ const STEPS = {
 export default function AddProduct() {
   const navigate = useNavigate();
   const { t, lang } = useLang();
+  const { userDisplayName } = useAuth();
   const [step, setStep] = useState(STEPS.UPLOAD);
   const [uploadedImages, setUploadedImages] = useState([]);
   const [aiData, setAiData] = useState(null);
@@ -171,6 +173,7 @@ If you cannot determine something from photos — use null.`,
         status: "confirmed",
         counterparty: formData.brand || "—",
         notes: `Przyjęcie produktu: ${formData.product_name}`,
+        created_by_name: userDisplayName,
         items: [{
           product_id: product.id,
           product_name: formData.product_name,

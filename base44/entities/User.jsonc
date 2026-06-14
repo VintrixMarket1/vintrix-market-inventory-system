@@ -10,6 +10,10 @@
       ],
       "default": "user",
       "description": "Rola u\u017cytkownika: admin = pe\u0142ny dost\u0119p, user = tylko katalog"
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Wy\u015bwietlane imi\u0119 i nazwisko (np. Patryk Rezner)"
     }
   }
 }
