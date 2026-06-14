@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
       reference_number: pallet.pallet_code,
       related_pz_number: pzNumber,
       notes: `Rozbicie palety ${pallet.pallet_code} na produkty — dekompletacja`,
-      created_by_name: user.email || user.full_name,
+      created_by_name: user.full_name || user.email,
       items: [{
         product_id: '',
         product_name: `Paleta ${pallet.pallet_code}`,
