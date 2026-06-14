@@ -14,6 +14,7 @@ const platforms = [
   { value: "olx", label: "OLX" },
   { value: "allegro", label: "Allegro" },
   { value: "ebay", label: "eBay" },
+  { value: "na_rynku", label: "Na rynku" },
 ];
 
 export default function SaleForm({ open, onClose, product, listing, onSaved }) {

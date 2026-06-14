@@ -17,7 +17,8 @@
         "olx",
         "allegro",
         "ebay",
-        "web_store"
+        "web_store",
+        "na_rynku"
       ],
       "description": "Platform where sold"
     },
