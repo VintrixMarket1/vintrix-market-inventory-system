@@ -7,7 +7,7 @@ import { SUBCATEGORIES } from "@/lib/subcategories";
 const categories = ["all", "clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
 const statuses = ["all", "in_stock", "listed", "sold", "unknown"];
 
-export default function SearchFilters({ filters, onChange }) {
+export default function SearchFilters({ filters, onChange, pallets = [] }) {
   const update = (key, value) => onChange({ ...filters, [key]: value });
 
   const subcategories = filters.category && filters.category !== "all"
@@ -44,6 +44,19 @@ export default function SearchFilters({ filters, onChange }) {
             <SelectItem value="all">All Subcategories</SelectItem>
             {subcategories.map(s => (
               <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+      {pallets.length > 0 && (
+        <Select value={filters.pallet_id || "all"} onValueChange={v => update("pallet_id", v)}>
+          <SelectTrigger className="w-full sm:w-44">
+            <SelectValue placeholder="Paleta" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Wszystkie palety</SelectItem>
+            {pallets.map(p => (
+              <SelectItem key={p.id} value={p.id}>{p.pallet_code} — {p.investor_name}</SelectItem>
             ))}
           </SelectContent>
         </Select>

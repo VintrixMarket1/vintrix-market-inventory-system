@@ -43,7 +43,7 @@ export default function Inventory() {
       return next;
     });
   };
-  const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "in_stock" });
+  const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "in_stock", pallet_id: "all" });
   const [viewMode, setViewMode] = useState("grid");
 
   const { data: products = [], isLoading } = useQuery({
@@ -89,7 +89,8 @@ export default function Inventory() {
     const categoryMatch = filters.category === "all" || p.category === filters.category;
     const subcategoryMatch = !filters.subcategory || filters.subcategory === "all" || p.subcategory === filters.subcategory;
     const statusMatch = filters.status === "all" || (p.status || "in_stock") === filters.status;
-    return searchMatch && categoryMatch && subcategoryMatch && statusMatch;
+    const palletMatch = !filters.pallet_id || filters.pallet_id === "all" || p.pallet_id === filters.pallet_id;
+    return searchMatch && categoryMatch && subcategoryMatch && statusMatch && palletMatch;
   });
 
   const handleDelete = async (product) => {
@@ -151,7 +152,7 @@ export default function Inventory() {
         </div>
       </div>
 
-      <SearchFilters filters={filters} onChange={setFilters} />
+      <SearchFilters filters={filters} onChange={setFilters} pallets={pallets} />
 
       {/* Karty palet nieskalkulowanych */}
       {unsettledPallets.length > 0 && (
