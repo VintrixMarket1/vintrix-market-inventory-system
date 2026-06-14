@@ -183,17 +183,7 @@ Deno.serve(async (req) => {
       total_value: totalValue,
     });
 
-    // 9. Update each product's purchase_price and status
-    for (const p of products) {
-      const qty = p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1;
-      const unitPrice = parseFloat((allocations[p.id] / qty).toFixed(2));
-      await base44.asServiceRole.entities.Product.update(p.id, {
-        purchase_price: unitPrice,
-        status: 'in_stock',
-      });
-    }
-
-    // 10. Update pallet status to exploded
+    // 9. Update pallet status to exploded FIRST — prevents re-explosion on timeout retry
     await base44.asServiceRole.entities.Pallet.update(pallet_id, {
       status: 'exploded',
       product_count: products.length,
@@ -207,6 +197,20 @@ Deno.serve(async (req) => {
       exploded_by: user.email || user.full_name,
       total_value: totalValue,
     });
+
+    // 10. Update each product's purchase_price and status (in parallel batches of 20)
+    const BATCH = 20;
+    for (let i = 0; i < products.length; i += BATCH) {
+      const batch = products.slice(i, i + BATCH);
+      await Promise.all(batch.map(p => {
+        const qty = p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1;
+        const unitPrice = parseFloat((allocations[p.id] / qty).toFixed(2));
+        return base44.asServiceRole.entities.Product.update(p.id, {
+          purchase_price: unitPrice,
+          status: 'in_stock',
+        });
+      }));
+    }
 
     return Response.json({
       success: true,
