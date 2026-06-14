@@ -2,10 +2,9 @@ import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Package, Search, LogOut, SlidersHorizontal, X, MessageCircle, ShoppingCart, Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, LogOut, SlidersHorizontal, X, MessageCircle, ShoppingCart, Heart, ChevronDown } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { CATEGORY_GROUPS, getCategoryLabel } from "@/lib/categoryConfig";
 import ProductDetailModal from "@/components/catalog/ProductDetailModal";
@@ -15,6 +14,7 @@ import CheckoutModal from "@/components/catalog/CheckoutModal";
 import { useCart, CartProvider } from "@/lib/CartContext.jsx";
 
 const CONDITION_LABELS = { new: "Nowy", like_new: "Jak nowy", used: "Używany" };
+const CONDITION_COLORS = { new: "bg-emerald-900/60 text-emerald-300", like_new: "bg-sky-900/60 text-sky-300", used: "bg-stone-700/60 text-stone-300" };
 const CONDITIONS = ["new", "like_new", "used"];
 
 function CustomerCatalog() {
@@ -27,15 +27,14 @@ function CustomerCatalog() {
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showMessages, setShowMessages] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [directCheckoutProduct, setDirectCheckoutProduct] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
   const { addToCart, isInCart, cartItems } = useCart();
-
   const queryClient = useQueryClient();
+
   const { data: favorites = [] } = useQuery({
     queryKey: ["my_favorites", user?.email],
     queryFn: () => base44.entities.Favorite.filter({ customer_email: user?.email }),
@@ -49,9 +48,7 @@ function CustomerCatalog() {
     const isFav = favoriteProductIds.has(product.id);
     if (isFav) {
       const fav = favorites.find(f => f.product_id === product.id);
-      if (fav) {
-        await base44.entities.Favorite.delete(fav.id);
-      }
+      if (fav) await base44.entities.Favorite.delete(fav.id);
     } else {
       await base44.entities.Favorite.create({
         product_id: product.id,
@@ -59,7 +56,6 @@ function CustomerCatalog() {
         customer_name: user?.full_name || "",
         customer_email: user?.email || "",
       });
-      // Notify admin
       await base44.entities.AdminNotification.create({
         type: "favorite",
         title: "Nowe polubienie produktu",
@@ -82,6 +78,7 @@ function CustomerCatalog() {
   const filtered = useMemo(() => {
     let result = products.filter(p => {
       if (p.status === "sold") return false;
+      if (p.product_name === "Nieznany produkt") return false;
       if (search && ![p.product_name, p.brand, p.category, p.subcategory].some(v => v?.toLowerCase().includes(search.toLowerCase()))) return false;
       if (selectedCategories.length > 0 && !selectedCategories.includes(p.category)) return false;
       if (selectedConditions.length > 0 && !selectedConditions.includes(p.condition)) return false;
@@ -89,93 +86,73 @@ function CustomerCatalog() {
       if (priceMax !== "" && (p.suggested_sale_price ?? 0) > Number(priceMax)) return false;
       return true;
     });
-    if (activeTab === "favorites") {
-      result = result.filter(p => favoriteProductIds.has(p.id));
-    }
+    if (activeTab === "favorites") result = result.filter(p => favoriteProductIds.has(p.id));
     return result;
   }, [products, search, selectedCategories, selectedConditions, priceMin, priceMax, activeTab, favoriteProductIds]);
 
   const toggleCategory = (val) => setSelectedCategories(prev => prev.includes(val) ? prev.filter(c => c !== val) : [...prev, val]);
   const toggleCondition = (val) => setSelectedConditions(prev => prev.includes(val) ? prev.filter(c => c !== val) : [...prev, val]);
-
   const activeFiltersCount = selectedCategories.length + selectedConditions.length + (priceMin ? 1 : 0) + (priceMax ? 1 : 0);
-
-  const clearFilters = () => {
-    setSelectedCategories([]);
-    setSelectedConditions([]);
-    setPriceMin("");
-    setPriceMax("");
-  };
+  const clearFilters = () => { setSelectedCategories([]); setSelectedConditions([]); setPriceMin(""); setPriceMax(""); };
 
   const handleSendInquiry = async (product, message) => {
     await base44.entities.ProductInquiry.create({
-      product_id: product.id,
-      product_name: product.product_name,
-      message,
-      customer_name: user?.full_name || "",
-      customer_email: user?.email || "",
-      status: "new",
+      product_id: product.id, product_name: product.product_name,
+      message, customer_name: user?.full_name || "", customer_email: user?.email || "", status: "new",
     });
-    // Notify admin
     await base44.entities.AdminNotification.create({
-      type: "new_inquiry",
-      title: "Nowe zapytanie o produkt",
+      type: "new_inquiry", title: "Nowe zapytanie o produkt",
       message: `${user?.full_name || user?.email || "Klient"} pyta o "${product.product_name}".`,
-      product_id: product.id,
-      product_name: product.product_name,
-      customer_name: user?.full_name || "",
-      customer_email: user?.email || "",
-      is_read: false,
+      product_id: product.id, product_name: product.product_name,
+      customer_name: user?.full_name || "", customer_email: user?.email || "", is_read: false,
     });
     toast({ title: "Zapytanie wysłane!", description: "Skontaktujemy się z Tobą wkrótce." });
   };
 
   const buildDirectOffer = (product) => ({
     id: `direct_${product.id}`,
-    product_id: product.id,
-    product_name: product.product_name,
+    product_id: product.id, product_name: product.product_name,
     offered_price: product.suggested_sale_price || 0,
-    status: "accepted",
-    customer_name: user?.full_name || "",
-    customer_email: user?.email || "",
+    status: "accepted", customer_name: user?.full_name || "", customer_email: user?.email || "",
   });
 
   const FiltersContent = () => (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Stan</p>
-        <div className="space-y-1">
+        <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-3">Stan produktu</p>
+        <div className="space-y-2">
           {CONDITIONS.map(c => (
-            <label key={c} className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={selectedConditions.includes(c)} onChange={() => toggleCondition(c)} className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-              <span className="text-sm text-slate-700">{CONDITION_LABELS[c]}</span>
+            <label key={c} className="flex items-center gap-3 cursor-pointer group">
+              <div className={`w-4 h-4 rounded border transition-all flex items-center justify-center shrink-0 ${selectedConditions.includes(c) ? "bg-amber-500 border-amber-500" : "border-stone-600 group-hover:border-stone-400"}`}>
+                {selectedConditions.includes(c) && <svg className="w-2.5 h-2.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+              </div>
+              <span className="text-sm text-stone-300 group-hover:text-white transition-colors">{CONDITION_LABELS[c]}</span>
             </label>
           ))}
         </div>
       </div>
       <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Cena (PLN)</p>
+        <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-3">Zakres cen (PLN)</p>
         <div className="flex gap-2">
-          <Input type="number" placeholder="Od" value={priceMin} onChange={e => setPriceMin(e.target.value)} className="h-9 text-sm" />
-          <Input type="number" placeholder="Do" value={priceMax} onChange={e => setPriceMax(e.target.value)} className="h-9 text-sm" />
+          <input type="number" placeholder="od" value={priceMin} onChange={e => setPriceMin(e.target.value)}
+            className="w-full bg-stone-800 border border-stone-700 text-stone-200 rounded-lg px-3 py-2 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-500" />
+          <input type="number" placeholder="do" value={priceMax} onChange={e => setPriceMax(e.target.value)}
+            className="w-full bg-stone-800 border border-stone-700 text-stone-200 rounded-lg px-3 py-2 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-500" />
         </div>
       </div>
       <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Kategorie</p>
+        <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-3">Kategorie</p>
         <div className="space-y-4">
           {CATEGORY_GROUPS.map(group => (
             <div key={group.group}>
-              <p className="text-xs font-medium text-slate-600 mb-1">{group.icon} {group.group}</p>
-              <div className="space-y-1 pl-1">
+              <p className="text-xs text-stone-500 mb-2">{group.icon} {group.group}</p>
+              <div className="space-y-1.5 pl-1">
                 {group.items.map(item => (
-                  <label key={item.value} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedCategories.includes(item.value)}
-                      onChange={() => toggleCategory(item.value)}
-                      className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <span className="text-xs text-slate-700">{item.label}</span>
+                  <label key={item.value} className="flex items-center gap-3 cursor-pointer group">
+                    <div className={`w-3.5 h-3.5 rounded border transition-all flex items-center justify-center shrink-0 ${selectedCategories.includes(item.value) ? "bg-amber-500 border-amber-500" : "border-stone-600 group-hover:border-stone-400"}`}>
+                      {selectedCategories.includes(item.value) && <svg className="w-2 h-2 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                    </div>
+                    <span className="text-xs text-stone-400 group-hover:text-stone-200 transition-colors">{item.label}</span>
                   </label>
                 ))}
               </div>
@@ -187,120 +164,152 @@ function CustomerCatalog() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Mobile filter drawer overlay */}
+    <div className="min-h-screen bg-stone-950 text-stone-100">
+
+      {/* Mobile filter drawer */}
       {showFilters && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowFilters(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowFilters(false)} />
+          <div className="absolute bottom-0 left-0 right-0 bg-stone-900 rounded-t-3xl max-h-[88vh] flex flex-col border-t border-stone-700">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-stone-800 shrink-0">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-slate-900">Filtry</span>
-                {activeFiltersCount > 0 && (
-                  <span className="bg-emerald-500 text-white text-xs rounded-full px-2 py-0.5">{activeFiltersCount}</span>
-                )}
+                <span className="font-semibold text-white tracking-wide">Filtry</span>
+                {activeFiltersCount > 0 && <span className="bg-amber-500 text-black text-xs font-bold rounded-full px-2 py-0.5">{activeFiltersCount}</span>}
               </div>
-              <div className="flex items-center gap-2">
-                {activeFiltersCount > 0 && (
-                  <button onClick={clearFilters} className="text-sm text-emerald-600 font-medium">Wyczyść</button>
-                )}
-                <button onClick={() => setShowFilters(false)} className="p-1.5 rounded-lg hover:bg-slate-100">
-                  <X className="w-5 h-5 text-slate-500" />
+              <div className="flex items-center gap-3">
+                {activeFiltersCount > 0 && <button onClick={clearFilters} className="text-sm text-amber-400 font-medium">Wyczyść</button>}
+                <button onClick={() => setShowFilters(false)} className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700">
+                  <X className="w-4 h-4 text-stone-400" />
                 </button>
               </div>
             </div>
-            <div className="overflow-y-auto p-4 flex-1">
-              <FiltersContent />
-            </div>
-            <div className="p-4 border-t border-slate-100 shrink-0">
-              <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={() => setShowFilters(false)}>
+            <div className="overflow-y-auto p-5 flex-1"><FiltersContent /></div>
+            <div className="p-4 border-t border-stone-800 shrink-0">
+              <button className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 rounded-xl transition-colors" onClick={() => setShowFilters(false)}>
                 Pokaż wyniki ({filtered.length})
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shrink-0">
-              <Package className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-slate-900 text-sm sm:text-base">Vintrix</span>
-            <span className="text-xs text-slate-400 hidden sm:block">— Katalog</span>
+      {/* Header */}
+      <header className="sticky top-0 z-30 bg-stone-950/90 backdrop-blur-xl border-b border-stone-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+          {/* Logo */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="text-lg font-black tracking-[0.15em] text-white uppercase">Vintrix</div>
+            <div className="hidden sm:block w-px h-4 bg-stone-600" />
+            <div className="hidden sm:block text-xs text-stone-500 tracking-[0.2em] uppercase font-light">Premium Catalog</div>
           </div>
+
+          {/* Search */}
+          <div className="flex-1 max-w-md hidden sm:block relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
+            <input
+              className="w-full bg-stone-900 border border-stone-700 text-stone-200 rounded-xl pl-10 pr-4 py-2.5 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-500 transition-colors"
+              placeholder="Szukaj produktów, marek..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+
+          {/* Actions */}
           <div className="flex items-center gap-1">
-            <span className="text-xs text-slate-500 hidden sm:block mr-1">Cześć, <strong>{user?.full_name?.split(" ")[0]}</strong></span>
-            <Button variant="ghost" size="icon" onClick={() => setShowMessages(true)} className="w-9 h-9 text-slate-500 relative" title="Wiadomości">
-              <MessageCircle className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => setShowCart(true)} className="w-9 h-9 text-slate-500 relative" title="Koszyk">
-              <ShoppingCart className="w-4 h-4" />
-              {cartItems.length > 0 && (
-                <span className="absolute top-1 right-1 bg-emerald-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none font-bold">{cartItems.length}</span>
-              )}
-            </Button>
-            <span className="hidden sm:flex items-center gap-1 text-xs text-slate-500 ml-1">
-              <Button variant="ghost" size="sm" onClick={() => logout()} className="gap-1.5 text-slate-500 text-xs">
-                <LogOut className="w-4 h-4" /> Wyloguj
-              </Button>
+            <span className="hidden md:block text-xs text-stone-500 mr-2">
+              Cześć, <span className="text-stone-200 font-medium">{user?.full_name?.split(" ")[0]}</span>
             </span>
-            <Button variant="ghost" size="icon" onClick={() => logout()} className="w-9 h-9 text-slate-500 sm:hidden" title="Wyloguj">
-              <LogOut className="w-4 h-4" />
-            </Button>
+            <button onClick={() => setShowMessages(true)} className="relative p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title="Wiadomości">
+              <MessageCircle className="w-5 h-5" />
+            </button>
+            <button onClick={() => setShowCart(true)} className="relative p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title="Koszyk">
+              <ShoppingCart className="w-5 h-5" />
+              {cartItems.length > 0 && (
+                <span className="absolute top-1.5 right-1.5 bg-amber-500 text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">{cartItems.length}</span>
+              )}
+            </button>
+            <button onClick={() => logout()} className="p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title="Wyloguj">
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 flex gap-1 border-t border-slate-100">
-          <button
-            onClick={() => setActiveTab("all")}
-            className={`px-3 sm:px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === "all" ? "border-emerald-500 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-          >
-            <Package className="w-4 h-4" />
-            <span className="hidden xs:inline">Wszystkie</span>
-            <span className="bg-slate-100 text-slate-600 text-[10px] rounded-full px-1.5 py-0.5 leading-none">{filtered.length}</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("favorites")}
-            className={`px-3 sm:px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === "favorites" ? "border-emerald-500 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-          >
-            <Heart className="w-4 h-4" />
-            <span className="hidden xs:inline">Polubione</span>
-            <span className="bg-red-100 text-red-600 text-[10px] rounded-full px-1.5 py-0.5 leading-none">{favoriteProductIds.size}</span>
-          </button>
+
+        {/* Mobile search */}
+        <div className="sm:hidden px-4 pb-3 relative">
+          <Search className="absolute left-7 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
+          <input
+            className="w-full bg-stone-900 border border-stone-700 text-stone-200 rounded-xl pl-10 pr-4 py-2.5 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-500"
+            placeholder="Szukaj..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+
+        {/* Tabs */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-1 border-t border-stone-800/50">
+          {[
+            { key: "all", label: "Wszystkie", count: products.filter(p => p.status !== "sold" && p.product_name !== "Nieznany produkt").length },
+            { key: "favorites", label: "Ulubione", count: favoriteProductIds.size },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold tracking-[0.1em] uppercase border-b-2 transition-all ${activeTab === tab.key ? "border-amber-500 text-amber-400" : "border-transparent text-stone-500 hover:text-stone-300"}`}
+            >
+              {tab.key === "favorites" && <Heart className={`w-3.5 h-3.5 ${activeTab === "favorites" ? "fill-current" : ""}`} />}
+              {tab.label}
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${activeTab === tab.key ? "bg-amber-500/20 text-amber-400" : "bg-stone-800 text-stone-500"}`}>{tab.count}</span>
+            </button>
+          ))}
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        {/* Search + filter bar */}
-        <div className="flex gap-2 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input className="pl-9 h-10" placeholder="Szukaj po nazwie, marce..." value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <Button variant="outline" onClick={() => setShowFilters(v => !v)} className="gap-1.5 shrink-0 h-10 px-3">
-            <SlidersHorizontal className="w-4 h-4" />
-            <span className="hidden sm:inline">Filtry</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        {/* Filter + results bar */}
+        <div className="flex items-center justify-between mb-6 gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowFilters(v => !v)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${showFilters || activeFiltersCount > 0 ? "bg-amber-500/10 border-amber-500/40 text-amber-400" : "bg-stone-900 border-stone-700 text-stone-400 hover:border-stone-500 hover:text-stone-200"}`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              Filtry
+              {activeFiltersCount > 0 && <span className="bg-amber-500 text-black text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center">{activeFiltersCount}</span>}
+            </button>
             {activeFiltersCount > 0 && (
-              <span className="bg-emerald-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">{activeFiltersCount}</span>
+              <button onClick={clearFilters} className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-300 transition-colors">
+                <X className="w-3.5 h-3.5" /> Wyczyść
+              </button>
             )}
-          </Button>
-          {activeFiltersCount > 0 && (
-            <Button variant="ghost" size="icon" onClick={clearFilters} className="shrink-0 h-10 w-10 text-slate-500" title="Wyczyść filtry">
-              <X className="w-4 h-4" />
-            </Button>
-          )}
+          </div>
+          <p className="text-xs text-stone-500 tracking-wide">{filtered.length} produktów</p>
         </div>
 
+        {/* Active filter chips */}
+        {(selectedConditions.length > 0 || selectedCategories.length > 0) && (
+          <div className="flex flex-wrap gap-2 mb-5">
+            {selectedConditions.map(c => (
+              <button key={c} onClick={() => toggleCondition(c)} className="flex items-center gap-1.5 bg-stone-800 text-stone-300 text-xs px-3 py-1.5 rounded-full border border-stone-700 hover:border-stone-500 transition-all">
+                {CONDITION_LABELS[c]} <X className="w-3 h-3" />
+              </button>
+            ))}
+            {selectedCategories.map(c => (
+              <button key={c} onClick={() => toggleCategory(c)} className="flex items-center gap-1.5 bg-stone-800 text-stone-300 text-xs px-3 py-1.5 rounded-full border border-stone-700 hover:border-stone-500 transition-all">
+                {getCategoryLabel(c)} <X className="w-3 h-3" />
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="flex gap-6">
-          {/* Desktop sidebar filters */}
+          {/* Desktop sidebar */}
           {showFilters && (
-            <aside className="w-64 shrink-0 hidden md:block">
-              <div className="bg-white rounded-xl border border-slate-200 p-4 sticky top-[7.5rem] max-h-[calc(100vh-8rem)] overflow-y-auto">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="font-semibold text-sm text-slate-800">Filtry</span>
+            <aside className="w-60 shrink-0 hidden md:block">
+              <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5 sticky top-[8.5rem] max-h-[calc(100vh-9rem)] overflow-y-auto">
+                <div className="flex items-center justify-between mb-5">
+                  <span className="text-xs font-semibold text-stone-300 uppercase tracking-[0.15em]">Filtry</span>
                   {activeFiltersCount > 0 && (
-                    <button onClick={clearFilters} className="text-xs text-emerald-600 font-medium hover:underline">Wyczyść</button>
+                    <button onClick={clearFilters} className="text-xs text-amber-400 hover:text-amber-300 transition-colors">Wyczyść</button>
                   )}
                 </div>
                 <FiltersContent />
@@ -308,99 +317,29 @@ function CustomerCatalog() {
             </aside>
           )}
 
+          {/* Product grid */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-3">
-              <h1 className="text-base sm:text-xl font-bold text-slate-900">
-                {activeTab === "favorites" ? "Polubione" : "Produkty"}
-                <span className="ml-2 text-sm font-normal text-slate-400">({filtered.length})</span>
-              </h1>
-            </div>
-
-            {(selectedCategories.length > 0 || selectedConditions.length > 0) && (
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {selectedConditions.map(c => (
-                  <Badge key={c} variant="secondary" className="gap-1 cursor-pointer text-xs" onClick={() => toggleCondition(c)}>
-                    {CONDITION_LABELS[c]} <X className="w-3 h-3" />
-                  </Badge>
-                ))}
-                {selectedCategories.map(c => (
-                  <Badge key={c} variant="secondary" className="gap-1 cursor-pointer text-xs" onClick={() => toggleCategory(c)}>
-                    {getCategoryLabel(c)} <X className="w-3 h-3" />
-                  </Badge>
-                ))}
-              </div>
-            )}
-
             {filtered.length === 0 ? (
-              <div className="text-center py-20">
-                <Package className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-400">Brak produktów spełniających kryteria</p>
+              <div className="text-center py-28">
+                <div className="text-6xl mb-4 opacity-20">◈</div>
+                <p className="text-stone-500 text-sm tracking-wide">Brak produktów spełniających kryteria</p>
                 {activeFiltersCount > 0 && (
-                  <Button variant="link" onClick={clearFilters} className="text-emerald-600 mt-2">Wyczyść filtry</Button>
+                  <button onClick={clearFilters} className="mt-4 text-amber-400 text-sm hover:underline">Wyczyść filtry</button>
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                 {filtered.map(product => (
-                  <div
+                  <ProductCard
                     key={product.id}
-                    className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all group flex flex-col"
-                  >
-                    <div className="aspect-square bg-slate-100 overflow-hidden relative cursor-pointer" onClick={() => setSelectedProduct(product)}>
-                      {product.images?.[0] ? (
-                        <img src={product.images[0]} alt={product.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-3xl">📦</div>
-                      )}
-                      <button
-                        onClick={(e) => toggleFavorite(product, e)}
-                        className={`absolute top-1.5 right-1.5 z-10 rounded-full p-1.5 shadow-md border transition-all ${favoriteProductIds.has(product.id) ? "bg-red-500 border-red-500 text-white" : "bg-white/90 border-slate-200 text-slate-400 hover:text-red-500"}`}
-                      >
-                        <Heart className={`w-3 h-3 ${favoriteProductIds.has(product.id) ? "fill-current" : ""}`} />
-                      </button>
-                      {product.status === "listed" && (
-                        <span className="absolute top-1.5 left-1.5 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide">Wyst.</span>
-                      )}
-                    </div>
-                    <div className="p-2 sm:p-3 space-y-1 flex-1 flex flex-col cursor-pointer" onClick={() => setSelectedProduct(product)}>
-                      <p className="font-semibold text-xs sm:text-sm text-slate-900 line-clamp-2 leading-snug">{product.product_name}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {product.brand && <span className="text-[9px] sm:text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{product.brand}</span>}
-                        <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1">{CONDITION_LABELS[product.condition] || product.condition}</Badge>
-                      </div>
-                      {product.suggested_sale_price ? (
-                        <p className="text-sm font-bold text-emerald-600 mt-auto pt-1">{product.suggested_sale_price} PLN</p>
-                      ) : (
-                        <p className="text-xs text-slate-400 italic mt-auto pt-1">Na zapytanie</p>
-                      )}
-                    </div>
-                    {product.suggested_sale_price && (
-                      <div className="px-2 sm:px-3 pb-2 sm:pb-3 grid grid-cols-2 gap-1" onClick={e => e.stopPropagation()}>
-                        <Button
-                          size="sm"
-                          className="h-7 sm:h-8 text-[10px] sm:text-xs font-bold bg-emerald-600 hover:bg-emerald-700 px-1"
-                          onClick={() => setDirectCheckoutProduct(product)}
-                        >
-                          Kup
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className={`h-7 sm:h-8 text-[10px] sm:text-xs px-1 ${isInCart(product.id) ? "border-emerald-400 text-emerald-600" : "border-slate-300 text-slate-600"}`}
-                          onClick={() => { addToCart(product); setShowCart(true); }}
-                        >
-                          {isInCart(product.id) ? "✓ Koszyk" : "+ Koszyk"}
-                        </Button>
-                      </div>
-                    )}
-                    {!product.suggested_sale_price && (
-                      <div className="px-2 sm:px-3 pb-2 sm:pb-3" onClick={e => e.stopPropagation()}>
-                        <Button size="sm" variant="outline" className="w-full h-7 sm:h-8 text-[10px] sm:text-xs border-slate-300 text-slate-600" onClick={() => setSelectedProduct(product)}>
-                          <MessageCircle className="w-3 h-3 mr-1" /> Zapytaj
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                    product={product}
+                    isFavorite={favoriteProductIds.has(product.id)}
+                    isInCart={isInCart(product.id)}
+                    onSelect={() => setSelectedProduct(product)}
+                    onToggleFavorite={(e) => toggleFavorite(product, e)}
+                    onAddToCart={() => { addToCart(product); setShowCart(true); }}
+                    onBuyNow={() => setDirectCheckoutProduct(product)}
+                  />
                 ))}
               </div>
             )}
@@ -408,27 +347,94 @@ function CustomerCatalog() {
         </div>
       </div>
 
-      {showMessages && (
-        <CustomerMessagesPanel user={user} onClose={() => setShowMessages(false)} />
-      )}
-
-      {showCart && (
-        <CartPanel user={user} onClose={() => setShowCart(false)} />
-      )}
-
+      {showMessages && <CustomerMessagesPanel user={user} onClose={() => setShowMessages(false)} />}
+      {showCart && <CartPanel user={user} onClose={() => setShowCart(false)} />}
       {directCheckoutProduct && (
-        <CheckoutModal
-          offer={buildDirectOffer(directCheckoutProduct)}
-          onClose={() => setDirectCheckoutProduct(null)}
-        />
+        <CheckoutModal offer={buildDirectOffer(directCheckoutProduct)} onClose={() => setDirectCheckoutProduct(null)} />
       )}
+      <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} user={user} onSendInquiry={handleSendInquiry} />
+    </div>
+  );
+}
 
-      <ProductDetailModal
-        product={selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        user={user}
-        onSendInquiry={handleSendInquiry}
-      />
+function ProductCard({ product, isFavorite, isInCart, onSelect, onToggleFavorite, onAddToCart, onBuyNow }) {
+  return (
+    <div className="group flex flex-col bg-stone-900 rounded-2xl overflow-hidden border border-stone-800 hover:border-stone-600 transition-all duration-300 hover:shadow-2xl hover:shadow-black/40">
+      {/* Image */}
+      <div className="relative aspect-[3/4] bg-stone-800 overflow-hidden cursor-pointer" onClick={onSelect}>
+        {product.images?.[0] ? (
+          <img src={product.images[0]} alt={product.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-4xl opacity-20">◈</div>
+        )}
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+        {/* Badges */}
+        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5">
+          {product.condition && (
+            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider backdrop-blur-sm ${CONDITION_COLORS[product.condition]}`}>
+              {CONDITION_LABELS[product.condition]}
+            </span>
+          )}
+        </div>
+
+        {/* Favorite */}
+        <button
+          onClick={onToggleFavorite}
+          className={`absolute top-2.5 right-2.5 w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-lg ${isFavorite ? "bg-red-500 text-white" : "bg-stone-900/80 text-stone-400 hover:text-red-400 backdrop-blur-sm"}`}
+        >
+          <Heart className={`w-3.5 h-3.5 ${isFavorite ? "fill-current" : ""}`} />
+        </button>
+
+        {/* Quick buy overlay on hover */}
+        {product.suggested_sale_price && (
+          <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+            <button
+              onClick={(e) => { e.stopPropagation(); onBuyNow(); }}
+              className="w-full bg-amber-500 hover:bg-amber-400 text-black text-xs font-black py-2 rounded-xl uppercase tracking-wider transition-colors"
+            >
+              Kup teraz
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="p-3 flex flex-col gap-2 flex-1">
+        <div className="cursor-pointer" onClick={onSelect}>
+          {product.brand && (
+            <p className="text-[10px] text-stone-500 uppercase tracking-[0.15em] font-semibold mb-0.5">{product.brand}</p>
+          )}
+          <p className="text-sm font-semibold text-stone-100 line-clamp-2 leading-snug">{product.product_name}</p>
+        </div>
+
+        <div className="flex items-center justify-between mt-auto pt-1">
+          {product.suggested_sale_price ? (
+            <p className="text-base font-black text-amber-400">{product.suggested_sale_price} <span className="text-xs font-normal text-stone-500">PLN</span></p>
+          ) : (
+            <p className="text-xs text-stone-600 italic">Na zapytanie</p>
+          )}
+          {product.suggested_sale_price ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onAddToCart(); }}
+              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isInCart ? "bg-amber-500 text-black" : "bg-stone-800 text-stone-400 hover:bg-stone-700 hover:text-white"}`}
+              title={isInCart ? "W koszyku" : "Dodaj do koszyka"}
+            >
+              <ShoppingCart className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <button
+              onClick={onSelect}
+              className="w-7 h-7 rounded-lg bg-stone-800 flex items-center justify-center text-stone-400 hover:bg-stone-700 hover:text-white transition-all"
+              title="Zapytaj"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
