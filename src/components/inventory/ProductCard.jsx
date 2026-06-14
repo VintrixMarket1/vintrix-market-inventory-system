@@ -12,6 +12,14 @@ const statusColors = {
   in_stock: "bg-slate-100 text-slate-600",
   listed: "bg-purple-100 text-purple-700",
   sold: "bg-emerald-100 text-emerald-700",
+  reclassified: "bg-amber-100 text-amber-700",
+};
+
+const statusLabels = {
+  in_stock: "Na stanie",
+  listed: "Wystawiony",
+  sold: "Sprzedany",
+  reclassified: "Przeklasyfikowany",
 };
 
 export default function ProductCard({ product, onEdit, onDelete, selected, onToggleSelect }) {
@@ -45,7 +53,7 @@ export default function ProductCard({ product, onEdit, onDelete, selected, onTog
         )}
         <div className="absolute top-2 right-2 flex gap-1">
           <Badge className={`text-[10px] ${statusColors[product.status] || statusColors.in_stock}`}>
-            {(product.status || "in_stock").replace("_", " ")}
+            {statusLabels[product.status] || (product.status || "in_stock").replace("_", " ")}
           </Badge>
         </div>
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-200 flex items-end justify-end p-2 opacity-0 group-hover:opacity-100 pointer-events-none">

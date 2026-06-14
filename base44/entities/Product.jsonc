@@ -175,7 +175,8 @@
       "enum": [
         "in_stock",
         "listed",
-        "sold"
+        "sold",
+        "reclassified"
       ],
       "default": "in_stock",
       "description": "Status produktu"
@@ -193,6 +194,10 @@
       "type": "boolean",
       "default": false,
       "description": "Czy dane AI zosta\u0142y zweryfikowane przez operatora"
+    },
+    "ai_analysis_result": {
+      "type": "string",
+      "description": "Wynik analizy AI (JSON jako string) \u2014 zachowany dla historii"
     },
     "shopify_product_id": {
       "type": "string",
@@ -217,11 +222,27 @@
     "is_multi_item": {
       "type": "boolean",
       "default": false,
-      "description": "Czy produkt jest wielosztuk\u0119"
+      "description": "Czy produkt jest wielosztuk\u0105"
     },
     "stock_quantity": {
       "type": "number",
-      "description": "Stan magazynowy (liczba sztuk) \u2014 tylko dla wielosztuk\u00f3\u00f3w"
+      "description": "Stan magazynowy (liczba sztuk) \u2014 tylko dla wielosztuk"
+    },
+    "reclassified_from_id": {
+      "type": "string",
+      "description": "ID starego produktu (Nieznany przedmiot), z kt\u00f3rego pochodzi ten produkt po konwersji"
+    },
+    "reclassified_to_id": {
+      "type": "string",
+      "description": "ID nowego produktu, na kt\u00f3ry zamieniono ten Nieznany przedmiot"
+    },
+    "dpt_document_id": {
+      "type": "string",
+      "description": "ID dokumentu DPT powi\u0105zanego z przeklasyfikowaniem"
+    },
+    "dpt_document_number": {
+      "type": "string",
+      "description": "Numer dokumentu DPT"
     }
   },
   "required": [

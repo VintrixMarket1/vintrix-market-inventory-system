@@ -3,6 +3,7 @@ import { useLang } from "@/lib/i18n";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Download, LayoutGrid, List, Edit2, Trash2, MapPin, ShoppingBag } from "lucide-react";
@@ -16,9 +17,11 @@ import ShopifyProductImporter from "../components/shopify/ShopifyProductImporter
 import BulkActionsBar from "../components/inventory/BulkActionsBar";
 import ShopifyBulkPublishModal from "../components/shopify/ShopifyBulkPublishModal";
 import PalletSummaryCard from "../components/inventory/PalletSummaryCard";
+import ConvertUnknownModal from "../components/inventory/ConvertUnknownModal";
 
 export default function Inventory() {
   const { t } = useLang();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
@@ -29,6 +32,7 @@ export default function Inventory() {
   const [showShopifyImport, setShowShopifyImport] = useState(false);
   const [bulkSelected, setBulkSelected] = useState(new Set());
   const [shopifyBulkProducts, setShopifyBulkProducts] = useState(null);
+  const [convertProduct, setConvertProduct] = useState(null);
 
   const toggleBulkSelect = (id) => {
     setBulkSelected(prev => {
@@ -196,10 +200,15 @@ export default function Inventory() {
                 </div>
               )}
               <div className="flex gap-1 mt-1.5">
-                {(product.status || "in_stock") !== "sold" && (
+                {product.product_name === "Nieznany produkt" && product.status !== "reclassified" && (
+                  <Button size="sm" className="flex-1 text-xs h-7 bg-amber-500 hover:bg-amber-600 text-white" onClick={() => setConvertProduct(product)}>
+                    🔄 Konwertuj
+                  </Button>
+                )}
+                {product.product_name !== "Nieznany produkt" && (product.status || "in_stock") !== "sold" && product.status !== "reclassified" && (
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setListingProduct(product)}>{t("inv_list")}</Button>
                 )}
-                {((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && (
+                {product.product_name !== "Nieznany produkt" && ((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && product.status !== "reclassified" && (
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                 )}
               </div>
@@ -268,10 +277,13 @@ export default function Inventory() {
                   <button onClick={() => handleDelete(product)} className="p-1.5 bg-slate-100 rounded-lg hover:bg-red-50">
                     <Trash2 className="w-3.5 h-3.5 text-red-500" />
                   </button>
-                  {(product.status || "in_stock") !== "sold" && (
+                  {product.product_name === "Nieznany produkt" && product.status !== "reclassified" && (
+                    <Button size="sm" className="text-xs h-7 px-2 bg-amber-500 hover:bg-amber-600 text-white" onClick={() => setConvertProduct(product)}>🔄 Konwertuj</Button>
+                  )}
+                  {product.product_name !== "Nieznany produkt" && (product.status || "in_stock") !== "sold" && product.status !== "reclassified" && (
                     <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={() => setListingProduct(product)}>{t("inv_list")}</Button>
                   )}
-                  {((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && (
+                  {product.product_name !== "Nieznany produkt" && ((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && product.status !== "reclassified" && (
                     <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-emerald-600 border-emerald-200" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                   )}
                 </div>
@@ -341,6 +353,16 @@ export default function Inventory() {
           onClose={() => setShopifyBulkProducts(null)}
           products={shopifyBulkProducts}
           onDone={() => { refresh(); setBulkSelected(new Set()); setShopifyBulkProducts(null); }}
+        />
+      )}
+      {convertProduct && (
+        <ConvertUnknownModal
+          product={convertProduct}
+          pallet={palletsMap[convertProduct.pallet_id]}
+          palletProductCount={products.filter(p => p.pallet_id === convertProduct.pallet_id).length}
+          user={user}
+          onClose={() => setConvertProduct(null)}
+          onConverted={() => { refresh(); setConvertProduct(null); }}
         />
       )}
     </div>
