@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { SUBCATEGORIES } from "@/lib/subcategories";
 
 const categories = ["all", "clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
-const statuses = ["all", "in_stock", "listed", "sold"];
+const statuses = ["all", "in_stock", "listed", "sold", "unknown"];
 
 export default function SearchFilters({ filters, onChange }) {
   const update = (key, value) => onChange({ ...filters, [key]: value });
@@ -53,9 +53,10 @@ export default function SearchFilters({ filters, onChange }) {
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>
-          {statuses.map(s => (
-            <SelectItem key={s} value={s}>{s === "all" ? "All Status" : s.replace("_", " ").charAt(0).toUpperCase() + s.replace("_", " ").slice(1)}</SelectItem>
-          ))}
+          {statuses.map(s => {
+            const labels = { all: "Wszystkie", in_stock: "Na stanie", listed: "Wystawione", sold: "Sprzedane", unknown: "Nieznane" };
+            return <SelectItem key={s} value={s}>{labels[s] || s}</SelectItem>;
+          })}
         </SelectContent>
       </Select>
     </div>

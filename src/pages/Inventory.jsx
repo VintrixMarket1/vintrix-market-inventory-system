@@ -74,6 +74,10 @@ export default function Inventory() {
   const filtered = products.filter(p => {
     // Ukryj produkty z nieskalkulowanych palet — są reprezentowane przez kartę palety
     if (p.pallet_id && unsettledPalletIds.has(p.pallet_id)) return false;
+    const isUnknown = p.product_name === "Nieznany produkt";
+    // Filtr "unknown" pokazuje tylko nieznane; inne filtry ukrywają nieznane
+    if (filters.status === "unknown") return isUnknown;
+    if (isUnknown && filters.status !== "all") return false;
     const searchMatch = !filters.search || p.product_name?.toLowerCase().includes(filters.search.toLowerCase()) || p.internal_code?.toLowerCase().includes(filters.search.toLowerCase());
     const categoryMatch = filters.category === "all" || p.category === filters.category;
     const subcategoryMatch = !filters.subcategory || filters.subcategory === "all" || p.subcategory === filters.subcategory;
