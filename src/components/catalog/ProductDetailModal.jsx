@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -218,7 +219,7 @@ function ImageLightbox({ images, startIndex, onClose }) {
     touchStartX.current = null;
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[500] bg-black/95 flex items-center justify-center"
       onTouchStart={handleTouchStart}
@@ -258,7 +259,8 @@ function ImageLightbox({ images, startIndex, onClose }) {
           ))}
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
 
