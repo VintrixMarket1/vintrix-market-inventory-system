@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Package, Tag, DollarSign, Zap, 
-  Menu, X, ChevronRight, Layers, BookOpen, Settings, FileText, MessageCircle
+  Menu, X, ChevronRight, Layers, BookOpen, Settings, FileText, MessageCircle, BarChart3
 } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
@@ -28,6 +28,7 @@ export default function Sidebar() {
     { path: "/Listings", labelKey: "nav_listings", icon: Tag },
     { path: "/Sales", labelKey: "nav_sales", icon: DollarSign },
     { path: "/WarehouseDocuments", label: "Dokumenty Mag.", icon: FileText },
+    { path: "/MonthlyReport", label: "Raport Miesięczny", icon: BarChart3 },
     { path: "/Inquiries", label: "Zapytania klientów", icon: MessageCircle },
     { path: "/QuickAdd", labelKey: "nav_quick_add", icon: Zap },
     { path: "/Settings", labelKey: "nav_settings", icon: Settings },

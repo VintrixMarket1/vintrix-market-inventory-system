@@ -28,6 +28,7 @@ import AllegroPublish from './pages/AllegroPublish';
 import AllegroTemplates from './pages/AllegroTemplates';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import WarehouseDocuments from './pages/WarehouseDocuments';
+import MonthlyReport from './pages/MonthlyReport';
 import PalletDetail from './pages/PalletDetail';
 
 const AuthenticatedApp = () => {
@@ -79,6 +80,7 @@ const AuthenticatedApp = () => {
         <Route path="/AllegroTemplates" element={<AllegroTemplates />} />
         <Route path="/Settings" element={<Settings />} />
         <Route path="/WarehouseDocuments" element={<WarehouseDocuments />} />
+        <Route path="/MonthlyReport" element={<MonthlyReport />} />
         <Route path="/PalletDetail" element={<PalletDetail />} />
         <Route path="/Inquiries" element={<Inquiries />} />
       </Route>
