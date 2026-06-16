@@ -5,8 +5,9 @@ import ImageUploader from "@/components/add-product/ImageUploader";
 import AiAnalysisStep from "@/components/add-product/AiAnalysisStep";
 import ProductVerifyForm from "@/components/add-product/ProductVerifyForm";
 import AiChatAssistant from "@/components/ai/AiChatAssistant";
+import CopyFromCatalog from "@/components/add-product/CopyFromCatalog";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MessageSquare } from "lucide-react";
+import { ArrowLeft, MessageSquare, Sparkles, Copy } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { generateDocumentNumber } from "@/lib/documentNumber";
 import { useAuth } from "@/lib/AuthContext";
@@ -22,6 +23,7 @@ export default function AddProduct() {
   const navigate = useNavigate();
   const { t, lang } = useLang();
   const { userDisplayName } = useAuth();
+  const [mode, setMode] = useState("ai"); // "ai" | "copy"
   const [step, setStep] = useState(STEPS.UPLOAD);
   const [uploadedImages, setUploadedImages] = useState([]);
   const [aiData, setAiData] = useState(null);
@@ -201,14 +203,15 @@ If you cannot determine something from photos — use null.`,
           <div>
             <h1 className="text-2xl font-bold">{t("ap_title")}</h1>
             <p className="text-sm text-muted-foreground">
-              {step === STEPS.UPLOAD && t("ap_step1")}
-              {step === STEPS.ANALYZING && t("ap_step2")}
-              {step === STEPS.VERIFY && t("ap_step3")}
-              {step === STEPS.DONE && t("ap_done")}
+              {mode === "copy" ? "Kopiuj produkt z bazy danych" :
+                step === STEPS.UPLOAD ? t("ap_step1") :
+                step === STEPS.ANALYZING ? t("ap_step2") :
+                step === STEPS.VERIFY ? t("ap_step3") :
+                t("ap_done")}
             </p>
           </div>
         </div>
-        {(step === STEPS.UPLOAD || step === STEPS.VERIFY) && (
+        {mode === "ai" && (step === STEPS.UPLOAD || step === STEPS.VERIFY) && (
           <Button 
             variant="outline" 
             onClick={() => setShowChat(true)} 
@@ -219,7 +222,32 @@ If you cannot determine something from photos — use null.`,
         )}
       </div>
 
-      {step === STEPS.UPLOAD && (
+      {/* Mode switcher — only on first step */}
+      {(mode === "ai" && step === STEPS.UPLOAD) || mode === "copy" ? (
+        <div className="flex gap-2 mb-6 bg-slate-100 rounded-xl p-1 w-fit">
+          <button
+            onClick={() => setMode("ai")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${mode === "ai" ? "bg-white shadow text-slate-900" : "text-slate-500 hover:text-slate-700"}`}
+          >
+            <Sparkles className="w-4 h-4" /> Analiza AI ze zdjęć
+          </button>
+          <button
+            onClick={() => setMode("copy")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${mode === "copy" ? "bg-white shadow text-slate-900" : "text-slate-500 hover:text-slate-700"}`}
+          >
+            <Copy className="w-4 h-4" /> Kopiuj z bazy
+          </button>
+        </div>
+      ) : null}
+
+      {mode === "copy" && (
+        <CopyFromCatalog
+          onSaved={() => {}}
+          onCancel={() => navigate("/Inventory")}
+        />
+      )}
+
+      {mode === "ai" && step === STEPS.UPLOAD && (
         <ImageUploader
           onImagesReady={handleImagesReady}
           onAnalyze={handleAnalyze}
@@ -229,9 +257,9 @@ If you cannot determine something from photos — use null.`,
         />
       )}
 
-      {step === STEPS.ANALYZING && <AiAnalysisStep />}
+      {mode === "ai" && step === STEPS.ANALYZING && <AiAnalysisStep />}
 
-      {step === STEPS.VERIFY && (
+      {mode === "ai" && step === STEPS.VERIFY && (
         <ProductVerifyForm
           aiData={aiData}
           images={uploadedImages}
@@ -240,7 +268,7 @@ If you cannot determine something from photos — use null.`,
         />
       )}
 
-      {step === STEPS.DONE && (() => {
+      {mode === "ai" && step === STEPS.DONE && (() => {
         const palletId = new URLSearchParams(window.location.search).get("pallet_id");
         return (
           <div className="text-center py-16 space-y-4">
@@ -269,7 +297,7 @@ If you cannot determine something from photos — use null.`,
         );
       })()}
 
-      {showChat && step === STEPS.VERIFY && (
+      {mode === "ai" && showChat && step === STEPS.VERIFY && (
         <AiChatAssistant 
           product={aiData} 
           onClose={() => setShowChat(false)} 
