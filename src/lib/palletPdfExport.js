@@ -12,6 +12,18 @@ export function exportDRP(pallet, products, docs) {
   const date   = drpDoc?.date || new Date().toISOString().split("T")[0];
   const totalValue = pallet.total_value || ((pallet.total_cost || 0) + (pallet.additional_costs || 0));
 
+  // Use saved items from DRP document (snapshot at time of explosion), fall back to live products
+  const items = (drpDoc?.items && drpDoc.items.length > 0) ? drpDoc.items : products.map(p => ({
+    product_id: p.id,
+    product_name: p.product_name,
+    internal_code: p.internal_code || "",
+    category: p.category || "",
+    condition: p.condition || "",
+    quantity: p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1,
+    unit_price: p.purchase_price || 0,
+    total_value: (p.purchase_price || 0) * (p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1),
+  }));
+
   addPageHeader(doc, "DRP — Protokol Rozbicia Palety / Dekompletacja", number, date);
   let y = 32;
 
@@ -21,12 +33,12 @@ export function exportDRP(pallet, products, docs) {
   y = infoRow(doc, "Wartosc zakupowa:", `${(pallet.total_cost || 0).toFixed(2)} PLN`, "Koszty dodatkowe:", `${(pallet.additional_costs || 0).toFixed(2)} PLN`, y);
   y = infoRow(doc, "Wartosc do rozliczenia:", `${totalValue.toFixed(2)} PLN`, "Metoda alokacji:", drpDoc?.allocation_method || pallet.allocation_method || "equal", y);
   y = infoRow(doc, "Dokument PZ:", pzDoc?.document_number || "—", "Dokument RW:", rwDoc?.document_number || "—", y);
-  y = infoRow(doc, "Dokument PW:", pwDoc?.document_number || "—", "Zatwierdzil:", pallet.exploded_by || "—", y);
+  y = infoRow(doc, "Dokument PW:", pwDoc?.document_number || "—", "Wystawil:", drpDoc?.created_by_name || pallet.exploded_by || "—", y);
   y += 4;
 
   y = sectionHeader(doc, "LISTA PRODUKTOW", y);
-  const cols = [14, 60, 95, 115, 140, 165];
-  const headers = ["Produkt / SKU", "Kategoria", "Stan", "Ilosc", "Cena spr.", "Koszt wl."];
+  const cols = [14, 65, 100, 120, 145, 170];
+  const headers = ["Produkt / SKU", "Kategoria", "Stan", "Ilosc", "Cena jedn.", "Wartosc"];
   doc.setFillColor(240, 240, 240); doc.rect(14, y, 182, 6, "F");
   doc.setFontSize(8); doc.setFont("helvetica", "bold");
   headers.forEach((h, i) => doc.text(h, cols[i] + 1, y + 4));
@@ -34,24 +46,26 @@ export function exportDRP(pallet, products, docs) {
 
   doc.setFont("helvetica", "normal");
   let totalAllocated = 0;
-  for (const p of products) {
+  for (const item of items) {
     if (y > 270) { doc.addPage(); y = 20; }
-    const qty = p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1;
+    const qty = item.quantity || 1;
+    const unitPrice = item.unit_price || 0;
+    const itemTotal = item.total_value != null ? item.total_value : unitPrice * qty;
     doc.setFontSize(8);
-    doc.text(pl((p.product_name || "—").substring(0, 26)), cols[0] + 1, y + 3);
-    if (p.internal_code) {
+    doc.text(pl((item.product_name || "—").substring(0, 28)), cols[0] + 1, y + 3);
+    if (item.internal_code) {
       doc.setFontSize(7); doc.setTextColor(130);
-      doc.text(p.internal_code, cols[0] + 1, y + 7);
+      doc.text(item.internal_code, cols[0] + 1, y + 7);
       doc.setFontSize(8); doc.setTextColor(0);
     }
-    doc.text(pl(p.category || "—"), cols[1] + 1, y + 3);
-    doc.text(pl(p.condition || "—"), cols[2] + 1, y + 3);
+    doc.text(pl(item.category || "—"), cols[1] + 1, y + 3);
+    doc.text(pl(item.condition || "—"), cols[2] + 1, y + 3);
     doc.text(String(qty), cols[3] + 1, y + 3);
-    doc.text(p.suggested_sale_price ? `${p.suggested_sale_price} PLN` : "—", cols[4] + 1, y + 3);
+    doc.text(`${unitPrice.toFixed(2)} PLN`, cols[4] + 1, y + 3);
     doc.setFont("helvetica", "bold");
-    doc.text(`${(p.purchase_price || 0).toFixed(2)} PLN`, cols[5] + 1, y + 3);
+    doc.text(`${itemTotal.toFixed(2)} PLN`, cols[5] + 1, y + 3);
     doc.setFont("helvetica", "normal");
-    totalAllocated += (p.purchase_price || 0) * qty;
+    totalAllocated += itemTotal;
     doc.setDrawColor(220); doc.line(14, y + 9, 196, y + 9);
     y += 10;
   }
