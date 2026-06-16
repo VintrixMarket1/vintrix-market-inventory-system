@@ -58,7 +58,7 @@ export default function MonthlyReport() {
 
   const { data: products = [], isLoading: loadingProducts } = useQuery({
     queryKey: ["products_all"],
-    queryFn: () => base44.entities.Product.list(),
+    queryFn: () => base44.entities.Product.list(null, 2000),
   });
 
   const isLoading = loadingDocs || loadingSales || loadingProducts;
