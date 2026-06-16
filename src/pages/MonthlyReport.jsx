@@ -61,7 +61,12 @@ export default function MonthlyReport() {
     queryFn: () => base44.entities.Product.list(null, 2000),
   });
 
-  const isLoading = loadingDocs || loadingSales || loadingProducts;
+  const { data: pallets = [], isLoading: loadingPallets } = useQuery({
+    queryKey: ["pallets_all"],
+    queryFn: () => base44.entities.Pallet.list(),
+  });
+
+  const isLoading = loadingDocs || loadingSales || loadingProducts || loadingPallets;
 
   const years = useMemo(() => {
     const ys = new Set();
@@ -104,24 +109,30 @@ export default function MonthlyReport() {
   const pwNet = sumNet(pwDocs);
   const rwNet = sumNet(rwDocs);
 
-  // Sprzedaże w miesiącu
+  // Sprzedaże w miesiącu — sale_price i purchase_price są kwotami BRUTTO, przeliczamy na netto
   const monthSales = sales.filter(s => filterByMonth(s.sale_date));
-  const totalRevenueNet = monthSales.reduce((s, x) => s + (x.sale_price || 0), 0);
-  const totalCostNet = monthSales.reduce((s, x) => s + (x.purchase_price || 0), 0);
+  const totalRevenueNet = monthSales.reduce((s, x) => s + toNet(x.sale_price || 0), 0);
+  const totalCostNet = monthSales.reduce((s, x) => s + toNet(x.purchase_price || 0), 0);
   const totalProfitNet = totalRevenueNet - totalCostNet;
   const marginPct = totalCostNet > 0 ? (totalProfitNet / totalCostNet) * 100 : 0;
 
-  // Stan magazynowy (in_stock + listed) — produkty netto
+  // Stan magazynowy (in_stock + listed) — purchase_price produktów to kwoty netto
   const activeProducts = products.filter(p => p.status === "in_stock" || p.status === "listed");
   const stockValueNet = activeProducts.reduce((s, p) => s + (p.purchase_price || 0), 0);
 
-  // Podział sprzedaży per platforma
+  // Nierozbite palety (accepted, sorting, ready) — ich total_value to kwoty netto (zakup)
+  const intactPallets = pallets.filter(p => ["accepted", "sorting", "ready"].includes(p.status));
+  const palletsValueNet = intactPallets.reduce((s, p) => s + (p.total_value || p.total_cost || 0), 0);
+
+  const totalStockValueNet = stockValueNet + palletsValueNet;
+
+  // Podział sprzedaży per platforma — sale_price/purchase_price są brutto, przeliczamy na netto
   const byPlatform = monthSales.reduce((acc, s) => {
     const p = s.platform || "inne";
     if (!acc[p]) acc[p] = { count: 0, revenueNet: 0, profitNet: 0 };
     acc[p].count++;
-    acc[p].revenueNet += s.sale_price || 0;
-    acc[p].profitNet += (s.sale_price || 0) - (s.purchase_price || 0);
+    acc[p].revenueNet += toNet(s.sale_price || 0);
+    acc[p].profitNet += toNet(s.sale_price || 0) - toNet(s.purchase_price || 0);
     return acc;
   }, {});
 
@@ -149,42 +160,58 @@ export default function MonthlyReport() {
       [`Marża (%)`, `${marginPct.toFixed(1)}%`, `${marginPct.toFixed(1)}%`],
       ["", "", ""],
       ["STAN MAGAZYNOWY (aktywne)", "NETTO (PLN)", "BRUTTO (PLN)"],
-      [`${activeProducts.length} produktów`, stockValueNet.toFixed(2), toGross(stockValueNet).toFixed(2)],
+      [`Produkty rozbite: ${activeProducts.length} szt.`, stockValueNet.toFixed(2), toGross(stockValueNet).toFixed(2)],
+      [`Palety nierozbite: ${intactPallets.length} szt.`, palletsValueNet.toFixed(2), toGross(palletsValueNet).toFixed(2)],
+      [`ŁĄCZNIE`, totalStockValueNet.toFixed(2), toGross(totalStockValueNet).toFixed(2)],
     ];
     const ws1 = XLSX.utils.aoa_to_sheet(summary);
     ws1["!cols"] = [{ wch: 40 }, { wch: 18 }, { wch: 18 }];
     XLSX.utils.book_append_sheet(wb, ws1, "Podsumowanie");
 
-    // Arkusz 2 — Sprzedaże
+    // Arkusz 2 — Sprzedaże (sale_price i purchase_price są brutto)
     const salesRows = monthSales.map((s, i) => ({
       "Lp.": i + 1,
       "Data": s.sale_date || "",
       "Produkt": s.product_name || "",
       "Platforma": s.platform || "",
       "Klient": s.customer_name || "",
-      "Przychód netto (PLN)": s.sale_price || 0,
-      "Przychód brutto (PLN)": parseFloat(toGross(s.sale_price || 0).toFixed(2)),
-      "Koszt netto (PLN)": s.purchase_price || 0,
-      "Koszt brutto (PLN)": parseFloat(toGross(s.purchase_price || 0).toFixed(2)),
-      "Zysk netto (PLN)": parseFloat(((s.sale_price || 0) - (s.purchase_price || 0)).toFixed(2)),
+      "Przychód netto (PLN)": parseFloat(toNet(s.sale_price || 0).toFixed(2)),
+      "Przychód brutto (PLN)": parseFloat((s.sale_price || 0).toFixed(2)),
+      "Koszt netto (PLN)": parseFloat(toNet(s.purchase_price || 0).toFixed(2)),
+      "Koszt brutto (PLN)": parseFloat((s.purchase_price || 0).toFixed(2)),
+      "Zysk netto (PLN)": parseFloat((toNet(s.sale_price || 0) - toNet(s.purchase_price || 0)).toFixed(2)),
       "Dok. WZ": s.wz_document_number || "",
     }));
     const ws2 = XLSX.utils.json_to_sheet(salesRows);
     ws2["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 40 }, { wch: 14 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
     XLSX.utils.book_append_sheet(wb, ws2, "Sprzedaże");
 
-    // Arkusz 3 — Stan magazynowy
+    // Arkusz 3 — Stan magazynowy (produkty rozbite)
     const stockRows = activeProducts.map((p, i) => ({
       "Lp.": i + 1,
       "SKU": p.internal_code || "",
       "Produkt": p.product_name || "",
       "Status": p.status || "",
-      "Cena zakupu netto (PLN)": p.purchase_price || 0,
-      "Cena zakupu brutto (PLN)": parseFloat(toGross(p.purchase_price || 0).toFixed(2)),
+      "Wartość netto (PLN)": p.purchase_price || 0,
+      "Wartość brutto (PLN)": parseFloat(toGross(p.purchase_price || 0).toFixed(2)),
     }));
     const ws3 = XLSX.utils.json_to_sheet(stockRows);
     ws3["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 45 }, { wch: 12 }, { wch: 22 }, { wch: 22 }];
-    XLSX.utils.book_append_sheet(wb, ws3, "Stan magazynowy");
+    XLSX.utils.book_append_sheet(wb, ws3, "Stan magazynowy - produkty");
+
+    // Arkusz 4 — Nierozbite palety
+    const palletRows = intactPallets.map((p, i) => ({
+      "Lp.": i + 1,
+      "Kod palety": p.pallet_code || "",
+      "Inwestor": p.investor_name || "",
+      "Status": p.status || "",
+      "Data zakupu": p.purchase_date || "",
+      "Wartość netto (PLN)": p.total_value || p.total_cost || 0,
+      "Wartość brutto (PLN)": parseFloat(toGross(p.total_value || p.total_cost || 0).toFixed(2)),
+    }));
+    const ws4 = XLSX.utils.json_to_sheet(palletRows);
+    ws4["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 22 }];
+    XLSX.utils.book_append_sheet(wb, ws4, "Stan magazynowy - palety");
 
     XLSX.writeFile(wb, `raport_${selectedYear}_${selectedMonth}_vintrix.xlsx`);
   };
@@ -255,20 +282,25 @@ export default function MonthlyReport() {
           {/* Stock value */}
           <div>
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Stan magazynowy (bieżący)</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Liczba produktów</p>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Produkty (rozbite)</p>
                 <p className="text-xl font-bold text-slate-900">{activeProducts.length} szt.</p>
-                <p className="text-xs text-slate-400 mt-0.5">in_stock + listed</p>
+                <p className="text-xs text-slate-400 mt-0.5">{stockValueNet.toFixed(2)} PLN netto</p>
               </div>
               <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Wartość netto</p>
-                <p className="text-xl font-bold text-slate-900">{stockValueNet.toFixed(2)} PLN</p>
-                <p className="text-xs text-slate-400 mt-0.5">ceny zakupu</p>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Palety (nierozbite)</p>
+                <p className="text-xl font-bold text-slate-900">{intactPallets.length} szt.</p>
+                <p className="text-xs text-slate-400 mt-0.5">{palletsValueNet.toFixed(2)} PLN netto</p>
+              </div>
+              <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
+                <p className="text-xs font-medium text-blue-600 uppercase tracking-wider mb-2">Łączna wartość netto</p>
+                <p className="text-xl font-bold text-blue-900">{totalStockValueNet.toFixed(2)} PLN</p>
+                <p className="text-xs text-blue-400 mt-0.5">produkty + palety</p>
               </div>
               <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Wartość brutto</p>
-                <p className="text-xl font-bold text-slate-700">{toGross(stockValueNet).toFixed(2)} PLN</p>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Łączna wartość brutto</p>
+                <p className="text-xl font-bold text-slate-700">{toGross(totalStockValueNet).toFixed(2)} PLN</p>
                 <p className="text-xs text-slate-400 mt-0.5">+23% VAT</p>
               </div>
             </div>
@@ -337,15 +369,17 @@ export default function MonthlyReport() {
                   </thead>
                   <tbody>
                     {monthSales.map((s) => {
-                      const profit = (s.sale_price || 0) - (s.purchase_price || 0);
+                      const salePriceNet = toNet(s.sale_price || 0);
+                      const purchasePriceNet = toNet(s.purchase_price || 0);
+                      const profit = salePriceNet - purchasePriceNet;
                       return (
                         <tr key={s.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
                           <td className="px-4 py-2.5 text-slate-500">{s.sale_date ? format(new Date(s.sale_date), "dd.MM.yyyy") : "—"}</td>
                           <td className="px-4 py-2.5 text-slate-800 font-medium max-w-[200px] truncate">{s.product_name || "—"}</td>
                           <td className="px-4 py-2.5 text-slate-500 capitalize">{s.platform || "—"}</td>
-                          <td className="px-4 py-2.5 text-right text-slate-900 font-semibold">{(s.sale_price || 0).toFixed(2)}</td>
-                          <td className="px-4 py-2.5 text-right text-slate-500">{toGross(s.sale_price || 0).toFixed(2)}</td>
-                          <td className="px-4 py-2.5 text-right text-slate-500">{(s.purchase_price || 0).toFixed(2)}</td>
+                          <td className="px-4 py-2.5 text-right text-slate-900 font-semibold">{salePriceNet.toFixed(2)}</td>
+                          <td className="px-4 py-2.5 text-right text-slate-500">{(s.sale_price || 0).toFixed(2)}</td>
+                          <td className="px-4 py-2.5 text-right text-slate-500">{purchasePriceNet.toFixed(2)}</td>
                           <td className={`px-4 py-2.5 text-right font-semibold ${profit >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                             {profit >= 0 ? "+" : ""}{profit.toFixed(2)}
                           </td>
