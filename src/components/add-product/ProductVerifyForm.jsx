@@ -15,11 +15,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, CheckCircle, ArrowLeft } from "lucide-react";
 import AiConfidenceBadge from "./AiConfidenceBadge";
-import { SUBCATEGORIES } from "@/lib/subcategories";
 import { useLang } from "@/lib/i18n";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CATEGORY_GROUPS, SUBCATEGORIES_BY_CATEGORY } from "@/lib/categoryConfig";
 
-const CATEGORIES = ["clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
 const CONDITIONS = ["new", "like_new", "used"];
 const GENDERS = ["men", "women", "unisex", "kids", "none"];
 
@@ -150,20 +149,27 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label>{isPolish ? "Kategoria *" : "Category *"}</Label>
-            <Select value={form.category} onValueChange={(v) => { set("category", v); set("subcategory", ""); }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <select
+              value={form.category}
+              onChange={(e) => { set("category", e.target.value); set("subcategory", ""); }}
+              className="w-full h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              {CATEGORY_GROUPS.map(group => (
+                <optgroup key={group.group} label={`${group.icon} ${group.group}`}>
+                  {group.items.map(item => (
+                    <option key={item.value} value={item.value}>{item.label}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </div>
           <div className="space-y-1.5">
             <Label>{isPolish ? "Podkategoria" : "Subcategory"}</Label>
             <Select value={form.subcategory || ""} onValueChange={(v) => set("subcategory", v)}>
               <SelectTrigger><SelectValue placeholder={isPolish ? "Wybierz..." : "Select..."} /></SelectTrigger>
               <SelectContent>
-                {(SUBCATEGORIES[form.category] || []).map((s) => (
-                  <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+                {(SUBCATEGORIES_BY_CATEGORY[form.category] || []).map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

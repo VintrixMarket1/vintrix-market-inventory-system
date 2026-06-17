@@ -50,7 +50,7 @@ ${aiNotes ? `\n=== UWAGI OD SPRZEDAWCY (traktuj jako pewne informacje) ===\n${ai
 Przeanalizuj dokładnie zdjęcia i określ:
 - product_name: pełna nazwa (marka + model/typ + główna cecha, np. "Nike Air Max 90 białe sneakersy")
 - brand: dokładna marka (lub null jeśli nierozpoznawalna)
-- category: clothing, shoes, accessories, electronics, home, toys, sports, books, other
+- category: jedna z wartości: clothing_men, clothing_women, clothing_kids, clothing_sport, shoes_men, shoes_women, shoes_kids, shoes_sport, accessories_bags, accessories_belts, accessories_hats, accessories_scarves, accessories_jewelry, accessories_watches, accessories_sunglasses, accessories_wallets, electronics_phones, electronics_tablets, electronics_laptops, electronics_audio, electronics_tv, electronics_cameras, electronics_gaming, electronics_accessories, home_furniture, home_kitchen, home_agd_large, home_agd_cleaning, home_agd_personal, home_agd_laundry, home_bedding, home_decor, home_lighting, home_garden, home_tools, home_bathroom, toys_kids, toys_board_games, toys_outdoor, toys_educational, toys_lego, toys_dolls, sports_fitness, sports_cycling, sports_winter, sports_water, sports_team, sports_outdoor, books_fiction, books_nonfiction, books_kids, books_comics, books_textbooks, beauty_cosmetics, beauty_perfumes, beauty_haircare, beauty_skincare, automotive_parts, automotive_accessories, automotive_tools, pet_food, pet_accessories, pet_clothing, food_supplements, health_medical, music_instruments, music_vinyl, art_paintings, art_collectibles, other
 - gender: men, women, unisex, kids, none
 - condition: new (metki, nieużywany), like_new (minimalne ślady), used (widoczne użytkowanie)
 - size: rozmiar jeśli widoczny na zdjęciach lub metkach
@@ -86,7 +86,7 @@ ${aiNotes ? `\n=== SELLER NOTES (treat as reliable facts) ===\n${aiNotes}\n` : "
 Carefully analyze the photos and determine:
 - product_name: full name (brand + model/type + main feature, e.g. "Nike Air Max 90 White Sneakers")
 - brand: exact brand name (or null if unrecognizable)
-- category: clothing, shoes, accessories, electronics, home, toys, sports, books, other
+- category: one of: clothing_men, clothing_women, clothing_kids, clothing_sport, shoes_men, shoes_women, shoes_kids, shoes_sport, accessories_bags, accessories_belts, accessories_hats, accessories_scarves, accessories_jewelry, accessories_watches, accessories_sunglasses, accessories_wallets, electronics_phones, electronics_tablets, electronics_laptops, electronics_audio, electronics_tv, electronics_cameras, electronics_gaming, electronics_accessories, home_furniture, home_kitchen, home_agd_large, home_agd_cleaning, home_agd_personal, home_agd_laundry, home_bedding, home_decor, home_lighting, home_garden, home_tools, home_bathroom, toys_kids, toys_board_games, toys_outdoor, toys_educational, toys_lego, toys_dolls, sports_fitness, sports_cycling, sports_winter, sports_water, sports_team, sports_outdoor, books_fiction, books_nonfiction, books_kids, books_comics, books_textbooks, beauty_cosmetics, beauty_perfumes, beauty_haircare, beauty_skincare, automotive_parts, automotive_accessories, automotive_tools, pet_food, pet_accessories, pet_clothing, food_supplements, health_medical, music_instruments, music_vinyl, art_paintings, art_collectibles, other
 - gender: men, women, unisex, kids, none
 - condition: new (tags on, unused), like_new (minimal signs), used (visible wear)
 - size: size if visible in photos or labels
