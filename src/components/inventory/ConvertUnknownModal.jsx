@@ -130,23 +130,27 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
 
   const fileRef = useRef();
 
-  // Catalog search with debounce
+  // Catalog search with debounce — load all non-unknown products, filter client-side
   useEffect(() => {
     if (uploadMode !== "catalog") return;
     clearTimeout(catalogSearchTimeout.current);
-    if (!catalogSearch.trim()) { setCatalogProducts([]); return; }
     catalogSearchTimeout.current = setTimeout(async () => {
       setCatalogLoading(true);
-      const results = await base44.entities.Product.filter({ status: "in_stock" }, "-created_date", 30);
-      const lower = catalogSearch.toLowerCase();
-      setCatalogProducts(
-        results.filter(p =>
-          p.product_name !== "Nieznany produkt" &&
-          (p.product_name?.toLowerCase().includes(lower) ||
-           p.brand?.toLowerCase().includes(lower) ||
-           p.internal_code?.toLowerCase().includes(lower))
-        ).slice(0, 10)
-      );
+      // Fetch a large set of products (in_stock + listed), exclude unknown
+      const [inStock, listed] = await Promise.all([
+        base44.entities.Product.filter({ status: "in_stock" }, "-created_date", 200),
+        base44.entities.Product.filter({ status: "listed" }, "-created_date", 200),
+      ]);
+      const all = [...inStock, ...listed].filter(p => p.product_name !== "Nieznany produkt");
+      const lower = catalogSearch.trim().toLowerCase();
+      const filtered = lower
+        ? all.filter(p =>
+            p.product_name?.toLowerCase().includes(lower) ||
+            p.brand?.toLowerCase().includes(lower) ||
+            p.internal_code?.toLowerCase().includes(lower)
+          )
+        : all;
+      setCatalogProducts(filtered.slice(0, 20));
       setCatalogLoading(false);
     }, 300);
   }, [catalogSearch, uploadMode]);
@@ -512,8 +516,8 @@ Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, goto
                          <Loader2 className="w-4 h-4 animate-spin" /> Szukam…
                        </div>
                      )}
-                     {!catalogLoading && catalogSearch.trim() && catalogProducts.length === 0 && (
-                       <p className="text-sm text-slate-400 py-2 text-center">Brak wyników</p>
+                     {!catalogLoading && catalogProducts.length === 0 && (
+                       <p className="text-sm text-slate-400 py-2 text-center">{catalogSearch.trim() ? "Brak wyników" : "Ładowanie…"}</p>
                      )}
                      <div className="space-y-2 max-h-64 overflow-y-auto">
                        {catalogProducts.map(p => (
