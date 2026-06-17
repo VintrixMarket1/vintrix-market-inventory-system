@@ -11,7 +11,7 @@ import { Upload, X, Loader2, RefreshCw, Package, Sparkles, MessageSquare } from 
 import { compressImage } from "@/lib/compressImage";
 import { useQuery } from "@tanstack/react-query";
 import { useLang } from "@/lib/i18n";
-import { CATEGORY_GROUPS, SUBCATEGORIES_BY_CATEGORY } from "@/lib/categoryConfig";
+import { CATEGORY_GROUPS, SUBCATEGORIES_BY_CATEGORY, CATEGORY_LABELS } from "@/lib/categoryConfig";
 
 const generateSKU = (category) => {
   const prefix = (category || "other").slice(0, 3).toUpperCase();
@@ -283,19 +283,19 @@ Generate ONLY the ready HTML. Start with <p>.`;
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-1.5">
               <Label>{t("pf_category")} *</Label>
-              <Select value={form.category} onValueChange={v => handleChange("category", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {CATEGORY_GROUPS.map(group => (
-                    <React.Fragment key={group.group}>
-                      <div className="px-2 py-1 text-xs font-semibold text-slate-400 uppercase">{group.icon} {group.group}</div>
-                      {group.items.map(item => (
-                        <SelectItem key={item.value} value={item.value} className="pl-5">{item.label}</SelectItem>
-                      ))}
-                    </React.Fragment>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                value={form.category}
+                onChange={e => handleChange("category", e.target.value)}
+                className="w-full h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {CATEGORY_GROUPS.map(group => (
+                  <optgroup key={group.group} label={`${group.icon} ${group.group}`}>
+                    {group.items.map(item => (
+                      <option key={item.value} value={item.value}>{item.label}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
             </div>
             <div className="space-y-1.5">
               <Label>{t("pf_subcategory")}</Label>
