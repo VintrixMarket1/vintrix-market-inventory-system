@@ -14,42 +14,7 @@ import {
 import { compressImage } from "@/lib/compressImage";
 import { generateDocumentNumber } from "@/lib/documentNumber";
 import { exportDptPdf } from "@/lib/dptPdfExport";
-
-const CATEGORY_OPTIONS = [
-  { value: "clothing_men", label: "Odzież męska" },
-  { value: "clothing_women", label: "Odzież damska" },
-  { value: "clothing_kids", label: "Odzież dziecięca" },
-  { value: "clothing_sport", label: "Odzież sportowa" },
-  { value: "shoes_men", label: "Obuwie męskie" },
-  { value: "shoes_women", label: "Obuwie damskie" },
-  { value: "shoes_kids", label: "Obuwie dziecięce" },
-  { value: "electronics_phones", label: "Telefony" },
-  { value: "electronics_tablets", label: "Tablety" },
-  { value: "electronics_laptops", label: "Laptopy" },
-  { value: "electronics_audio", label: "Audio" },
-  { value: "electronics_tv", label: "TV" },
-  { value: "electronics_cameras", label: "Aparaty / kamery" },
-  { value: "electronics_gaming", label: "Gaming" },
-  { value: "electronics_accessories", label: "Akcesoria elektroniczne" },
-  { value: "home_furniture", label: "Meble" },
-  { value: "home_kitchen", label: "Kuchnia" },
-  { value: "home_agd_large", label: "AGD duże" },
-  { value: "home_agd_cleaning", label: "AGD do sprzątania" },
-  { value: "home_agd_personal", label: "AGD osobiste" },
-  { value: "home_agd_laundry", label: "AGD pralnia" },
-  { value: "home_bedding", label: "Pościel / Tekstylia" },
-  { value: "home_decor", label: "Dekoracje" },
-  { value: "home_tools", label: "Narzędzia" },
-  { value: "toys_kids", label: "Zabawki" },
-  { value: "toys_board_games", label: "Gry planszowe" },
-  { value: "toys_lego", label: "LEGO" },
-  { value: "sports_fitness", label: "Sport / Fitness" },
-  { value: "beauty_cosmetics", label: "Kosmetyki" },
-  { value: "beauty_perfumes", label: "Perfumy" },
-  { value: "automotive_parts", label: "Motoryzacja — części" },
-  { value: "automotive_accessories", label: "Motoryzacja — akcesoria" },
-  { value: "other", label: "Inne" },
-];
+import { CATEGORY_GROUPS, CATEGORY_LABELS } from "@/lib/categoryConfig";
 
 const CONDITION_OPTIONS = [
   { value: "new", label: "Nowy" },
@@ -672,7 +637,13 @@ Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, goto
                       onChange={e => handleFormChange("category", e.target.value)}
                       className="w-full h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      {CATEGORY_OPTIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      {CATEGORY_GROUPS.map(group => (
+                        <optgroup key={group.group} label={`${group.icon} ${group.group}`}>
+                          {group.items.map(item => (
+                            <option key={item.value} value={item.value}>{item.label}</option>
+                          ))}
+                        </optgroup>
+                      ))}
                     </select>
                   </FieldRow>
                   <FieldRow label="Stan" required>
@@ -769,7 +740,7 @@ Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, goto
                     <div className="text-slate-500">Nowe SKU</div>
                     <div className="font-mono text-slate-600 text-xs">{form.internal_code}</div>
                     <div className="text-slate-500">Kategoria</div>
-                    <div>{CATEGORY_OPTIONS.find(c => c.value === form.category)?.label || form.category}</div>
+                    <div>{CATEGORY_LABELS[form.category] || form.category}</div>
                     <div className="text-slate-500">Stan</div>
                     <div>{CONDITION_OPTIONS.find(c => c.value === form.condition)?.label}</div>
                     <div className="text-slate-500">Ilość</div>
