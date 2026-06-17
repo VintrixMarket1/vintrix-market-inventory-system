@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   X, Upload, Sparkles, Loader2, CheckCircle, AlertTriangle,
-  ChevronRight, RotateCcw, FileText, Camera, Info
+  ChevronRight, RotateCcw, FileText, Camera, Info, BookCopy, Search
 } from "lucide-react";
 import { compressImage } from "@/lib/compressImage";
 import { generateDocumentNumber } from "@/lib/documentNumber";
@@ -90,6 +90,14 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
 
   // Step: "upload" → "analyzing" → "form" → "confirm" → "done"
   const [step, setStep] = useState("upload");
+  // Mode for upload step: "ai" | "catalog"
+  const [uploadMode, setUploadMode] = useState("ai");
+  // Catalog search
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [catalogProducts, setCatalogProducts] = useState([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [selectedCatalogProduct, setSelectedCatalogProduct] = useState(null);
+  const catalogSearchTimeout = useRef(null);
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [analysisNotes, setAnalysisNotes] = useState("");
@@ -121,6 +129,46 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
   const [valueDiffConfirmed, setValueDiffConfirmed] = useState(false);
 
   const fileRef = useRef();
+
+  // Catalog search with debounce
+  useEffect(() => {
+    if (uploadMode !== "catalog") return;
+    clearTimeout(catalogSearchTimeout.current);
+    if (!catalogSearch.trim()) { setCatalogProducts([]); return; }
+    catalogSearchTimeout.current = setTimeout(async () => {
+      setCatalogLoading(true);
+      const results = await base44.entities.Product.filter({ status: "in_stock" }, "-created_date", 30);
+      const lower = catalogSearch.toLowerCase();
+      setCatalogProducts(
+        results.filter(p =>
+          p.product_name !== "Nieznany produkt" &&
+          (p.product_name?.toLowerCase().includes(lower) ||
+           p.brand?.toLowerCase().includes(lower) ||
+           p.internal_code?.toLowerCase().includes(lower))
+        ).slice(0, 10)
+      );
+      setCatalogLoading(false);
+    }, 300);
+  }, [catalogSearch, uploadMode]);
+
+  const applyCatalogProduct = (p) => {
+    setSelectedCatalogProduct(p);
+    setForm(prev => ({
+      ...prev,
+      product_name: p.product_name || prev.product_name,
+      brand: p.brand || prev.brand,
+      category: p.category || prev.category,
+      subcategory: p.subcategory || prev.subcategory,
+      condition: p.condition || prev.condition,
+      size: p.size || prev.size,
+      color: p.color || prev.color,
+      listing_title: p.listing_title || prev.listing_title,
+      listing_description: p.listing_description || prev.listing_description,
+      suggested_sale_price: p.suggested_sale_price ? String(p.suggested_sale_price) : prev.suggested_sale_price,
+    }));
+    if (p.images?.length) setImages(p.images);
+    setStep("form");
+  };
 
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files || []);
@@ -419,18 +467,86 @@ Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, goto
             )}
 
             {/* STEP: upload + AI */}
-            {!validationError && step === "upload" && (
-              <div className="p-6 space-y-5">
-                {/* Source product info */}
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
-                  <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-800">
-                    <p className="font-semibold">Oryginalny produkt zostanie oznaczony jako „Przeklasyfikowany".</p>
-                    <p className="text-xs mt-0.5">Wartość magazynowa: <strong>{product.purchase_price} PLN</strong> · Paleta: <strong>{pallet?.pallet_code || "brak"}</strong></p>
-                  </div>
-                </div>
+             {!validationError && step === "upload" && (
+               <div className="p-6 space-y-5">
+                 {/* Source product info */}
+                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
+                   <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                   <div className="text-sm text-amber-800">
+                     <p className="font-semibold">Oryginalny produkt zostanie oznaczony jako „Przeklasyfikowany".</p>
+                     <p className="text-xs mt-0.5">Wartość magazynowa: <strong>{product.purchase_price} PLN</strong> · Paleta: <strong>{pallet?.pallet_code || "brak"}</strong></p>
+                   </div>
+                 </div>
 
-                {/* Image upload */}
+                 {/* Mode switcher */}
+                 <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+                   <button
+                     onClick={() => setUploadMode("ai")}
+                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium transition-colors ${uploadMode === "ai" ? "bg-emerald-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+                   >
+                     <Sparkles className="w-4 h-4" /> Analiza AI
+                   </button>
+                   <button
+                     onClick={() => setUploadMode("catalog")}
+                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium transition-colors ${uploadMode === "catalog" ? "bg-emerald-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+                   >
+                     <BookCopy className="w-4 h-4" /> Z biblioteki
+                   </button>
+                 </div>
+
+                 {/* CATALOG MODE */}
+                 {uploadMode === "catalog" && (
+                   <div className="space-y-3">
+                     <div className="relative">
+                       <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                       <Input
+                         className="pl-9 text-sm"
+                         placeholder="Szukaj po nazwie, marce lub SKU…"
+                         value={catalogSearch}
+                         onChange={e => setCatalogSearch(e.target.value)}
+                         autoFocus
+                       />
+                     </div>
+                     {catalogLoading && (
+                       <div className="flex items-center gap-2 text-sm text-slate-500 py-2">
+                         <Loader2 className="w-4 h-4 animate-spin" /> Szukam…
+                       </div>
+                     )}
+                     {!catalogLoading && catalogSearch.trim() && catalogProducts.length === 0 && (
+                       <p className="text-sm text-slate-400 py-2 text-center">Brak wyników</p>
+                     )}
+                     <div className="space-y-2 max-h-64 overflow-y-auto">
+                       {catalogProducts.map(p => (
+                         <button
+                           key={p.id}
+                           onClick={() => applyCatalogProduct(p)}
+                           className="w-full text-left flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition-colors"
+                         >
+                           {p.images?.[0] ? (
+                             <img src={p.images[0]} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                           ) : (
+                             <div className="w-12 h-12 rounded-lg bg-slate-100 shrink-0 flex items-center justify-center">
+                               <Camera className="w-5 h-5 text-slate-300" />
+                             </div>
+                           )}
+                           <div className="min-w-0">
+                             <p className="text-sm font-medium text-slate-800 truncate">{p.product_name}</p>
+                             <p className="text-xs text-slate-500">{p.brand || "—"} · {p.internal_code || "brak SKU"}</p>
+                             <p className="text-xs text-emerald-700 font-mono">{p.suggested_sale_price ? `${p.suggested_sale_price} PLN` : ""}</p>
+                           </div>
+                           <ChevronRight className="w-4 h-4 text-slate-300 ml-auto shrink-0" />
+                         </button>
+                       ))}
+                     </div>
+                     <Button variant="outline" className="w-full gap-1.5" onClick={() => setStep("form")}>
+                       Pomiń, wypełnię ręcznie <ChevronRight className="w-4 h-4" />
+                     </Button>
+                   </div>
+                 )}
+
+                 {/* AI MODE */}
+                 {uploadMode === "ai" && (<>
+                 {/* Image upload */}
                 <div>
                   <Label className="text-sm font-semibold text-slate-700 mb-2 block flex items-center gap-1.5">
                     <Camera className="w-4 h-4" /> Zdjęcia produktu
@@ -489,18 +605,30 @@ Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, goto
                   </Button>
                 </div>
                 {analyzing && (
-                  <div className="bg-slate-50 rounded-xl p-4 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-emerald-500 mx-auto mb-2" />
-                    <p className="text-sm text-slate-600 font-medium">AI analizuje produkt…</p>
-                    <p className="text-xs text-slate-400 mt-1">Identyfikacja, wycena i generowanie opisu. Chwilę to zajmie.</p>
-                  </div>
+                   <div className="bg-slate-50 rounded-xl p-4 text-center">
+                     <Loader2 className="w-6 h-6 animate-spin text-emerald-500 mx-auto mb-2" />
+                     <p className="text-sm text-slate-600 font-medium">AI analizuje produkt…</p>
+                     <p className="text-xs text-slate-400 mt-1">Identyfikacja, wycena i generowanie opisu. Chwilę to zajmie.</p>
+                   </div>
+                 )}
+                 </>)}
+                </div>
                 )}
-              </div>
-            )}
 
-            {/* STEP: form */}
+                {/* STEP: form */}
             {!validationError && step === "form" && (
               <div className="p-6 space-y-5">
+                {/* Catalog copy info */}
+                {selectedCatalogProduct && !aiResult && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
+                    <BookCopy className="w-4 h-4 text-blue-600 shrink-0" />
+                    <div className="text-sm text-blue-800">
+                      <span className="font-semibold">Skopiowano z biblioteki:</span> {selectedCatalogProduct.product_name}
+                      {selectedCatalogProduct.brand && ` · ${selectedCatalogProduct.brand}`}
+                    </div>
+                  </div>
+                )}
+
                 {/* AI result summary */}
                 {aiResult && (
                   <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
