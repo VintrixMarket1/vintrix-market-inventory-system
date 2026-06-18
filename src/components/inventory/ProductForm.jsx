@@ -467,8 +467,13 @@ Generate ONLY the ready HTML. Start with <p>.`;
               onClose={() => setShowChat(false)}
               onDataChanged={async () => {
                 if (product?.id) {
-                  const updated = await base44.entities.Product.filter({ id: product.id });
-                  if (updated && updated.length > 0) setForm(updated[0]);
+                  try {
+                    const updated = await base44.entities.Product.list();
+                    const found = updated.find(p => p.id === product.id);
+                    if (found) setForm(found);
+                  } catch (e) {
+                    console.error("onDataChanged error:", e);
+                  }
                 }
               }}
             />

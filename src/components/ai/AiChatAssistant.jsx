@@ -243,7 +243,7 @@ ZAWSZE odpowiadaj po polsku.`;
                   ? "bg-blue-500 text-white"
                   : "bg-white border border-slate-200 text-slate-800"
               }`}>
-                <p className="whitespace-pre-wrap">{msg.content}</p>
+                <p className="whitespace-pre-wrap">{typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content)}</p>
               </div>
             </div>
 
