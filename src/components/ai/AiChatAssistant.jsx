@@ -171,14 +171,14 @@ ZAWSZE odpowiadaj po polsku.`;
                 type: "object",
                 properties: {
                   field: { type: "string" },
-                  value: {},
+                  value: { type: "string" },
                   reason: { type: "string" }
                 }
               }
             }
           }
         },
-        model: "gpt_5_5",
+        model: "claude_sonnet_4_6",
       });
 
       const actions = (result.actions || []).map((a, i) => ({
@@ -193,7 +193,8 @@ ZAWSZE odpowiadaj po polsku.`;
         actions: actions.length > 0 ? actions : undefined,
       }]);
     } catch (err) {
-      setMessages(prev => [...prev, { role: "assistant", content: "Przepraszam, wystąpił błąd. Spróbuj ponownie." }]);
+      console.error("AiChatAssistant error:", err);
+      setMessages(prev => [...prev, { role: "assistant", content: `Przepraszam, wystąpił błąd: ${err?.message || String(err)}` }]);
     } finally {
       setLoading(false);
     }
