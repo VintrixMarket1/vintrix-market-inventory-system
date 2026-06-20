@@ -113,51 +113,18 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
 - Kategoria: ${form.category}${form.subcategory ? ` / ${form.subcategory}` : ""}
 - Notatki sprzedawcy: ${form.notes || "brak"}
 
-=== ZASADY COPYWRITINGU ===
+=== ZASADY ===
 - Zacznij od najmocniejszej cechy produktu — tej, która przyciąga uwagę kupującego
 - Używaj konkretnych, opisowych przymiotników zamiast ogólników
 - Podkreśl wartość (co kupujący zyska) a nie tylko cechy
 - Stan opisz szczerze ale pozytywnie
-- Używaj emoji tam gdzie pasują — ✨ 🚀 📦 itp.
 - Pisz naturalnie, angażująco — jak do znajomego
 
-=== WYMAGANIA TECHNICZNE ===
-- Dozwolone tagi: p, ul, li, b, br
-- BRAK atrybutów w tagach (żadnych class, style, id)
-- BRAK h1, h2, h3, div, span, CSS, img
-- Czysty HTML — bez komentarzy, bez wstępów${isClothing ? `
-
-=== FORMAT DLA ODZIEŻY/OBUWIA (OBOWIĄZKOWY) ===
-Wzoruj się DOKŁADNIE na tym formacie:
-
-<p>Proszę sprawdzić wymiary przed zakupem!</p>
-<p>[Chwytliwy, emocjonalny opis produktu — co to jest, dlaczego wyróżnia się z tłumu, na jakie okazje idealny (festiwale, imprezy, koncerty, itp.) ✨]</p>
-<p><b>Rozmiar na metce:</b> [rozmiar]<br><b>Rzeczywisty krój:</b> [np. ok. M/L, w zależności od pożądanego dopasowania]</p>
-<p><b>Wymiary:</b></p>
-<ul>
-<li>Talia/Klatka/Ramiona: [X] cm na płasko</li>
-<li>Długość: [X] cm</li>
-<li>[inne wymiary pasujące do produktu]</li>
-</ul>
-<p><b>Cechy:</b></p>
-<ul>
-<li>[cecha 1 — konkretna i atrakcyjna]</li>
-<li>[cecha 2]</li>
-<li>[cecha 3]</li>
-<li>[cecha 4]</li>
-<li>[cecha 5 — opcjonalnie: okazje/stylizacje]</li>
-</ul>
-<p>[Zdanie zamykające — zachęcające, opisujące kiedy warto kupić, z emoji] ✨</p>
-<p>Szybka wysyłka 🚀📦</p>
-
-WAŻNE: Jeśli nie znasz wymiarów (brak w notatkach), pomiń sekcję wymiarów, ale zachowaj resztę struktury.` : `
-
-=== STRUKTURA ===
-1. <p> — 2-3 zdania haczyka: co to jest + dlaczego warto kupić
-2. <p> — szczery opis stanu: co sprawdzono, co jest jak nowe
-3. <ul> "Parametry:" — kluczowe dane w formacie <b>parametr:</b> wartość`}
-
-Wygeneruj WYŁĄCZNIE gotowy HTML. Zacznij od <p>.`
+=== FORMAT WYJŚCIOWY ===
+Czysty tekst, BEZ HTML, BEZ tagów, BEZ markdown.
+3-5 zdań: co to jest i do czego służy, dlaczego warto (marka, jakość), szczery opis stanu, konkretne parametry (rozmiar, kolor).
+${isClothing ? "Dla odzieży/obuwia zacznij od: 'Proszę sprawdzić wymiary przed zakupem!' jeśli rozmiar jest istotny." : ""}
+Pisz po polsku. Żadnych tagów HTML ani formatowania.`
       : `You are an e-commerce copywriting expert specializing in second-hand sales on OLX/Vinted/eBay. Your description must SELL the product — quickly and effectively.
 
 === PRODUCT DATA ===
@@ -169,56 +136,16 @@ Wygeneruj WYŁĄCZNIE gotowy HTML. Zacznij od <p>.`
 - Category: ${form.category}${form.subcategory ? ` / ${form.subcategory}` : ""}
 - Seller notes: ${form.notes || "none"}
 
-=== COPYWRITING RULES ===
-- Open with the strongest feature — the one that grabs the buyer's attention
-- Use specific, descriptive adjectives instead of generics
-- Highlight value (what the buyer gains) not just features
-- Describe condition honestly but positively
-- Use emojis where fitting — ✨ 🚀 📦 etc.
-- Write naturally and engagingly — like to a friend${isClothing ? `
-
-=== FORMAT FOR CLOTHING/SHOES (MANDATORY) ===
-Follow this format EXACTLY:
-
-<p>Please check measurements before purchasing!</p>
-<p>[Catchy, emotional product description — what it is, why it stands out, what occasions it's perfect for (festivals, parties, concerts, etc.) ✨]</p>
-<p><b>Label size:</b> [size]<br><b>Actual fit:</b> [e.g. approx. M/L depending on desired fit]</p>
-<p><b>Measurements:</b></p>
-<ul>
-<li>Waist/Chest/Shoulders: [X] cm flat</li>
-<li>Length: [X] cm</li>
-<li>[other measurements relevant to the item]</li>
-</ul>
-<p><b>Features:</b></p>
-<ul>
-<li>[feature 1 — specific and appealing]</li>
-<li>[feature 2]</li>
-<li>[feature 3]</li>
-<li>[feature 4]</li>
-<li>[feature 5 — optional: occasions/styling tips]</li>
-</ul>
-<p>[Closing sentence — encouraging, describing when to buy, with emoji] ✨</p>
-<p>Fast shipping 🚀📦</p>
-
-IMPORTANT: If you don't know the measurements (not in notes), skip the measurements section but keep the rest of the structure.` : `
-
-=== STRUCTURE ===
-1. <p> — 2-3 hook sentences: what it is + why it's worth buying
-2. <p> — honest condition description: what was checked, what's like new
-3. <ul> "Specs:" — key data in format <b>spec:</b> value`}
-
-=== TECHNICAL REQUIREMENTS ===
-- Allowed tags: p, ul, li, b, br
-- NO attributes in tags (no class, style, id)
-- NO h1, h2, h3, div, span, CSS, img
-- Clean HTML — no comments, no preamble
-
-Generate ONLY the ready HTML. Start with <p>.`;
+=== OUTPUT FORMAT ===
+Plain text, NO HTML, NO tags, NO markdown.
+3-5 sentences: what it is and its purpose, why it's worth buying (brand, quality), honest condition description, specific parameters (size, color).
+${isClothing ? "For clothing/shoes start with: 'Please check measurements before purchasing!' if size is relevant." : ""}
+No HTML tags or formatting whatsoever.`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
       response_json_schema: { type: "object", properties: { description: { type: "string" } } },
-      model: "gpt_5_5",
+      model: "claude_sonnet_4_6",
     });
     handleChange("listing_description", result.description);
     setGenerating(false);
