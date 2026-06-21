@@ -500,10 +500,7 @@ Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, goto
                              </div>
                            )}
                            <div className="min-w-0">
-                             <p className="text-sm font-medium text-slate-800 truncate flex items-center gap-1.5">
-                               {p.product_name}
-                               {p.status === "sold" && <Badge className="bg-slate-200 text-slate-600 text-[9px] px-1 py-0">Sprzedany</Badge>}
-                             </p>
+                             <p className="text-sm font-medium text-slate-800 truncate">{p.product_name}</p>
                              <p className="text-xs text-slate-500">{p.brand || "—"} · {p.internal_code || "brak SKU"}</p>
                              <p className="text-xs text-emerald-700 font-mono">{p.suggested_sale_price ? `${p.suggested_sale_price} PLN` : ""}</p>
                            </div>
