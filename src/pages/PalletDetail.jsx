@@ -101,20 +101,26 @@ export default function PalletDetail() {
 
   const handleExplode = async (method) => {
     setExplodingLoading(true);
-    const res = await base44.functions.invoke("explodePallet", {
-      pallet_id: palletId,
-      allocation_method: method,
-    });
-    setExplodingLoading(false);
-    if (res.data?.success) {
-      setAllocationModal(false);
-      toast({
-        title: "Rozbicie palety zatwierdzone ✅",
-        description: `Wygenerowano: ${res.data.rw_number}, ${res.data.pw_number}, ${res.data.drp_number}`,
+    try {
+      const res = await base44.functions.invoke("explodePallet", {
+        pallet_id: palletId,
+        allocation_method: method,
       });
-      refresh();
-    } else {
-      toast({ title: "Błąd", description: res.data?.error || "Nieznany błąd", variant: "destructive" });
+      if (res.data?.success) {
+        setAllocationModal(false);
+        toast({
+          title: "Rozbicie palety zatwierdzone ✅",
+          description: `Wygenerowano: ${res.data.rw_number}, ${res.data.pw_number}, ${res.data.drp_number}`,
+        });
+        refresh();
+      } else {
+        toast({ title: "Błąd", description: res.data?.error || "Nieznany błąd", variant: "destructive" });
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.error || err?.message || "Nieznany błąd serwera";
+      toast({ title: "Błąd rozbicia palety", description: msg, variant: "destructive" });
+    } finally {
+      setExplodingLoading(false);
     }
   };
 

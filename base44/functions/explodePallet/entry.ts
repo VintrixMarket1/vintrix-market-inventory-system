@@ -1,21 +1,29 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-// Generate doc number on backend (query existing docs)
-async function generateDocNumber(base44, type) {
+// Generate doc numbers for multiple types in a single query
+async function generateDocNumbers(base44, types) {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
-  const prefix = `${type}/${year}/${month}/`;
   const existing = await base44.asServiceRole.entities.WarehouseDocument.list("-created_date", 300);
-  const thisMonth = existing.filter(d => d.document_number?.startsWith(prefix));
-  let maxNum = 0;
-  for (const doc of thisMonth) {
-    const parts = doc.document_number.split("/");
-    const num = parseInt(parts[3]) || 0;
-    if (num > maxNum) maxNum = num;
+  const maxByType = {};
+  for (const doc of existing) {
+    const num = doc.document_number || "";
+    for (const type of types) {
+      const prefix = `${type}/${year}/${month}/`;
+      if (num.startsWith(prefix)) {
+        const parts = num.split("/");
+        const n = parseInt(parts[3]) || 0;
+        if (n > (maxByType[type] || 0)) maxByType[type] = n;
+      }
+    }
   }
-  const nextNum = String(maxNum + 1).padStart(3, "0");
-  return `${prefix}${nextNum}`;
+  const result = {};
+  for (const type of types) {
+    const nextNum = String((maxByType[type] || 0) + 1).padStart(3, "0");
+    result[type] = `${type}/${year}/${month}/${nextNum}`;
+  }
+  return result;
 }
 
 Deno.serve(async (req) => {
@@ -103,10 +111,11 @@ Deno.serve(async (req) => {
     const pzNumber = pzDoc?.document_number || pallet.pallet_code;
     const today = new Date().toISOString().split('T')[0];
 
-    // 5. Generate document numbers
-    const rwNumber = await generateDocNumber(base44, 'RW');
-    const pwNumber = await generateDocNumber(base44, 'PW');
-    const drpNumber = await generateDocNumber(base44, 'DRP');
+    // 5. Generate document numbers (single query for all three)
+    const docNumbers = await generateDocNumbers(base44, ['RW', 'PW', 'DRP']);
+    const rwNumber = docNumbers.RW;
+    const pwNumber = docNumbers.PW;
+    const drpNumber = docNumbers.DRP;
 
     // 6. Create RW — paleta schodzi ze stanu
     const rwDoc = await base44.asServiceRole.entities.WarehouseDocument.create({
