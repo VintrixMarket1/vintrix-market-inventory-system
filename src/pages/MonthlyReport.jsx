@@ -102,7 +102,7 @@ export default function MonthlyReport() {
   // Sprzedaże w miesiącu — sale_price i purchase_price są kwotami BRUTTO, przeliczamy na netto
   const monthSales = sales.filter(s => filterByMonth(s.sale_date));
   const totalRevenueNet = monthSales.reduce((s, x) => s + toNet(x.sale_price || 0), 0);
-  const totalCostNet = monthSales.reduce((s, x) => s + toNet(x.purchase_price || 0), 0);
+  const totalCostNet = monthSales.reduce((s, x) => s + (x.purchase_price || 0), 0);
   const totalProfitNet = totalRevenueNet - totalCostNet;
   const marginPct = totalCostNet > 0 ? (totalProfitNet / totalCostNet) * 100 : 0;
 
@@ -133,7 +133,7 @@ export default function MonthlyReport() {
     if (!acc[p]) acc[p] = { count: 0, revenueNet: 0, profitNet: 0 };
     acc[p].count++;
     acc[p].revenueNet += toNet(s.sale_price || 0);
-    acc[p].profitNet += toNet(s.sale_price || 0) - toNet(s.purchase_price || 0);
+    acc[p].profitNet += toNet(s.sale_price || 0) - (s.purchase_price || 0);
     return acc;
   }, {});
 
@@ -178,9 +178,9 @@ export default function MonthlyReport() {
       "Klient": s.customer_name || "",
       "Przychód netto (PLN)": parseFloat(toNet(s.sale_price || 0).toFixed(2)),
       "Przychód brutto (PLN)": parseFloat((s.sale_price || 0).toFixed(2)),
-      "Koszt netto (PLN)": parseFloat(toNet(s.purchase_price || 0).toFixed(2)),
-      "Koszt brutto (PLN)": parseFloat((s.purchase_price || 0).toFixed(2)),
-      "Zysk netto (PLN)": parseFloat((toNet(s.sale_price || 0) - toNet(s.purchase_price || 0)).toFixed(2)),
+      "Koszt netto (PLN)": parseFloat((s.purchase_price || 0).toFixed(2)),
+      "Koszt brutto (PLN)": parseFloat(toGross(s.purchase_price || 0).toFixed(2)),
+      "Zysk netto (PLN)": parseFloat((toNet(s.sale_price || 0) - (s.purchase_price || 0)).toFixed(2)),
       "Dok. WZ": s.wz_document_number || "",
     }));
     const ws2 = XLSX.utils.json_to_sheet(salesRows);
@@ -358,7 +358,7 @@ export default function MonthlyReport() {
                   <tbody>
                     {monthSales.map((s) => {
                       const salePriceNet = toNet(s.sale_price || 0);
-                      const purchasePriceNet = toNet(s.purchase_price || 0);
+                      const purchasePriceNet = s.purchase_price || 0;
                       const profit = salePriceNet - purchasePriceNet;
                       return (
                         <tr key={s.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
