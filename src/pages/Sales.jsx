@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Download, TrendingUp, TrendingDown, Calendar, Pencil, Loader2, ShoppingCart, Package, Globe } from "lucide-react";
+import { Search, Download, TrendingUp, TrendingDown, Calendar, Pencil, Loader2, ShoppingCart, Package, Globe, Receipt } from "lucide-react";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
 
@@ -116,7 +116,7 @@ function EditSaleModal({ sale, onClose, onSaved }) {
   );
 }
 
-function SalesFilters({ search, setSearch, platformFilter, setPlatformFilter, dateFrom, setDateFrom, dateTo, setDateTo, onExport }) {
+function SalesFilters({ search, setSearch, platformFilter, setPlatformFilter, dateFrom, setDateFrom, dateTo, setDateTo, onExport, onFiscalExport }) {
   return (
     <div className="flex flex-col sm:flex-row gap-3">
       <div className="relative flex-1">
@@ -138,6 +138,9 @@ function SalesFilters({ search, setSearch, platformFilter, setPlatformFilter, da
         <span className="text-xs text-slate-400">–</span>
         <Input type="date" className="w-36 h-9 text-sm" value={dateTo} onChange={e => setDateTo(e.target.value)} />
       </div>
+      <Button variant="outline" size="sm" onClick={onFiscalExport} className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50">
+        <Receipt className="w-4 h-4" /> Raport fiskalny
+      </Button>
       <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5">
         <Download className="w-4 h-4" /> Excel
       </Button>
@@ -274,6 +277,113 @@ export default function Sales() {
     XLSX.writeFile(wb, `sprzedaz${suffix}${dateRange}_${new Date().toISOString().split("T")[0]}.xlsx`);
   };
 
+  const exportFiscalReport = (list) => {
+    const VAT_RATE = 0.23;
+    const sorted = [...list].sort((a, b) => {
+      const da = a.sale_date || "";
+      const db = b.sale_date || "";
+      if (da !== db) return da.localeCompare(db);
+      return (a.product_name || "").localeCompare(b.product_name || "");
+    });
+
+    const rows = [];
+    let runningTotal = 0;
+
+    // Podsumowanie dzienne
+    let currentDate = null;
+    let dayGross = 0;
+    let dayNet = 0;
+    let dayCount = 0;
+    let dayStartIdx = 0;
+
+    sorted.forEach((s, i) => {
+      const gross = s.sale_price || 0;
+      const net = parseFloat((gross / (1 + VAT_RATE)).toFixed(2));
+      const vat = parseFloat((gross - net).toFixed(2));
+      const date = s.sale_date || "—";
+
+      // Nowy dzień — emituj podsumowanie poprzedniego dnia
+      if (currentDate && currentDate !== date) {
+        rows.push({
+          "Data": "",
+          "Produkt": `— PODSUMOWANIE DNIA ${format(new Date(currentDate), "dd.MM.yyyy")} —`,
+          "Platforma": `${dayCount} szt.`,
+          "Netto (PLN)": parseFloat(dayNet.toFixed(2)),
+          "VAT 23% (PLN)": parseFloat((dayGross - dayNet).toFixed(2)),
+          "Brutto (PLN)": parseFloat(dayGross.toFixed(2)),
+          "Numer WZ": "",
+        });
+        dayGross = 0;
+        dayNet = 0;
+        dayCount = 0;
+      }
+
+      currentDate = date;
+      dayGross += gross;
+      dayNet += net;
+      dayCount++;
+      runningTotal += gross;
+
+      rows.push({
+        "Data": s.sale_date ? format(new Date(s.sale_date), "dd.MM.yyyy") : "—",
+        "Produkt": s.product_name || "—",
+        "Platforma": platformLabels[s.platform] || s.platform || "—",
+        "Netto (PLN)": net,
+        "VAT 23% (PLN)": vat,
+        "Brutto (PLN)": parseFloat(gross.toFixed(2)),
+        "Numer WZ": s.wz_document_number || "",
+      });
+
+      // Ostatni element — emituj podsumowanie ostatniego dnia
+      if (i === sorted.length - 1 && currentDate) {
+        rows.push({
+          "Data": "",
+          "Produkt": `— PODSUMOWANIE DNIA ${format(new Date(currentDate), "dd.MM.yyyy")} —`,
+          "Platforma": `${dayCount} szt.`,
+          "Netto (PLN)": parseFloat(dayNet.toFixed(2)),
+          "VAT 23% (PLN)": parseFloat((dayGross - dayNet).toFixed(2)),
+          "Brutto (PLN)": parseFloat(dayGross.toFixed(2)),
+          "Numer WZ": "",
+        });
+      }
+    });
+
+    // Wiersz końcowy — suma całkowita
+    const totalNet = parseFloat((runningTotal / (1 + VAT_RATE)).toFixed(2));
+    const totalVat = parseFloat((runningTotal - totalNet).toFixed(2));
+    rows.push({});
+    rows.push({
+      "Data": "",
+      "Produkt": "RAZEM PRZYCHÓD",
+      "Platforma": `${sorted.length} szt.`,
+      "Netto (PLN)": totalNet,
+      "VAT 23% (PLN)": totalVat,
+      "Brutto (PLN)": parseFloat(runningTotal.toFixed(2)),
+      "Numer WZ": "",
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows, { header: ["Data", "Produkt", "Platforma", "Netto (PLN)", "VAT 23% (PLN)", "Brutto (PLN)", "Numer WZ"] });
+    ws["!cols"] = [{ wch: 14 }, { wch: 50 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 }];
+
+    // Nagłówek
+    const header = [
+      ["RAPORT FISKALNY — VINTRIX MARKET SP. Z O.O."],
+      ["NIP: 7322230672"],
+      [`Data generowania: ${format(new Date(), "dd.MM.yyyy HH:mm")}`],
+      dateFrom || dateTo ? [`Okres: ${dateFrom ? format(new Date(dateFrom), "dd.MM.yyyy") : "..."} — ${dateTo ? format(new Date(dateTo), "dd.MM.yyyy") : "..."}`] : [""],
+      [""],
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const wsHeader = XLSX.utils.aoa_to_sheet(header);
+    XLSX.utils.sheet_add_json(wsHeader, rows, { origin: "A6", header: ["Data", "Produkt", "Platforma", "Netto (PLN)", "VAT 23% (PLN)", "Brutto (PLN)", "Numer WZ"] });
+    wsHeader["!cols"] = [{ wch: 14 }, { wch: 50 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 }];
+    XLSX.utils.book_append_sheet(wb, wsHeader, "Raport fiskalny");
+
+    const dateRange = dateFrom && dateTo ? `_${format(new Date(dateFrom), "yyyy-MM-dd")}-${format(new Date(dateTo), "yyyy-MM-dd")}` : `_${new Date().toISOString().split("T")[0]}`;
+    XLSX.writeFile(wb, `raport_fiskalny${dateRange}.xlsx`);
+  };
+
   const onSaved = () => { queryClient.invalidateQueries({ queryKey: ["sales"] }); setEditingSale(null); };
 
   return (
@@ -304,6 +414,7 @@ export default function Sales() {
             dateFrom={dateFrom} setDateFrom={setDateFrom}
             dateTo={dateTo} setDateTo={setDateTo}
             onExport={() => exportExcel(allFiltered)}
+            onFiscalExport={() => exportFiscalReport(allFiltered)}
           />
           <SalesList sales={allFiltered} isLoading={isLoading} onEdit={setEditingSale} emptyMessage="Brak sprzedaży spełniających kryteria" />
         </TabsContent>
@@ -317,6 +428,7 @@ export default function Sales() {
             dateFrom={dateFrom} setDateFrom={setDateFrom}
             dateTo={dateTo} setDateTo={setDateTo}
             onExport={() => exportExcel(webStoreFiltered, "_sklep")}
+            onFiscalExport={() => exportFiscalReport(webStoreFiltered)}
           />
           {webStoreFiltered.length === 0 && !isLoading ? (
             <div className="text-center py-20">
