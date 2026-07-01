@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -242,6 +242,17 @@ export default function Sales() {
     queryFn: () => base44.entities.Sale.list("-created_date"),
   });
 
+  const { data: wzDocs = [] } = useQuery({
+    queryKey: ["wz_docs_for_fiscal"],
+    queryFn: () => base44.entities.WarehouseDocument.filter({ document_type: "WZ" }),
+  });
+
+  const wzBySaleId = useMemo(() => {
+    const map = {};
+    wzDocs.forEach(w => { if (w.sale_id) map[w.sale_id] = w; });
+    return map;
+  }, [wzDocs]);
+
   const applyFilters = (list) => list.filter(s => {
     const searchMatch = !search || s.product_name?.toLowerCase().includes(search.toLowerCase()) || s.customer_name?.toLowerCase().includes(search.toLowerCase());
     const platformMatch = platformFilter === "all" || s.platform === platformFilter;
@@ -289,12 +300,10 @@ export default function Sales() {
     const rows = [];
     let runningTotal = 0;
 
-    // Podsumowanie dzienne
     let currentDate = null;
     let dayGross = 0;
     let dayNet = 0;
     let dayCount = 0;
-    let dayStartIdx = 0;
 
     sorted.forEach((s, i) => {
       const gross = s.sale_price || 0;
@@ -302,7 +311,7 @@ export default function Sales() {
       const vat = parseFloat((gross - net).toFixed(2));
       const date = s.sale_date || "—";
 
-      // Nowy dzień — emituj podsumowanie poprzedniego dnia
+      // Nowy dzień — emituj podsumowanie poprzedniego dnia + pusty wiersz odstępu
       if (currentDate && currentDate !== date) {
         rows.push({
           "Data": "",
@@ -313,6 +322,7 @@ export default function Sales() {
           "Brutto (PLN)": parseFloat(dayGross.toFixed(2)),
           "Numer WZ": "",
         });
+        rows.push({});
         dayGross = 0;
         dayNet = 0;
         dayCount = 0;
@@ -324,6 +334,7 @@ export default function Sales() {
       dayCount++;
       runningTotal += gross;
 
+      const wzDoc = wzBySaleId[s.id];
       rows.push({
         "Data": s.sale_date ? format(new Date(s.sale_date), "dd.MM.yyyy") : "—",
         "Produkt": s.product_name || "—",
@@ -331,7 +342,7 @@ export default function Sales() {
         "Netto (PLN)": net,
         "VAT 23% (PLN)": vat,
         "Brutto (PLN)": parseFloat(gross.toFixed(2)),
-        "Numer WZ": s.wz_document_number || "",
+        "Numer WZ": s.wz_document_number || wzDoc?.document_number || "",
       });
 
       // Ostatni element — emituj podsumowanie ostatniego dnia
