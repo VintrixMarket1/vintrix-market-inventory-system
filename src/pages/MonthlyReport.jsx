@@ -56,17 +56,7 @@ export default function MonthlyReport() {
     queryFn: () => base44.entities.Sale.list("-sale_date"),
   });
 
-  const { data: products = [], isLoading: loadingProducts } = useQuery({
-    queryKey: ["products_all"],
-    queryFn: () => base44.entities.Product.list(null, 2000),
-  });
-
-  const { data: pallets = [], isLoading: loadingPallets } = useQuery({
-    queryKey: ["pallets_all"],
-    queryFn: () => base44.entities.Pallet.list(),
-  });
-
-  const isLoading = loadingDocs || loadingSales || loadingProducts || loadingPallets;
+  const isLoading = loadingDocs || loadingSales;
 
   const years = useMemo(() => {
     const ys = new Set();
@@ -116,15 +106,26 @@ export default function MonthlyReport() {
   const totalProfitNet = totalRevenueNet - totalCostNet;
   const marginPct = totalCostNet > 0 ? (totalProfitNet / totalCostNet) * 100 : 0;
 
-  // Stan magazynowy (in_stock + listed) — purchase_price produktów to kwoty netto
-  const activeProducts = products.filter(p => p.status === "in_stock" || p.status === "listed");
-  const stockValueNet = activeProducts.reduce((s, p) => s + (p.purchase_price || 0), 0);
+  // Stan magazynowy na koniec wybranego miesiąca — liczony narastająco z dokumentów
+  // PZ + PW (przyjęcia) - WZ - RW (wydania), wszystkie dokumenty do końca wybranego miesiąca
+  const isBeforeOrInMonth = (dateStr) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const y = String(d.getFullYear());
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    if (y < selectedYear) return true;
+    if (y > selectedYear) return false;
+    return m <= selectedMonth;
+  };
 
-  // Nierozbite palety (accepted, sorting, ready) — ich total_value to kwoty netto (zakup)
-  const intactPallets = pallets.filter(p => ["accepted", "sorting", "ready"].includes(p.status));
-  const palletsValueNet = intactPallets.reduce((s, p) => s + (p.total_value || p.total_cost || 0), 0);
-
-  const totalStockValueNet = stockValueNet + palletsValueNet;
+  const cumulativeDocs = docs.filter(d => isBeforeOrInMonth(d.date));
+  const cumulativePzNet = cumulativeDocs.filter(d => d.document_type === "PZ").reduce((s, d) => s + (d.total_value || 0), 0);
+  const cumulativePwNet = cumulativeDocs.filter(d => d.document_type === "PW").reduce((s, d) => s + (d.total_value || 0), 0);
+  const cumulativeWzNet = cumulativeDocs.filter(d => d.document_type === "WZ").reduce((s, d) => s + (d.total_value || 0), 0);
+  const cumulativeRwNet = cumulativeDocs.filter(d => d.document_type === "RW").reduce((s, d) => s + (d.total_value || 0), 0);
+  const cumulativeReceiptsNet = cumulativePzNet + cumulativePwNet;
+  const cumulativeIssuesNet = cumulativeWzNet + cumulativeRwNet;
+  const totalStockValueNet = cumulativeReceiptsNet - cumulativeIssuesNet;
 
   // Podział sprzedaży per platforma — sale_price/purchase_price są brutto, przeliczamy na netto
   const byPlatform = monthSales.reduce((acc, s) => {
@@ -159,10 +160,10 @@ export default function MonthlyReport() {
       ["Zysk brutto ze sprzedaży", totalProfitNet.toFixed(2), toGross(totalProfitNet).toFixed(2)],
       [`Marża (%)`, `${marginPct.toFixed(1)}%`, `${marginPct.toFixed(1)}%`],
       ["", "", ""],
-      ["STAN MAGAZYNOWY (aktywne)", "NETTO (PLN)", "BRUTTO (PLN)"],
-      [`Produkty rozbite: ${activeProducts.length} szt.`, stockValueNet.toFixed(2), toGross(stockValueNet).toFixed(2)],
-      [`Palety nierozbite: ${intactPallets.length} szt.`, palletsValueNet.toFixed(2), toGross(palletsValueNet).toFixed(2)],
-      [`ŁĄCZNIE`, totalStockValueNet.toFixed(2), toGross(totalStockValueNet).toFixed(2)],
+      ["STAN MAGAZYNOWY (na koniec miesiąca)", "NETTO (PLN)", "BRUTTO (PLN)"],
+      ["Przyjęcia narastająco (PZ+PW)", cumulativeReceiptsNet.toFixed(2), toGross(cumulativeReceiptsNet).toFixed(2)],
+      ["Wydania narastająco (WZ+RW)", cumulativeIssuesNet.toFixed(2), toGross(cumulativeIssuesNet).toFixed(2)],
+      ["STAN MAGAZYNOWY", totalStockValueNet.toFixed(2), toGross(totalStockValueNet).toFixed(2)],
     ];
     const ws1 = XLSX.utils.aoa_to_sheet(summary);
     ws1["!cols"] = [{ wch: 40 }, { wch: 18 }, { wch: 18 }];
@@ -186,32 +187,19 @@ export default function MonthlyReport() {
     ws2["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 40 }, { wch: 14 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
     XLSX.utils.book_append_sheet(wb, ws2, "Sprzedaże");
 
-    // Arkusz 3 — Stan magazynowy (produkty rozbite)
-    const stockRows = activeProducts.map((p, i) => ({
+    // Arkusz 3 — Dokumenty narastająco (stan magazynowy)
+    const stockDocRows = cumulativeDocs.map((d, i) => ({
       "Lp.": i + 1,
-      "SKU": p.internal_code || "",
-      "Produkt": p.product_name || "",
-      "Status": p.status || "",
-      "Wartość netto (PLN)": p.purchase_price || 0,
-      "Wartość brutto (PLN)": parseFloat(toGross(p.purchase_price || 0).toFixed(2)),
+      "Data": d.date || "",
+      "Numer dokumentu": d.document_number || "",
+      "Typ": d.document_type || "",
+      "Kontrahent": d.counterparty || "",
+      "Wartość netto (PLN)": d.total_value || 0,
+      "Wartość brutto (PLN)": parseFloat(toGross(d.total_value || 0).toFixed(2)),
     }));
-    const ws3 = XLSX.utils.json_to_sheet(stockRows);
-    ws3["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 45 }, { wch: 12 }, { wch: 22 }, { wch: 22 }];
-    XLSX.utils.book_append_sheet(wb, ws3, "Stan magazynowy - produkty");
-
-    // Arkusz 4 — Nierozbite palety
-    const palletRows = intactPallets.map((p, i) => ({
-      "Lp.": i + 1,
-      "Kod palety": p.pallet_code || "",
-      "Inwestor": p.investor_name || "",
-      "Status": p.status || "",
-      "Data zakupu": p.purchase_date || "",
-      "Wartość netto (PLN)": p.total_value || p.total_cost || 0,
-      "Wartość brutto (PLN)": parseFloat(toGross(p.total_value || p.total_cost || 0).toFixed(2)),
-    }));
-    const ws4 = XLSX.utils.json_to_sheet(palletRows);
-    ws4["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 22 }];
-    XLSX.utils.book_append_sheet(wb, ws4, "Stan magazynowy - palety");
+    const ws3 = XLSX.utils.json_to_sheet(stockDocRows);
+    ws3["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 22 }, { wch: 8 }, { wch: 20 }, { wch: 22 }, { wch: 22 }];
+    XLSX.utils.book_append_sheet(wb, ws3, "Stan magazynowy - dokumenty");
 
     XLSX.writeFile(wb, `raport_${selectedYear}_${selectedMonth}_vintrix.xlsx`);
   };
@@ -281,25 +269,25 @@ export default function MonthlyReport() {
 
           {/* Stock value */}
           <div>
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Stan magazynowy (bieżący)</h2>
+            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Stan magazynowy na koniec {monthLabel} {selectedYear}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Produkty (rozbite)</p>
-                <p className="text-xl font-bold text-slate-900">{activeProducts.length} szt.</p>
-                <p className="text-xs text-slate-400 mt-0.5">{stockValueNet.toFixed(2)} PLN netto</p>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Przyjęcia narastająco (PZ+PW)</p>
+                <p className="text-xl font-bold text-slate-900">{cumulativeReceiptsNet.toFixed(2)} PLN</p>
+                <p className="text-xs text-slate-400 mt-0.5">netto — od początku działalności</p>
               </div>
               <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Palety (nierozbite)</p>
-                <p className="text-xl font-bold text-slate-900">{intactPallets.length} szt.</p>
-                <p className="text-xs text-slate-400 mt-0.5">{palletsValueNet.toFixed(2)} PLN netto</p>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Wydania narastająco (WZ+RW)</p>
+                <p className="text-xl font-bold text-slate-900">{cumulativeIssuesNet.toFixed(2)} PLN</p>
+                <p className="text-xs text-slate-400 mt-0.5">netto — od początku działalności</p>
               </div>
               <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
-                <p className="text-xs font-medium text-blue-600 uppercase tracking-wider mb-2">Łączna wartość netto</p>
+                <p className="text-xs font-medium text-blue-600 uppercase tracking-wider mb-2">Stan magazynu netto</p>
                 <p className="text-xl font-bold text-blue-900">{totalStockValueNet.toFixed(2)} PLN</p>
-                <p className="text-xs text-blue-400 mt-0.5">produkty + palety</p>
+                <p className="text-xs text-blue-400 mt-0.5">przyjęcia − wydania</p>
               </div>
               <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Łączna wartość brutto</p>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Stan magazynu brutto</p>
                 <p className="text-xl font-bold text-slate-700">{toGross(totalStockValueNet).toFixed(2)} PLN</p>
                 <p className="text-xs text-slate-400 mt-0.5">+23% VAT</p>
               </div>
