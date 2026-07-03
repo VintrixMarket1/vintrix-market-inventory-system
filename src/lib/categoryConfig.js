@@ -373,21 +373,57 @@ export const CATEGORY_LABELS = Object.fromEntries(
   CATEGORY_GROUPS.flatMap(g => g.items.map(i => [i.value, i.label]))
 );
 
-// Legacy mapping for old category values
-export const LEGACY_CATEGORY_LABELS = {
-  clothing: "Odzież",
-  shoes: "Obuwie",
-  accessories: "Akcesoria",
-  electronics: "Elektronika",
-  home: "Dom",
-  toys: "Zabawki",
-  sports: "Sport",
-  books: "Książki",
-  other: "Inne",
+// English labels for categories
+export const CATEGORY_LABELS_EN = {
+  clothing_men: "Men's Clothing", clothing_women: "Women's Clothing", clothing_kids: "Kids' Clothing", clothing_sport: "Sportswear",
+  shoes_men: "Men's Shoes", shoes_women: "Women's Shoes", shoes_kids: "Kids' Shoes", shoes_sport: "Sports Shoes",
+  accessories_bags: "Bags & Backpacks", accessories_belts: "Belts", accessories_hats: "Hats & Caps", accessories_scarves: "Scarves & Wraps",
+  accessories_jewelry: "Jewelry", accessories_watches: "Watches", accessories_sunglasses: "Sunglasses", accessories_wallets: "Wallets",
+  electronics_phones: "Phones", electronics_tablets: "Tablets", electronics_laptops: "Laptops", electronics_audio: "Audio / Headphones",
+  electronics_tv: "Televisions", electronics_cameras: "Cameras & Camcorders", electronics_gaming: "Gaming", electronics_accessories: "Electronic Accessories",
+  home_furniture: "Furniture", home_kitchen: "Kitchen Appliances", home_agd_large: "Large Appliances", home_agd_cleaning: "Cleaning Appliances",
+  home_agd_personal: "Personal Care", home_agd_laundry: "Ironing & Garment Care", home_bedding: "Bedding & Textiles", home_decor: "Decorations",
+  home_lighting: "Lighting", home_garden: "Garden", home_tools: "Tools", home_bathroom: "Bathroom",
+  toys_kids: "Kids' Toys", toys_board_games: "Board Games", toys_outdoor: "Outdoor Toys", toys_educational: "Educational Toys",
+  toys_lego: "Blocks / LEGO", toys_dolls: "Dolls & Figures",
+  sports_fitness: "Fitness & Gym", sports_cycling: "Bikes & Scooters", sports_winter: "Winter Sports", sports_water: "Water Sports",
+  sports_team: "Team Sports", sports_outdoor: "Outdoor & Hiking",
+  books_fiction: "Fiction", books_nonfiction: "Non-fiction", books_kids: "Children's Books", books_comics: "Comics & Manga", books_textbooks: "Textbooks",
+  beauty_cosmetics: "Cosmetics", beauty_perfumes: "Perfumes", beauty_haircare: "Hair Care", beauty_skincare: "Skin Care",
+  automotive_parts: "Car Parts", automotive_accessories: "Car Accessories", automotive_tools: "Automotive Tools",
+  pet_food: "Pet Food", pet_accessories: "Pet Accessories", pet_clothing: "Pet Clothing",
+  food_supplements: "Dietary Supplements", health_medical: "Medical Equipment",
+  music_instruments: "Musical Instruments", music_vinyl: "Vinyl Records",
+  art_paintings: "Paintings & Prints", art_collectibles: "Collectibles", other: "Other",
 };
 
-export function getCategoryLabel(value) {
+// English labels for category groups
+export const CATEGORY_GROUP_LABELS_EN = {
+  "Odzież": "Clothing", "Obuwie": "Footwear", "Akcesoria": "Accessories", "Elektronika": "Electronics",
+  "Dom i ogród": "Home & Garden", "Zabawki": "Toys", "Sport": "Sports", "Książki": "Books",
+  "Uroda": "Beauty", "Motoryzacja": "Automotive", "Zwierzęta": "Pets", "Zdrowie": "Health",
+  "Muzyka": "Music", "Sztuka i kolekcje": "Art & Collectibles", "Inne": "Other",
+};
+
+// Legacy mapping for old category values
+export const LEGACY_CATEGORY_LABELS = {
+  clothing: "Odzież", shoes: "Obuwie", accessories: "Akcesoria", electronics: "Elektronika",
+  home: "Dom", toys: "Zabawki", sports: "Sport", books: "Książki", other: "Inne",
+};
+
+export const LEGACY_CATEGORY_LABELS_EN = {
+  clothing: "Clothing", shoes: "Footwear", accessories: "Accessories", electronics: "Electronics",
+  home: "Home", toys: "Toys", sports: "Sports", books: "Books", other: "Other",
+};
+
+export function getCategoryLabel(value, lang = "pl") {
+  if (lang === "en") return CATEGORY_LABELS_EN[value] || LEGACY_CATEGORY_LABELS_EN[value] || value;
   return CATEGORY_LABELS[value] || LEGACY_CATEGORY_LABELS[value] || value;
+}
+
+export function getCategoryGroupLabel(group, lang = "pl") {
+  if (lang === "en") return CATEGORY_GROUP_LABELS_EN[group] || group;
+  return group;
 }
 
 // Flat list of all subcategories grouped by category value

@@ -2,19 +2,20 @@ import React, { useState } from "react";
 import { useCart } from "@/lib/CartContext.jsx";
 import { Button } from "@/components/ui/button";
 import { X, ShoppingCart, Trash2, Package } from "lucide-react";
+import { useLang } from "@/lib/i18n";
 import CheckoutModal from "./CheckoutModal";
 
 export default function CartPanel({ user, onClose }) {
+  const { t } = useLang();
   const { cartItems, removeFromCart, cartTotal } = useCart();
   const [checkoutProduct, setCheckoutProduct] = useState(null);
 
-  // For cart checkout we create a synthetic "offer" object from the product's listed price
   const buildSyntheticOffer = (product) => ({
     id: `direct_${product.id}`,
     product_id: product.id,
     product_name: product.product_name,
     offered_price: product.suggested_sale_price || 0,
-    status: "accepted", // treat as accepted for checkout
+    status: "accepted",
     customer_name: user?.full_name || "",
     customer_email: user?.email || "",
   });
@@ -26,8 +27,8 @@ export default function CartPanel({ user, onClose }) {
           <div className="flex items-center gap-2">
             <ShoppingCart className="w-5 h-5 text-emerald-600" />
             <div>
-              <h2 className="font-bold text-slate-900">Koszyk</h2>
-              <p className="text-xs text-slate-400">{cartItems.length} {cartItems.length === 1 ? "produkt" : "produkty/ów"}</p>
+              <h2 className="font-bold text-slate-900">{t("cart_title")}</h2>
+              <p className="text-xs text-slate-400">{cartItems.length} {cartItems.length === 1 ? t("cart_one_product") : t("cart_many_products")}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100">
@@ -39,8 +40,8 @@ export default function CartPanel({ user, onClose }) {
           {cartItems.length === 0 ? (
             <div className="text-center py-20">
               <ShoppingCart className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-400 text-sm">Koszyk jest pusty</p>
-              <p className="text-slate-400 text-xs mt-1">Dodaj produkty klikając "Kup teraz"</p>
+              <p className="text-slate-400 text-sm">{t("cart_empty")}</p>
+              <p className="text-slate-400 text-xs mt-1">{t("cart_empty_hint")}</p>
             </div>
           ) : (
             cartItems.map(({ product }) => (
@@ -54,7 +55,7 @@ export default function CartPanel({ user, onClose }) {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-slate-800 truncate">{product.product_name}</p>
                   <p className="text-emerald-600 font-bold text-sm mt-0.5">
-                    {product.suggested_sale_price ? `${product.suggested_sale_price} PLN` : "Cena na zapytanie"}
+                    {product.suggested_sale_price ? `${product.suggested_sale_price} PLN` : t("cat_on_request")}
                   </p>
                 </div>
                 <div className="flex flex-col gap-1.5 items-end shrink-0">
@@ -64,7 +65,7 @@ export default function CartPanel({ user, onClose }) {
                     onClick={() => setCheckoutProduct(product)}
                     disabled={!product.suggested_sale_price}
                   >
-                    Zapłać
+                    {t("cart_pay")}
                   </Button>
                   <button
                     onClick={() => removeFromCart(product.id)}
@@ -81,10 +82,10 @@ export default function CartPanel({ user, onClose }) {
         {cartItems.length > 0 && (
           <div className="border-t border-slate-200 bg-white p-4 shrink-0">
             <div className="flex justify-between items-center mb-3">
-              <span className="text-sm text-slate-600">Łącznie (bez dostawy)</span>
+              <span className="text-sm text-slate-600">{t("cart_total_no_shipping")}</span>
               <span className="font-bold text-lg text-emerald-700">{cartTotal.toFixed(2)} PLN</span>
             </div>
-            <p className="text-xs text-slate-400 text-center">Każdy produkt opłacany osobno — kliknij "Zapłać" przy wybranym</p>
+            <p className="text-xs text-slate-400 text-center">{t("cart_each_separate")}</p>
           </div>
         )}
       </div>

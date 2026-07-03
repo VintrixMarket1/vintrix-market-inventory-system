@@ -176,6 +176,76 @@ export const translations = {
     common_loading: "Loading...",
     common_select: "Select...",
     common_search: "Search...",
+
+    // Catalog
+    cat_filters: "Filters", cat_clear: "Clear", cat_show_results: "Show results",
+    cat_condition: "Condition", cat_price_range: "Price range (PLN)", cat_price_from: "from", cat_price_to: "to",
+    cat_categories: "Categories", cat_all: "All", cat_favorites: "Favorites",
+    cat_products_count: "products", cat_no_results: "No products matching criteria",
+    cat_clear_filters: "Clear filters", cat_buy_now: "Buy now", cat_on_request: "On request",
+    cat_search_placeholder: "Search products, brands...", cat_search_placeholder_short: "Search...",
+    cat_hello: "Hi", cat_messages: "Messages", cat_cart: "Cart", cat_logout: "Logout",
+    cat_add_to_cart: "Add to cart", cat_in_cart: "In cart", cat_ask: "Ask",
+    cat_premium_catalog: "Premium Catalog",
+    cat_inquiry_sent: "Inquiry sent!", cat_contact_soon: "We'll contact you soon.",
+
+    // Product Detail
+    pd_brand: "Brand", pd_size: "Size", pd_color: "Color", pd_gender: "Gender", pd_description: "Description",
+    pd_price_on_request: "Price on request", pd_ask: "Ask", pd_make_offer: "Make offer",
+    pd_product_inquiry: "Product inquiry", pd_inquiry_placeholder: "Write what you'd like to know...",
+    pd_cancel: "Cancel", pd_send: "Send", pd_your_offer: "Your price offer", pd_asking_price: "Asking price",
+    pd_your_price: "Your price (PLN)", pd_message_optional: "Message (optional)", pd_add_message: "Add message...",
+    pd_send_offer: "Send offer", pd_offer_sent: "Offer sent!",
+
+    // Gender
+    gender_men: "Men", gender_women: "Women", gender_unisex: "Unisex", gender_kids: "Kids",
+
+    // Cart
+    cart_title: "Cart", cart_empty: "Cart is empty",
+    cart_empty_hint: "Add products by clicking \"Buy now\"", cart_pay: "Pay",
+    cart_total_no_shipping: "Total (without shipping)",
+    cart_each_separate: "Each product paid separately — click \"Pay\" next to selected",
+    cart_one_product: "product", cart_many_products: "products",
+
+    // Checkout
+    co_title: "Order checkout", co_accepted_offer: "Accepted offer", co_contact_data: "Contact details",
+    co_full_name: "Full name *", co_email: "Email *", co_phone: "Phone",
+    co_nip: "VAT number (optional)", co_company: "Company (optional)", co_shipping_method: "Delivery method",
+    co_personal_pickup: "Personal pickup", co_personal_pickup_desc: "Pick up your order at our warehouse",
+    co_inpost: "InPost Parcel Locker", co_inpost_desc: "Delivery to selected parcel locker",
+    co_courier: "Home courier", co_courier_desc: "Delivery to specified address",
+    co_free: "Free", co_delivery_address: "Delivery address", co_street: "Street and number *",
+    co_postal_code: "Postal code *", co_city: "City *", co_parcel_locker: "Parcel locker",
+    co_locker_id: "Parcel locker number/ID *", co_locker_hint: "Enter InPost parcel locker code (e.g. WAW123M)",
+    co_product: "Product", co_delivery: "Delivery", co_free_f: "Free", co_total: "Total",
+    co_redirecting: "Redirecting to payment...", co_pay: "Pay",
+    co_stripe_note: "Payment handled by Stripe. We accept cards, BLIK, Przelewy24.",
+    co_iframe_error: "Payment works only in a published app, not in preview.",
+    co_error: "An error occurred. Try again.",
+
+    // Messages
+    msg_title: "My messages", msg_subtitle: "Inquiries and purchase offers",
+    msg_inquiries: "Inquiries", msg_offers: "Offers",
+    msg_no_inquiries: "No sent inquiries", msg_no_offers: "No submitted offers",
+    msg_your_inquiry: "Your inquiry", msg_seller_reply: "Seller's reply",
+    msg_waiting_reply: "Waiting for seller's reply...",
+    msg_your_offer: "Your offer", msg_seller_counter: "Seller's counter-offer",
+    msg_your_message: "Your message", msg_seller_message: "Seller's message",
+    msg_offer_accepted: "✅ Offer accepted by seller! You can now finalize the purchase.",
+    msg_offer_rejected: "❌ Offer rejected by seller.",
+    msg_you_accepted: "✅ You accepted the counter-offer. You can now finalize the purchase.",
+    msg_you_rejected: "❌ You rejected the counter-offer.",
+    msg_you_countered: "💬 You sent a counter-offer. Waiting for seller's reply.",
+    msg_seller_offer_new: "The seller sent you an offer. Choose what you want to do:",
+    msg_respond_offer: "Respond to offer", msg_respond_counter: "Respond to counter-offer",
+    msg_your_counter: "Your counter-offer (PLN) — optional",
+    msg_reject: "Reject", msg_counter: "Counter", msg_accept: "Accept",
+    msg_finalize_pay: "Finalize and pay", msg_product: "Product",
+
+    // Inquiry/Offer statuses
+    status_pending: "Pending", status_replied: "Replied", status_closed: "Closed",
+    status_accepted: "Accepted", status_rejected_status: "Rejected", status_countered: "Counter-offer",
+    status_your_counter: "Your counter-offer", status_you_accepted: "You accepted", status_you_rejected: "You rejected",
   },
 
   pl: {
@@ -351,6 +421,76 @@ export const translations = {
     common_loading: "Ładowanie...",
     common_select: "Wybierz...",
     common_search: "Szukaj...",
+
+    // Catalog
+    cat_filters: "Filtry", cat_clear: "Wyczyść", cat_show_results: "Pokaż wyniki",
+    cat_condition: "Stan produktu", cat_price_range: "Zakres cen (PLN)", cat_price_from: "od", cat_price_to: "do",
+    cat_categories: "Kategorie", cat_all: "Wszystkie", cat_favorites: "Ulubione",
+    cat_products_count: "produktów", cat_no_results: "Brak produktów spełniających kryteria",
+    cat_clear_filters: "Wyczyść filtry", cat_buy_now: "Kup teraz", cat_on_request: "Na zapytanie",
+    cat_search_placeholder: "Szukaj produktów, marek...", cat_search_placeholder_short: "Szukaj...",
+    cat_hello: "Cześć", cat_messages: "Wiadomości", cat_cart: "Koszyk", cat_logout: "Wyloguj",
+    cat_add_to_cart: "Dodaj do koszyka", cat_in_cart: "W koszyku", cat_ask: "Zapytaj",
+    cat_premium_catalog: "Premium Catalog",
+    cat_inquiry_sent: "Zapytanie wysłane!", cat_contact_soon: "Skontaktujemy się z Tobą wkrótce.",
+
+    // Product Detail
+    pd_brand: "Marka", pd_size: "Rozmiar", pd_color: "Kolor", pd_gender: "Przeznaczenie", pd_description: "Opis",
+    pd_price_on_request: "Cena na zapytanie", pd_ask: "Zapytaj", pd_make_offer: "Złóż ofertę",
+    pd_product_inquiry: "Zapytanie o produkt", pd_inquiry_placeholder: "Napisz czego chcesz się dowiedzieć...",
+    pd_cancel: "Anuluj", pd_send: "Wyślij", pd_your_offer: "Twoja oferta cenowa", pd_asking_price: "Cena wywoławcza",
+    pd_your_price: "Twoja cena (PLN)", pd_message_optional: "Wiadomość (opcjonalnie)", pd_add_message: "Dodaj wiadomość...",
+    pd_send_offer: "Wyślij ofertę", pd_offer_sent: "Oferta wysłana!",
+
+    // Gender
+    gender_men: "Mężczyźni", gender_women: "Kobiety", gender_unisex: "Unisex", gender_kids: "Dzieci",
+
+    // Cart
+    cart_title: "Koszyk", cart_empty: "Koszyk jest pusty",
+    cart_empty_hint: "Dodaj produkty klikając \"Kup teraz\"", cart_pay: "Zapłać",
+    cart_total_no_shipping: "Łącznie (bez dostawy)",
+    cart_each_separate: "Każdy produkt opłacany osobno — kliknij \"Zapłać\" przy wybranym",
+    cart_one_product: "produkt", cart_many_products: "produkty/ów",
+
+    // Checkout
+    co_title: "Finalizacja zamówienia", co_accepted_offer: "Zaakceptowana oferta", co_contact_data: "Dane kontaktowe",
+    co_full_name: "Imię i nazwisko *", co_email: "Email *", co_phone: "Telefon",
+    co_nip: "NIP (opcjonalnie)", co_company: "Firma (opcjonalnie)", co_shipping_method: "Sposób dostawy",
+    co_personal_pickup: "Odbiór osobisty", co_personal_pickup_desc: "Odbierz zamówienie osobiście w naszym magazynie",
+    co_inpost: "Paczkomat InPost", co_inpost_desc: "Dostawa do wybranego paczkomatu",
+    co_courier: "Kurier do domu", co_courier_desc: "Dostawa pod wskazany adres",
+    co_free: "Bezpłatne", co_delivery_address: "Adres dostawy", co_street: "Ulica i numer *",
+    co_postal_code: "Kod pocztowy *", co_city: "Miasto *", co_parcel_locker: "Paczkomat",
+    co_locker_id: "Numer/ID paczkomatu *", co_locker_hint: "Wpisz kod paczkomatu InPost (np. WAW123M)",
+    co_product: "Produkt", co_delivery: "Dostawa", co_free_f: "Bezpłatna", co_total: "Razem",
+    co_redirecting: "Przekierowuję do płatności...", co_pay: "Zapłać",
+    co_stripe_note: "Płatność obsługiwana przez Stripe. Akceptujemy karty, BLIK, Przelewy24.",
+    co_iframe_error: "Płatność działa tylko w opublikowanej aplikacji, nie w podglądzie.",
+    co_error: "Wystąpił błąd. Spróbuj ponownie.",
+
+    // Messages
+    msg_title: "Moje wiadomości", msg_subtitle: "Zapytania i oferty zakupu",
+    msg_inquiries: "Zapytania", msg_offers: "Oferty",
+    msg_no_inquiries: "Brak wysłanych zapytań", msg_no_offers: "Brak złożonych ofert",
+    msg_your_inquiry: "Twoje zapytanie", msg_seller_reply: "Odpowiedź sprzedawcy",
+    msg_waiting_reply: "Czekamy na odpowiedź sprzedawcy...",
+    msg_your_offer: "Twoja oferta", msg_seller_counter: "Kontroferta sprzedawcy",
+    msg_your_message: "Twoja wiadomość", msg_seller_message: "Wiadomość sprzedawcy",
+    msg_offer_accepted: "✅ Oferta zaakceptowana przez sprzedawcę! Możesz teraz sfinalizować zakup.",
+    msg_offer_rejected: "❌ Oferta odrzucona przez sprzedawcę.",
+    msg_you_accepted: "✅ Zaakceptowałeś kontrofertę. Możesz teraz sfinalizować zakup.",
+    msg_you_rejected: "❌ Odrzuciłeś kontrofertę.",
+    msg_you_countered: "💬 Wysłałeś kontrofertę. Czekamy na odpowiedź sprzedawcy.",
+    msg_seller_offer_new: "Sprzedawca wysłał Ci ofertę. Wybierz co chcesz zrobić:",
+    msg_respond_offer: "Odpowiedz na ofertę", msg_respond_counter: "Odpowiedz na kontrofertę",
+    msg_your_counter: "Twoja kontroferta (PLN) — opcjonalnie",
+    msg_reject: "Odrzuć", msg_counter: "Kontruj", msg_accept: "Akceptuj",
+    msg_finalize_pay: "Sfinalizuj i zapłać", msg_product: "Produkt",
+
+    // Inquiry/Offer statuses
+    status_pending: "Oczekuje", status_replied: "Odpowiedziano", status_closed: "Zamknięte",
+    status_accepted: "Zaakceptowana", status_rejected_status: "Odrzucona", status_countered: "Kontroferta",
+    status_your_counter: "Twoja kontroferta", status_you_accepted: "Zaakceptowałeś", status_you_rejected: "Odrzuciłeś",
   },
 };
 

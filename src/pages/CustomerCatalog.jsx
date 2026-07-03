@@ -4,22 +4,25 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, LogOut, SlidersHorizontal, X, MessageCircle, ShoppingCart, Heart, ChevronDown } from "lucide-react";
+import { Search, LogOut, SlidersHorizontal, X, MessageCircle, ShoppingCart, Heart } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { CATEGORY_GROUPS, getCategoryLabel } from "@/lib/categoryConfig";
+import { useLang } from "@/lib/i18n";
+import { CATEGORY_GROUPS, getCategoryLabel, getCategoryGroupLabel } from "@/lib/categoryConfig";
 import ProductDetailModal from "@/components/catalog/ProductDetailModal";
 import CustomerMessagesPanel from "@/components/catalog/CustomerMessagesPanel";
 import CartPanel from "@/components/catalog/CartPanel";
 import CheckoutModal from "@/components/catalog/CheckoutModal";
 import { useCart, CartProvider } from "@/lib/CartContext.jsx";
 
-const CONDITION_LABELS = { new: "Nowy", like_new: "Jak nowy", used: "Używany" };
-const CONDITION_COLORS = { new: "bg-emerald-900/60 text-emerald-300", like_new: "bg-sky-900/60 text-sky-300", used: "bg-stone-700/60 text-stone-300" };
 const CONDITIONS = ["new", "like_new", "used"];
+const CONDITION_COLORS = { new: "bg-emerald-900/60 text-emerald-300", like_new: "bg-sky-900/60 text-sky-300", used: "bg-stone-700/60 text-stone-300" };
 
 function CustomerCatalog() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const { t, lang } = useLang();
+
+  const condLabels = { new: t("cond_new"), like_new: t("cond_like_new"), used: t("cond_used") };
 
   const [search, setSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -51,20 +54,8 @@ function CustomerCatalog() {
       if (fav) await base44.entities.Favorite.delete(fav.id);
     } else {
       await base44.entities.Favorite.create({
-        product_id: product.id,
-        product_name: product.product_name,
-        customer_name: user?.full_name || "",
-        customer_email: user?.email || "",
-      });
-      await base44.entities.AdminNotification.create({
-        type: "favorite",
-        title: "Nowe polubienie produktu",
-        message: `${user?.full_name || user?.email || "Klient"} dodał "${product.product_name}" do ulubionych.`,
-        product_id: product.id,
-        product_name: product.product_name,
-        customer_name: user?.full_name || "",
-        customer_email: user?.email || "",
-        is_read: false,
+        product_id: product.id, product_name: product.product_name,
+        customer_name: user?.full_name || "", customer_email: user?.email || "",
       });
     }
     queryClient.invalidateQueries({ queryKey: ["my_favorites"] });
@@ -100,13 +91,7 @@ function CustomerCatalog() {
       product_id: product.id, product_name: product.product_name,
       message, customer_name: user?.full_name || "", customer_email: user?.email || "", status: "new",
     });
-    await base44.entities.AdminNotification.create({
-      type: "new_inquiry", title: "Nowe zapytanie o produkt",
-      message: `${user?.full_name || user?.email || "Klient"} pyta o "${product.product_name}".`,
-      product_id: product.id, product_name: product.product_name,
-      customer_name: user?.full_name || "", customer_email: user?.email || "", is_read: false,
-    });
-    toast({ title: "Zapytanie wysłane!", description: "Skontaktujemy się z Tobą wkrótce." });
+    toast({ title: t("cat_inquiry_sent"), description: t("cat_contact_soon") });
   };
 
   const buildDirectOffer = (product) => ({
@@ -119,40 +104,40 @@ function CustomerCatalog() {
   const FiltersContent = () => (
     <div className="space-y-6">
       <div>
-        <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-3">Stan produktu</p>
+        <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-3">{t("cat_condition")}</p>
         <div className="space-y-2">
           {CONDITIONS.map(c => (
             <label key={c} className="flex items-center gap-3 cursor-pointer group">
               <div className={`w-4 h-4 rounded border transition-all flex items-center justify-center shrink-0 ${selectedConditions.includes(c) ? "bg-amber-500 border-amber-500" : "border-stone-600 group-hover:border-stone-400"}`}>
                 {selectedConditions.includes(c) && <svg className="w-2.5 h-2.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
               </div>
-              <span className="text-sm text-stone-300 group-hover:text-white transition-colors">{CONDITION_LABELS[c]}</span>
+              <span className="text-sm text-stone-300 group-hover:text-white transition-colors">{condLabels[c]}</span>
             </label>
           ))}
         </div>
       </div>
       <div>
-        <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-3">Zakres cen (PLN)</p>
+        <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-3">{t("cat_price_range")}</p>
         <div className="flex gap-2">
-          <input type="number" placeholder="od" value={priceMin} onChange={e => setPriceMin(e.target.value)}
+          <input type="number" placeholder={t("cat_price_from")} value={priceMin} onChange={e => setPriceMin(e.target.value)}
             className="w-full bg-stone-800 border border-stone-700 text-stone-200 rounded-lg px-3 py-2 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-500" />
-          <input type="number" placeholder="do" value={priceMax} onChange={e => setPriceMax(e.target.value)}
+          <input type="number" placeholder={t("cat_price_to")} value={priceMax} onChange={e => setPriceMax(e.target.value)}
             className="w-full bg-stone-800 border border-stone-700 text-stone-200 rounded-lg px-3 py-2 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-500" />
         </div>
       </div>
       <div>
-        <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-3">Kategorie</p>
+        <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-3">{t("cat_categories")}</p>
         <div className="space-y-4">
           {CATEGORY_GROUPS.map(group => (
             <div key={group.group}>
-              <p className="text-xs text-stone-500 mb-2">{group.icon} {group.group}</p>
+              <p className="text-xs text-stone-500 mb-2">{group.icon} {getCategoryGroupLabel(group.group, lang)}</p>
               <div className="space-y-1.5 pl-1">
                 {group.items.map(item => (
                   <label key={item.value} className="flex items-center gap-3 cursor-pointer group">
                     <div className={`w-3.5 h-3.5 rounded border transition-all flex items-center justify-center shrink-0 ${selectedCategories.includes(item.value) ? "bg-amber-500 border-amber-500" : "border-stone-600 group-hover:border-stone-400"}`}>
                       {selectedCategories.includes(item.value) && <svg className="w-2 h-2 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                     </div>
-                    <span className="text-xs text-stone-400 group-hover:text-stone-200 transition-colors">{item.label}</span>
+                    <span className="text-xs text-stone-400 group-hover:text-stone-200 transition-colors">{getCategoryLabel(item.value, lang)}</span>
                   </label>
                 ))}
               </div>
@@ -173,11 +158,11 @@ function CustomerCatalog() {
           <div className="absolute bottom-0 left-0 right-0 bg-stone-900 rounded-t-3xl max-h-[88vh] flex flex-col border-t border-stone-700" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-stone-800 shrink-0">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-white tracking-wide">Filtry</span>
+                <span className="font-semibold text-white tracking-wide">{t("cat_filters")}</span>
                 {activeFiltersCount > 0 && <span className="bg-amber-500 text-black text-xs font-bold rounded-full px-2 py-0.5">{activeFiltersCount}</span>}
               </div>
               <div className="flex items-center gap-3">
-                {activeFiltersCount > 0 && <button onClick={clearFilters} className="text-sm text-amber-400 font-medium">Wyczyść</button>}
+                {activeFiltersCount > 0 && <button onClick={clearFilters} className="text-sm text-amber-400 font-medium">{t("cat_clear")}</button>}
                 <button onClick={() => setShowFilters(false)} className="p-2 rounded-lg bg-stone-800 hover:bg-stone-700 touch-manipulation">
                   <X className="w-5 h-5 text-stone-300" />
                 </button>
@@ -186,7 +171,7 @@ function CustomerCatalog() {
             <div className="overflow-y-auto p-5 flex-1"><FiltersContent /></div>
             <div className="p-4 border-t border-stone-800 shrink-0">
               <button className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 rounded-xl transition-colors touch-manipulation" onClick={() => setShowFilters(false)}>
-                Pokaż wyniki ({filtered.length})
+                {t("cat_show_results")} ({filtered.length})
               </button>
             </div>
           </div>
@@ -196,11 +181,10 @@ function CustomerCatalog() {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-stone-950/90 backdrop-blur-xl border-b border-stone-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          {/* Logo */}
           <div className="flex items-center gap-3 shrink-0">
             <div className="text-lg font-black tracking-[0.15em] text-white uppercase">Vintrix</div>
             <div className="hidden sm:block w-px h-4 bg-stone-600" />
-            <div className="hidden sm:block text-xs text-stone-500 tracking-[0.2em] uppercase font-light">Premium Catalog</div>
+            <div className="hidden sm:block text-xs text-stone-500 tracking-[0.2em] uppercase font-light">{t("cat_premium_catalog")}</div>
           </div>
 
           {/* Search */}
@@ -208,7 +192,7 @@ function CustomerCatalog() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
             <input
               className="w-full bg-stone-900 border border-stone-700 text-stone-200 rounded-xl pl-10 pr-4 py-2.5 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-500 transition-colors"
-              placeholder="Szukaj produktów, marek..."
+              placeholder={t("cat_search_placeholder")}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -217,18 +201,18 @@ function CustomerCatalog() {
           {/* Actions */}
           <div className="flex items-center gap-1">
             <span className="hidden md:block text-xs text-stone-500 mr-2">
-              Cześć, <span className="text-stone-200 font-medium">{user?.full_name?.split(" ")[0]}</span>
+              {t("cat_hello")}, <span className="text-stone-200 font-medium">{user?.full_name?.split(" ")[0]}</span>
             </span>
-            <button onClick={() => setShowMessages(true)} className="relative p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title="Wiadomości">
+            <button onClick={() => setShowMessages(true)} className="relative p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title={t("cat_messages")}>
               <MessageCircle className="w-5 h-5" />
             </button>
-            <button onClick={() => setShowCart(true)} className="relative p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title="Koszyk">
+            <button onClick={() => setShowCart(true)} className="relative p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title={t("cat_cart")}>
               <ShoppingCart className="w-5 h-5" />
               {cartItems.length > 0 && (
                 <span className="absolute top-1.5 right-1.5 bg-amber-500 text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">{cartItems.length}</span>
               )}
             </button>
-            <button onClick={() => logout()} className="p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title="Wyloguj">
+            <button onClick={() => logout()} className="p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title={t("cat_logout")}>
               <LogOut className="w-5 h-5" />
             </button>
           </div>
@@ -239,7 +223,7 @@ function CustomerCatalog() {
           <Search className="absolute left-7 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
           <input
             className="w-full bg-stone-900 border border-stone-700 text-stone-200 rounded-xl pl-10 pr-4 py-2.5 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-500"
-            placeholder="Szukaj..."
+            placeholder={t("cat_search_placeholder_short")}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -248,8 +232,8 @@ function CustomerCatalog() {
         {/* Tabs */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-1 border-t border-stone-800/50">
           {[
-            { key: "all", label: "Wszystkie", count: products.filter(p => p.status !== "sold" && p.product_name !== "Nieznany produkt").length },
-            { key: "favorites", label: "Ulubione", count: favoriteProductIds.size },
+            { key: "all", label: t("cat_all"), count: products.filter(p => p.status !== "sold" && p.product_name !== "Nieznany produkt").length },
+            { key: "favorites", label: t("cat_favorites"), count: favoriteProductIds.size },
           ].map(tab => (
             <button
               key={tab.key}
@@ -273,16 +257,16 @@ function CustomerCatalog() {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${showFilters || activeFiltersCount > 0 ? "bg-amber-500/10 border-amber-500/40 text-amber-400" : "bg-stone-900 border-stone-700 text-stone-400 hover:border-stone-500 hover:text-stone-200"}`}
             >
               <SlidersHorizontal className="w-4 h-4" />
-              Filtry
+              {t("cat_filters")}
               {activeFiltersCount > 0 && <span className="bg-amber-500 text-black text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center">{activeFiltersCount}</span>}
             </button>
             {activeFiltersCount > 0 && (
               <button onClick={clearFilters} className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-300 transition-colors">
-                <X className="w-3.5 h-3.5" /> Wyczyść
+                <X className="w-3.5 h-3.5" /> {t("cat_clear")}
               </button>
             )}
           </div>
-          <p className="text-xs text-stone-500 tracking-wide">{filtered.length} produktów</p>
+          <p className="text-xs text-stone-500 tracking-wide">{filtered.length} {t("cat_products_count")}</p>
         </div>
 
         {/* Active filter chips */}
@@ -290,12 +274,12 @@ function CustomerCatalog() {
           <div className="flex flex-wrap gap-2 mb-5">
             {selectedConditions.map(c => (
               <button key={c} onClick={() => toggleCondition(c)} className="flex items-center gap-1.5 bg-stone-800 text-stone-300 text-xs px-3 py-1.5 rounded-full border border-stone-700 hover:border-stone-500 transition-all">
-                {CONDITION_LABELS[c]} <X className="w-3 h-3" />
+                {condLabels[c]} <X className="w-3 h-3" />
               </button>
             ))}
             {selectedCategories.map(c => (
               <button key={c} onClick={() => toggleCategory(c)} className="flex items-center gap-1.5 bg-stone-800 text-stone-300 text-xs px-3 py-1.5 rounded-full border border-stone-700 hover:border-stone-500 transition-all">
-                {getCategoryLabel(c)} <X className="w-3 h-3" />
+                {getCategoryLabel(c, lang)} <X className="w-3 h-3" />
               </button>
             ))}
           </div>
@@ -307,9 +291,9 @@ function CustomerCatalog() {
             <aside className="w-60 shrink-0 hidden md:block">
               <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5 sticky top-[8.5rem] max-h-[calc(100vh-9rem)] overflow-y-auto">
                 <div className="flex items-center justify-between mb-5">
-                  <span className="text-xs font-semibold text-stone-300 uppercase tracking-[0.15em]">Filtry</span>
+                  <span className="text-xs font-semibold text-stone-300 uppercase tracking-[0.15em]">{t("cat_filters")}</span>
                   {activeFiltersCount > 0 && (
-                    <button onClick={clearFilters} className="text-xs text-amber-400 hover:text-amber-300 transition-colors">Wyczyść</button>
+                    <button onClick={clearFilters} className="text-xs text-amber-400 hover:text-amber-300 transition-colors">{t("cat_clear")}</button>
                   )}
                 </div>
                 <FiltersContent />
@@ -322,9 +306,9 @@ function CustomerCatalog() {
             {filtered.length === 0 ? (
               <div className="text-center py-28">
                 <div className="text-6xl mb-4 opacity-20">◈</div>
-                <p className="text-stone-500 text-sm tracking-wide">Brak produktów spełniających kryteria</p>
+                <p className="text-stone-500 text-sm tracking-wide">{t("cat_no_results")}</p>
                 {activeFiltersCount > 0 && (
-                  <button onClick={clearFilters} className="mt-4 text-amber-400 text-sm hover:underline">Wyczyść filtry</button>
+                  <button onClick={clearFilters} className="mt-4 text-amber-400 text-sm hover:underline">{t("cat_clear_filters")}</button>
                 )}
               </div>
             ) : (
@@ -339,6 +323,8 @@ function CustomerCatalog() {
                     onToggleFavorite={(e) => toggleFavorite(product, e)}
                     onAddToCart={() => { addToCart(product); setShowCart(true); }}
                     onBuyNow={() => setDirectCheckoutProduct(product)}
+                    condLabels={condLabels}
+                    t={t}
                   />
                 ))}
               </div>
@@ -357,7 +343,7 @@ function CustomerCatalog() {
   );
 }
 
-function ProductCard({ product, isFavorite, isInCart, onSelect, onToggleFavorite, onAddToCart, onBuyNow }) {
+function ProductCard({ product, isFavorite, isInCart, onSelect, onToggleFavorite, onAddToCart, onBuyNow, condLabels, t }) {
   return (
     <div className="group flex flex-col bg-stone-900 rounded-2xl overflow-hidden border border-stone-800 hover:border-stone-600 transition-all duration-300 hover:shadow-2xl hover:shadow-black/40">
       {/* Image */}
@@ -375,7 +361,7 @@ function ProductCard({ product, isFavorite, isInCart, onSelect, onToggleFavorite
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5">
           {product.condition && (
             <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider backdrop-blur-sm ${CONDITION_COLORS[product.condition]}`}>
-              {CONDITION_LABELS[product.condition]}
+              {condLabels[product.condition]}
             </span>
           )}
         </div>
@@ -395,7 +381,7 @@ function ProductCard({ product, isFavorite, isInCart, onSelect, onToggleFavorite
               onClick={(e) => { e.stopPropagation(); onBuyNow(); }}
               className="w-full bg-amber-500 hover:bg-amber-400 text-black text-xs font-black py-2 rounded-xl uppercase tracking-wider transition-colors"
             >
-              Kup teraz
+              {t("cat_buy_now")}
             </button>
           </div>
         )}
@@ -414,13 +400,13 @@ function ProductCard({ product, isFavorite, isInCart, onSelect, onToggleFavorite
           {product.suggested_sale_price ? (
             <p className="text-base font-black text-amber-400">{product.suggested_sale_price} <span className="text-xs font-normal text-stone-500">PLN</span></p>
           ) : (
-            <p className="text-xs text-stone-600 italic">Na zapytanie</p>
+            <p className="text-xs text-stone-600 italic">{t("cat_on_request")}</p>
           )}
           {product.suggested_sale_price ? (
             <button
               onClick={(e) => { e.stopPropagation(); onAddToCart(); }}
               className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isInCart ? "bg-amber-500 text-black" : "bg-stone-800 text-stone-400 hover:bg-stone-700 hover:text-white"}`}
-              title={isInCart ? "W koszyku" : "Dodaj do koszyka"}
+              title={isInCart ? t("cat_in_cart") : t("cat_add_to_cart")}
             >
               <ShoppingCart className="w-3.5 h-3.5" />
             </button>
@@ -428,7 +414,7 @@ function ProductCard({ product, isFavorite, isInCart, onSelect, onToggleFavorite
             <button
               onClick={onSelect}
               className="w-7 h-7 rounded-lg bg-stone-800 flex items-center justify-center text-stone-400 hover:bg-stone-700 hover:text-white transition-all"
-              title="Zapytaj"
+              title={t("cat_ask")}
             >
               <MessageCircle className="w-3.5 h-3.5" />
             </button>

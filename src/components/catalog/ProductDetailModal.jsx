@@ -7,11 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Package, ChevronLeft, ChevronRight, MessageCircle, X, CheckCircle, Loader2, HandCoins, Heart, ZoomIn } from "lucide-react";
 import { getCategoryLabel } from "@/lib/categoryConfig";
+import { useLang } from "@/lib/i18n";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-
-const CONDITION_LABELS = { new: "Nowy", like_new: "Jak nowy", used: "Używany" };
-const GENDER_LABELS = { men: "Mężczyźni", women: "Kobiety", unisex: "Unisex", kids: "Dzieci" };
 
 function FavoriteButton({ product, user }) {
   const queryClient = useQueryClient();
@@ -35,12 +33,6 @@ function FavoriteButton({ product, user }) {
         product_id: product.id, product_name: product.product_name,
         customer_name: user?.full_name || "", customer_email: user?.email || "",
       });
-      await base44.entities.AdminNotification.create({
-        type: "favorite", title: "Nowe polubienie produktu",
-        message: `${user?.full_name || user?.email || "Klient"} dodał "${product.product_name}" do ulubionych.`,
-        product_id: product.id, product_name: product.product_name,
-        customer_name: user?.full_name || "", customer_email: user?.email || "", is_read: false,
-      });
     }
     queryClient.invalidateQueries({ queryKey: ["my_favorites"] });
     setLoading(false);
@@ -55,6 +47,7 @@ function FavoriteButton({ product, user }) {
 }
 
 function ActionPanel({ product, user, onSendInquiry }) {
+  const { t } = useLang();
   const [mode, setMode] = useState(null);
   const [message, setMessage] = useState("");
   const [offeredPrice, setOfferedPrice] = useState(product.suggested_sale_price ? String(Math.round(product.suggested_sale_price * 0.9)) : "");
@@ -79,13 +72,6 @@ function ActionPanel({ product, user, onSendInquiry }) {
       offered_price: Number(offeredPrice), message: message.trim() || undefined,
       customer_name: user?.full_name || "", customer_email: user?.email || "", status: "new",
     });
-    await base44.entities.AdminNotification.create({
-      type: "new_offer", title: "Nowa oferta zakupu",
-      message: `${user?.full_name || user?.email || "Klient"} złożył ofertę ${offeredPrice} PLN za "${product.product_name}".`,
-      product_id: product.id, product_name: product.product_name,
-      customer_name: user?.full_name || "", customer_email: user?.email || "",
-      reference_id: product.id, is_read: false,
-    });
     setSending(false); setSent(true);
     setTimeout(reset, 2500);
   };
@@ -93,30 +79,30 @@ function ActionPanel({ product, user, onSendInquiry }) {
   if (sent) return (
     <div className="flex flex-col items-center py-4 gap-2">
       <CheckCircle className="w-9 h-9 text-emerald-500" />
-      <p className="font-semibold text-slate-800 text-sm">{mode === "offer" ? "Oferta wysłana!" : "Zapytanie wysłane!"}</p>
-      <p className="text-xs text-slate-500 text-center">Skontaktujemy się z Tobą wkrótce.</p>
+      <p className="font-semibold text-slate-800 text-sm">{mode === "offer" ? t("pd_offer_sent") : t("cat_inquiry_sent")}</p>
+      <p className="text-xs text-slate-500 text-center">{t("cat_contact_soon")}</p>
     </div>
   );
 
   if (mode === null) return (
     <div className="flex gap-2">
       <Button variant="outline" className="flex-1 h-11 text-sm font-semibold gap-2 border-slate-300" onClick={() => setMode("inquiry")}>
-        <MessageCircle className="w-4 h-4 text-slate-500" /> Zapytaj
+        <MessageCircle className="w-4 h-4 text-slate-500" /> {t("pd_ask")}
       </Button>
       <Button className="flex-1 h-11 text-sm font-semibold gap-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => setMode("offer")}>
-        <HandCoins className="w-4 h-4" /> Złóż ofertę
+        <HandCoins className="w-4 h-4" /> {t("pd_make_offer")}
       </Button>
     </div>
   );
 
   if (mode === "inquiry") return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2"><MessageCircle className="w-4 h-4 text-slate-500" /><span className="font-semibold text-sm text-slate-800">Zapytanie o produkt</span></div>
-      <Textarea placeholder="Napisz czego chcesz się dowiedzieć..." value={message} onChange={e => setMessage(e.target.value)} rows={3} className="text-sm resize-none" />
+      <div className="flex items-center gap-2"><MessageCircle className="w-4 h-4 text-slate-500" /><span className="font-semibold text-sm text-slate-800">{t("pd_product_inquiry")}</span></div>
+      <Textarea placeholder={t("pd_inquiry_placeholder")} value={message} onChange={e => setMessage(e.target.value)} rows={3} className="text-sm resize-none" />
       <div className="flex gap-2">
-        <Button variant="outline" className="flex-1" onClick={reset}>Anuluj</Button>
+        <Button variant="outline" className="flex-1" onClick={reset}>{t("pd_cancel")}</Button>
         <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={handleSendInquiry} disabled={sending || !message.trim()}>
-          {sending && <Loader2 className="w-4 h-4 animate-spin mr-2" />} Wyślij
+          {sending && <Loader2 className="w-4 h-4 animate-spin mr-2" />} {t("pd_send")}
         </Button>
       </div>
     </div>
@@ -124,27 +110,27 @@ function ActionPanel({ product, user, onSendInquiry }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2"><HandCoins className="w-4 h-4 text-emerald-600" /><span className="font-semibold text-sm text-slate-800">Twoja oferta cenowa</span></div>
+      <div className="flex items-center gap-2"><HandCoins className="w-4 h-4 text-emerald-600" /><span className="font-semibold text-sm text-slate-800">{t("pd_your_offer")}</span></div>
       {product.suggested_sale_price && (
         <div className="bg-slate-50 rounded-lg px-3 py-2 text-xs text-slate-500 flex items-center justify-between">
-          <span>Cena wywoławcza</span><span className="font-bold text-slate-700">{product.suggested_sale_price} PLN</span>
+          <span>{t("pd_asking_price")}</span><span className="font-bold text-slate-700">{product.suggested_sale_price} PLN</span>
         </div>
       )}
       <div className="space-y-1">
-        <Label className="text-xs">Twoja cena (PLN)</Label>
+        <Label className="text-xs">{t("pd_your_price")}</Label>
         <div className="relative">
-          <Input type="number" min={1} value={offeredPrice} onChange={e => setOfferedPrice(e.target.value)} className="pr-14 text-base font-bold" placeholder="np. 150" />
+          <Input type="number" min={1} value={offeredPrice} onChange={e => setOfferedPrice(e.target.value)} className="pr-14 text-base font-bold" placeholder="0" />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-medium">PLN</span>
         </div>
       </div>
       <div className="space-y-1">
-        <Label className="text-xs">Wiadomość (opcjonalnie)</Label>
-        <Textarea placeholder="Dodaj wiadomość..." value={message} onChange={e => setMessage(e.target.value)} rows={2} className="text-sm resize-none" />
+        <Label className="text-xs">{t("pd_message_optional")}</Label>
+        <Textarea placeholder={t("pd_add_message")} value={message} onChange={e => setMessage(e.target.value)} rows={2} className="text-sm resize-none" />
       </div>
       <div className="flex gap-2">
-        <Button variant="outline" className="flex-1" onClick={reset}>Anuluj</Button>
+        <Button variant="outline" className="flex-1" onClick={reset}>{t("pd_cancel")}</Button>
         <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={handleSendOffer} disabled={sending || !offeredPrice || isNaN(Number(offeredPrice)) || Number(offeredPrice) <= 0}>
-          {sending && <Loader2 className="w-4 h-4 animate-spin mr-2" />} Wyślij ofertę
+          {sending && <Loader2 className="w-4 h-4 animate-spin mr-2" />} {t("pd_send_offer")}
         </Button>
       </div>
     </div>
@@ -204,8 +190,12 @@ function ImageLightbox({ images, startIndex, onClose }) {
 }
 
 export default function ProductDetailModal({ product, onClose, user, onSendInquiry }) {
+  const { t, lang } = useLang();
   const [activeImg, setActiveImg] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+
+  const condLabels = { new: t("cond_new"), like_new: t("cond_like_new"), used: t("cond_used") };
+  const genderLabels = { men: t("gender_men"), women: t("gender_women"), unisex: t("gender_unisex"), kids: t("gender_kids") };
 
   useEffect(() => {
     setActiveImg(0);
@@ -275,24 +265,24 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
             <div className="p-6 flex-1 space-y-5">
               <div>
                 <div className="flex flex-wrap gap-1.5 mb-2">
-                  <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">{getCategoryLabel(product.category)}</Badge>
+                  <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">{getCategoryLabel(product.category, lang)}</Badge>
                   {product.subcategory && <Badge variant="outline" className="text-xs">{product.subcategory}</Badge>}
-                  {product.condition && <Badge className="bg-slate-100 text-slate-600 border-0 text-xs">{CONDITION_LABELS[product.condition] || product.condition}</Badge>}
+                  {product.condition && <Badge className="bg-slate-100 text-slate-600 border-0 text-xs">{condLabels[product.condition] || product.condition}</Badge>}
                 </div>
                 <h2 className="text-xl font-bold text-slate-900 leading-snug">{product.product_name}</h2>
                 {product.suggested_sale_price
                   ? <p className="text-2xl font-extrabold text-emerald-600 mt-1">{product.suggested_sale_price} PLN</p>
-                  : <p className="text-sm text-slate-400 mt-1 italic">Cena na zapytanie</p>}
+                  : <p className="text-sm text-slate-400 mt-1 italic">{t("pd_price_on_request")}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {product.brand && <div className="bg-slate-50 rounded-xl p-3"><p className="text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Marka</p><p className="font-semibold text-slate-800 text-sm">{product.brand}</p></div>}
-                {product.size && <div className="bg-slate-50 rounded-xl p-3"><p className="text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Rozmiar</p><p className="font-semibold text-slate-800 text-sm">{product.size}</p></div>}
-                {product.color && <div className="bg-slate-50 rounded-xl p-3"><p className="text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Kolor</p><p className="font-semibold text-slate-800 text-sm">{product.color}</p></div>}
-                {product.gender && product.gender !== "none" && GENDER_LABELS[product.gender] && <div className="bg-slate-50 rounded-xl p-3"><p className="text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Przeznaczenie</p><p className="font-semibold text-slate-800 text-sm">{GENDER_LABELS[product.gender]}</p></div>}
+                {product.brand && <div className="bg-slate-50 rounded-xl p-3"><p className="text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">{t("pd_brand")}</p><p className="font-semibold text-slate-800 text-sm">{product.brand}</p></div>}
+                {product.size && <div className="bg-slate-50 rounded-xl p-3"><p className="text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">{t("pd_size")}</p><p className="font-semibold text-slate-800 text-sm">{product.size}</p></div>}
+                {product.color && <div className="bg-slate-50 rounded-xl p-3"><p className="text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">{t("pd_color")}</p><p className="font-semibold text-slate-800 text-sm">{product.color}</p></div>}
+                {product.gender && product.gender !== "none" && genderLabels[product.gender] && <div className="bg-slate-50 rounded-xl p-3"><p className="text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">{t("pd_gender")}</p><p className="font-semibold text-slate-800 text-sm">{genderLabels[product.gender]}</p></div>}
               </div>
               {product.listing_description && (
                 <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Opis</p>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t("pd_description")}</p>
                   <div className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none bg-slate-50 rounded-xl p-4" dangerouslySetInnerHTML={{ __html: product.listing_description }} />
                 </div>
               )}
