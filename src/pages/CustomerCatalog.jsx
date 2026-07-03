@@ -69,7 +69,8 @@ function CustomerCatalog() {
   const filtered = useMemo(() => {
     let result = products.filter(p => {
       if (p.status === "sold") return false;
-      if (p.product_name === "Nieznany produkt") return false;
+      if (p.product_name?.toLowerCase() === "nieznany produkt") return false;
+      if (p.internal_code?.startsWith("UNK-")) return false;
       if (search && ![p.product_name, p.brand, p.category, p.subcategory].some(v => v?.toLowerCase().includes(search.toLowerCase()))) return false;
       if (selectedCategories.length > 0 && !selectedCategories.includes(p.category)) return false;
       if (selectedConditions.length > 0 && !selectedConditions.includes(p.condition)) return false;
