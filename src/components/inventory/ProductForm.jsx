@@ -11,7 +11,7 @@ import { Upload, X, Loader2, RefreshCw, Package, Sparkles, MessageSquare } from 
 import { compressImage } from "@/lib/compressImage";
 import { useQuery } from "@tanstack/react-query";
 import { useLang } from "@/lib/i18n";
-import { CATEGORY_GROUPS, SUBCATEGORIES_BY_CATEGORY, CATEGORY_LABELS } from "@/lib/categoryConfig";
+import { CATEGORY_GROUPS, SUBCATEGORIES_BY_CATEGORY, CATEGORY_LABELS, getCategoryLabel, getCategoryGroupLabel } from "@/lib/categoryConfig";
 
 const generateSKU = (category) => {
   const prefix = (category || "other").slice(0, 3).toUpperCase();
@@ -216,9 +216,9 @@ No HTML tags or formatting whatsoever.`;
                 className="w-full h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 {CATEGORY_GROUPS.map(group => (
-                  <optgroup key={group.group} label={`${group.icon} ${group.group}`}>
+                  <optgroup key={group.group} label={`${group.icon} ${getCategoryGroupLabel(group.group, lang)}`}>
                     {group.items.map(item => (
-                      <option key={item.value} value={item.value}>{item.label}</option>
+                      <option key={item.value} value={item.value}>{getCategoryLabel(item.value, lang)}</option>
                     ))}
                   </optgroup>
                 ))}

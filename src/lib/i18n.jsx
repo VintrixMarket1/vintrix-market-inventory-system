@@ -127,6 +127,15 @@ export const translations = {
     status_in_stock: "In stock",
     status_listed: "Listed",
     status_sold: "Sold",
+    status_all: "All",
+    status_unknown: "Unknown",
+
+    // Inventory filters
+    inv_search_placeholder: "Search products...",
+    inv_all_categories: "All Categories",
+    inv_all_subcategories: "All Subcategories",
+    inv_all_pallets: "All pallets",
+    inv_status: "Status",
 
     // Pallets
     pal_title: "Pallets",
@@ -372,6 +381,15 @@ export const translations = {
     status_in_stock: "W magazynie",
     status_listed: "Wystawiony",
     status_sold: "Sprzedany",
+    status_all: "Wszystkie",
+    status_unknown: "Nieznane",
+
+    // Inventory filters
+    inv_search_placeholder: "Szukaj produktów...",
+    inv_all_categories: "Wszystkie kategorie",
+    inv_all_subcategories: "Wszystkie podkategorie",
+    inv_all_pallets: "Wszystkie palety",
+    inv_status: "Status",
 
     // Pallets
     pal_title: "Palety",
