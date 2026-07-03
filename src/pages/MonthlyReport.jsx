@@ -119,13 +119,30 @@ export default function MonthlyReport() {
   };
 
   const cumulativeDocs = docs.filter(d => isBeforeOrInMonth(d.date));
-  const cumulativePzNet = cumulativeDocs.filter(d => d.document_type === "PZ").reduce((s, d) => s + (d.total_value || 0), 0);
-  const cumulativePwNet = cumulativeDocs.filter(d => d.document_type === "PW").reduce((s, d) => s + (d.total_value || 0), 0);
-  const cumulativeWzNet = cumulativeDocs.filter(d => d.document_type === "WZ").reduce((s, d) => s + (d.total_value || 0), 0);
-  const cumulativeRwNet = cumulativeDocs.filter(d => d.document_type === "RW").reduce((s, d) => s + (d.total_value || 0), 0);
-  const cumulativeReceiptsNet = cumulativePzNet + cumulativePwNet;
-  const cumulativeIssuesNet = cumulativeWzNet + cumulativeRwNet;
-  const totalStockValueNet = cumulativeReceiptsNet - cumulativeIssuesNet;
+
+  // Stan z poprzedniego miesiąca — wszystkie dokumenty PRZED wybranym miesiącem
+  const isBeforeMonth = (dateStr) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const y = String(d.getFullYear());
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    if (y < selectedYear) return true;
+    if (y > selectedYear) return false;
+    return m < selectedMonth;
+  };
+  const prevMonthDocs = docs.filter(d => isBeforeMonth(d.date));
+  const prevReceiptsNet = prevMonthDocs.filter(d => d.document_type === "PZ" || d.document_type === "PW").reduce((s, d) => s + (d.total_value || 0), 0);
+  const prevIssuesNet = prevMonthDocs.filter(d => d.document_type === "WZ" || d.document_type === "RW").reduce((s, d) => s + (d.total_value || 0), 0);
+  const prevStockValueNet = prevReceiptsNet - prevIssuesNet;
+
+  // Przyjęcia i wydania w danym miesiącu
+  const monthReceiptsNet = pzNet + pwNet;
+  const monthIssuesNet = wzNet + rwNet;
+
+  // Stan na koniec miesiąca
+  const totalStockValueNet = prevStockValueNet + monthReceiptsNet - monthIssuesNet;
+  const cumulativeReceiptsNet = prevReceiptsNet + monthReceiptsNet;
+  const cumulativeIssuesNet = prevIssuesNet + monthIssuesNet;
 
   // Podział sprzedaży per platforma — sale_price/purchase_price są brutto, przeliczamy na netto
   const byPlatform = monthSales.reduce((acc, s) => {
@@ -160,10 +177,11 @@ export default function MonthlyReport() {
       ["Zysk brutto ze sprzedaży", totalProfitNet.toFixed(2), toGross(totalProfitNet).toFixed(2)],
       [`Marża (%)`, `${marginPct.toFixed(1)}%`, `${marginPct.toFixed(1)}%`],
       ["", "", ""],
-      ["STAN MAGAZYNOWY (na koniec miesiąca)", "NETTO (PLN)", "BRUTTO (PLN)"],
-      ["Przyjęcia narastająco (PZ+PW)", cumulativeReceiptsNet.toFixed(2), toGross(cumulativeReceiptsNet).toFixed(2)],
-      ["Wydania narastająco (WZ+RW)", cumulativeIssuesNet.toFixed(2), toGross(cumulativeIssuesNet).toFixed(2)],
-      ["STAN MAGAZYNOWY", totalStockValueNet.toFixed(2), toGross(totalStockValueNet).toFixed(2)],
+      ["STAN MAGAZYNOWY", "NETTO (PLN)", "BRUTTO (PLN)"],
+      ["Stan z poprzedniego miesiąca", prevStockValueNet.toFixed(2), toGross(prevStockValueNet).toFixed(2)],
+      ["Przyjęcia w danym miesiącu", monthReceiptsNet.toFixed(2), toGross(monthReceiptsNet).toFixed(2)],
+      ["Wydania w danym miesiącu", monthIssuesNet.toFixed(2), toGross(monthIssuesNet).toFixed(2)],
+      ["Stan magazynu na koniec miesiąca", totalStockValueNet.toFixed(2), toGross(totalStockValueNet).toFixed(2)],
     ];
     const ws1 = XLSX.utils.aoa_to_sheet(summary);
     ws1["!cols"] = [{ wch: 40 }, { wch: 18 }, { wch: 18 }];
@@ -269,27 +287,27 @@ export default function MonthlyReport() {
 
           {/* Stock value */}
           <div>
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Stan magazynowy na koniec {monthLabel} {selectedYear}</h2>
+            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Stan magazynowy — {monthLabel} {selectedYear}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Przyjęcia narastająco (PZ+PW)</p>
-                <p className="text-xl font-bold text-slate-900">{cumulativeReceiptsNet.toFixed(2)} PLN</p>
-                <p className="text-xs text-slate-400 mt-0.5">netto — od początku działalności</p>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Stan z poprzedniego miesiąca</p>
+                <p className="text-xl font-bold text-slate-900">{prevStockValueNet.toFixed(2)} PLN</p>
+                <p className="text-xs text-slate-400 mt-0.5">netto</p>
               </div>
-              <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Wydania narastająco (WZ+RW)</p>
-                <p className="text-xl font-bold text-slate-900">{cumulativeIssuesNet.toFixed(2)} PLN</p>
-                <p className="text-xs text-slate-400 mt-0.5">netto — od początku działalności</p>
+              <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-4">
+                <p className="text-xs font-medium text-emerald-600 uppercase tracking-wider mb-2">Przyjęcia w danym miesiącu</p>
+                <p className="text-xl font-bold text-emerald-900">{monthReceiptsNet.toFixed(2)} PLN</p>
+                <p className="text-xs text-emerald-400 mt-0.5">PZ + PW netto</p>
+              </div>
+              <div className="bg-amber-50 rounded-xl border border-amber-200 p-4">
+                <p className="text-xs font-medium text-amber-600 uppercase tracking-wider mb-2">Wydania w danym miesiącu</p>
+                <p className="text-xl font-bold text-amber-900">{monthIssuesNet.toFixed(2)} PLN</p>
+                <p className="text-xs text-amber-400 mt-0.5">WZ + RW netto</p>
               </div>
               <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
-                <p className="text-xs font-medium text-blue-600 uppercase tracking-wider mb-2">Stan magazynu netto</p>
+                <p className="text-xs font-medium text-blue-600 uppercase tracking-wider mb-2">Stan na koniec miesiąca</p>
                 <p className="text-xl font-bold text-blue-900">{totalStockValueNet.toFixed(2)} PLN</p>
-                <p className="text-xs text-blue-400 mt-0.5">przyjęcia − wydania</p>
-              </div>
-              <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Stan magazynu brutto</p>
-                <p className="text-xl font-bold text-slate-700">{toGross(totalStockValueNet).toFixed(2)} PLN</p>
-                <p className="text-xs text-slate-400 mt-0.5">+23% VAT</p>
+                <p className="text-xs text-blue-400 mt-0.5">brutto: {toGross(totalStockValueNet).toFixed(2)} PLN</p>
               </div>
             </div>
           </div>
