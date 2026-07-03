@@ -63,13 +63,14 @@ function CustomerCatalog() {
 
   const { data: products = [] } = useQuery({
     queryKey: ["catalog_products"],
-    queryFn: () => base44.entities.Product.list("-created_date"),
+    queryFn: () => base44.entities.Product.list("-created_date", 500),
   });
 
   const filtered = useMemo(() => {
     let result = products.filter(p => {
       if (p.status === "sold") return false;
-      if (p.product_name?.toLowerCase() === "nieznany produkt") return false;
+      const nameLower = (p.product_name || "").toLowerCase();
+      if (nameLower.includes("nieznany") || nameLower.includes("unknown")) return false;
       if (p.internal_code?.startsWith("UNK-")) return false;
       if (search && ![p.product_name, p.brand, p.category, p.subcategory].some(v => v?.toLowerCase().includes(search.toLowerCase()))) return false;
       if (selectedCategories.length > 0 && !selectedCategories.includes(p.category)) return false;
@@ -233,7 +234,7 @@ function CustomerCatalog() {
         {/* Tabs */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-1 border-t border-stone-800/50">
           {[
-            { key: "all", label: t("cat_all"), count: products.filter(p => p.status !== "sold" && p.product_name !== "Nieznany produkt").length },
+            { key: "all", label: t("cat_all"), count: products.filter(p => p.status !== "sold" && !(p.product_name || "").toLowerCase().includes("nieznany") && !(p.internal_code || "").startsWith("UNK-")).length },
             { key: "favorites", label: t("cat_favorites"), count: favoriteProductIds.size },
           ].map(tab => (
             <button
