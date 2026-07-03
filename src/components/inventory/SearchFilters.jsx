@@ -1,9 +1,9 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import { useLang } from "@/lib/i18n";
-import { getCategoryLabel, getCategoryGroupLabel, CATEGORY_GROUPS, SUBCATEGORIES_BY_CATEGORY } from "@/lib/categoryConfig";
+import { CATEGORY_GROUPS, SUBCATEGORIES_BY_CATEGORY, getCategoryLabel, getCategoryGroupLabel } from "@/lib/categoryConfig";
 
 export default function SearchFilters({ filters, onChange, pallets = [] }) {
   const { t, lang } = useLang();
@@ -16,19 +16,6 @@ export default function SearchFilters({ filters, onChange, pallets = [] }) {
     sold: t("status_sold"),
     unknown: t("status_unknown"),
   };
-
-  // Legacy category values for the top-level filter
-  const legacyCategories = [
-    { value: "clothing", group: "Odzież" },
-    { value: "shoes", group: "Obuwie" },
-    { value: "accessories", group: "Akcesoria" },
-    { value: "electronics", group: "Elektronika" },
-    { value: "home", group: "Dom i ogród" },
-    { value: "toys", group: "Zabawki" },
-    { value: "sports", group: "Sport" },
-    { value: "books", group: "Książki" },
-    { value: "other", group: "Inne" },
-  ];
 
   const subcategories = filters.category && filters.category !== "all"
     ? SUBCATEGORIES_BY_CATEGORY[filters.category] || []
@@ -46,13 +33,18 @@ export default function SearchFilters({ filters, onChange, pallets = [] }) {
         />
       </div>
       <Select value={filters.category} onValueChange={v => { onChange({ ...filters, category: v, subcategory: "all" }); }}>
-        <SelectTrigger className="w-full sm:w-40">
+        <SelectTrigger className="w-full sm:w-44">
           <SelectValue placeholder={t("pf_category")} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">{t("inv_all_categories")}</SelectItem>
-          {legacyCategories.map(c => (
-            <SelectItem key={c.value} value={c.value}>{getCategoryLabel(c.value, lang)}</SelectItem>
+          {CATEGORY_GROUPS.map(group => (
+            <SelectGroup key={group.group}>
+              <SelectLabel>{group.icon} {getCategoryGroupLabel(group.group, lang)}</SelectLabel>
+              {group.items.map(item => (
+                <SelectItem key={item.value} value={item.value}>{getCategoryLabel(item.value, lang)}</SelectItem>
+              ))}
+            </SelectGroup>
           ))}
         </SelectContent>
       </Select>

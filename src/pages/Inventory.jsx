@@ -158,7 +158,7 @@ export default function Inventory() {
       {unsettledPallets.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Palety w trakcie sortowania</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("bulk_sorting_pallets")}</span>
             <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{unsettledPallets.length}</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -170,7 +170,7 @@ export default function Inventory() {
               );
             })}
           </div>
-          {filtered.length > 0 && <div className="border-t border-slate-200 mt-4 pt-2"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Produkty na stanie</span></div>}
+          {filtered.length > 0 && <div className="border-t border-slate-200 mt-4 pt-2"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("inv_products_on_stock")}</span></div>}
         </div>
       )}
 
@@ -206,7 +206,7 @@ export default function Inventory() {
               <div className="flex gap-1 mt-1.5">
                 {product.product_name === "Nieznany produkt" && product.status !== "reclassified" && (
                   <Button size="sm" className="flex-1 text-xs h-7 bg-amber-500 hover:bg-amber-600 text-white" onClick={() => setConvertProduct(product)}>
-                    🔄 Konwertuj
+                    🔄 {t("inv_convert")}
                   </Button>
                 )}
                 {product.product_name !== "Nieznany produkt" && (product.status || "in_stock") !== "sold" && product.status !== "reclassified" && (
@@ -216,7 +216,7 @@ export default function Inventory() {
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                 )}
                 {product.status === "sold" && !product.is_multi_item && (
-                  <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ Zwrot</Button>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ {t("inv_return")}</Button>
                 )}
               </div>
             </div>
@@ -285,7 +285,7 @@ export default function Inventory() {
                     <Trash2 className="w-3.5 h-3.5 text-red-500" />
                   </button>
                   {product.product_name === "Nieznany produkt" && product.status !== "reclassified" && (
-                    <Button size="sm" className="text-xs h-7 px-2 bg-amber-500 hover:bg-amber-600 text-white" onClick={() => setConvertProduct(product)}>🔄 Konwertuj</Button>
+                    <Button size="sm" className="text-xs h-7 px-2 bg-amber-500 hover:bg-amber-600 text-white" onClick={() => setConvertProduct(product)}>🔄 {t("inv_convert")}</Button>
                   )}
                   {product.product_name !== "Nieznany produkt" && (product.status || "in_stock") !== "sold" && product.status !== "reclassified" && (
                     <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={() => setListingProduct(product)}>{t("inv_list")}</Button>
@@ -294,7 +294,7 @@ export default function Inventory() {
                     <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-emerald-600 border-emerald-200" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                   )}
                   {product.status === "sold" && !product.is_multi_item && (
-                    <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ Zwrot</Button>
+                    <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ {t("inv_return")}</Button>
                   )}
                 </div>
               </div>

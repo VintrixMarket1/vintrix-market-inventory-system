@@ -2,15 +2,17 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { X, CheckSquare, Tag, TrendingUp, Trash2, Loader2, ShoppingBag, Package } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useLang } from "@/lib/i18n";
 
 export default function BulkActionsBar({ selectedIds, allProducts, pallets = [], onClear, onListSelected, onShopifyPublish }) {
   const [loading, setLoading] = useState(false);
   const [selectedPallet, setSelectedPallet] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useLang();
   const count = selectedIds.size;
 
   const bulkSetStatus = async (status) => {
@@ -20,7 +22,7 @@ export default function BulkActionsBar({ selectedIds, allProducts, pallets = [],
       await base44.entities.Product.update(id, { status });
     }
     queryClient.invalidateQueries({ queryKey: ["products"] });
-    toast({ title: "Zaktualizowano", description: `Zmieniono status ${ids.length} produktów na "${status}"` });
+    toast({ title: t("bulk_updated"), description: t("bulk_status_changed")(ids.length) });
     setLoading(false);
     onClear();
   };
@@ -34,20 +36,20 @@ export default function BulkActionsBar({ selectedIds, allProducts, pallets = [],
     }
     queryClient.invalidateQueries({ queryKey: ["products"] });
     const pallet = pallets.find(p => p.id === selectedPallet);
-    toast({ title: "Przypisano do palety", description: `${ids.length} produktów przypisano do ${pallet?.pallet_code || "palety"}` });
+    toast({ title: t("bulk_updated"), description: t("bulk_assigned_pallet")(ids.length, pallet?.pallet_code || "") });
     setSelectedPallet("");
     setLoading(false);
     onClear();
   };
 
   const bulkDelete = async () => {
-    if (!confirm(`Czy na pewno usunąć ${count} produktów?`)) return;
+    if (!confirm(t("bulk_delete_confirm")(count))) return;
     setLoading(true);
     for (const id of [...selectedIds]) {
       await base44.entities.Product.delete(id);
     }
     queryClient.invalidateQueries({ queryKey: ["products"] });
-    toast({ title: "Usunięto", description: `Usunięto ${count} produktów` });
+    toast({ title: t("bulk_deleted"), description: t("bulk_deleted_count")(count) });
     setLoading(false);
     onClear();
   };
@@ -56,24 +58,24 @@ export default function BulkActionsBar({ selectedIds, allProducts, pallets = [],
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3 flex-wrap">
       <div className="flex items-center gap-2 text-sm font-medium">
         <CheckSquare className="w-4 h-4 text-emerald-400" />
-        <span className="text-emerald-400">{count}</span> zaznaczonych
+        <span className="text-emerald-400">{count}</span> {t("bulk_selected")}
       </div>
 
       <div className="w-px h-5 bg-slate-600" />
 
       <div className="flex items-center gap-2 text-xs text-slate-400">
         <Tag className="w-3.5 h-3.5" />
-        Zmień status:
+        {t("bulk_change_status")}
       </div>
       <div className="flex gap-1.5">
         <Button size="sm" variant="outline" className="h-7 text-xs border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white bg-transparent" onClick={() => bulkSetStatus("in_stock")} disabled={loading}>
-          W magazynie
+          {t("status_in_stock")}
         </Button>
         <Button size="sm" variant="outline" className="h-7 text-xs border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white bg-transparent" onClick={() => bulkSetStatus("listed")} disabled={loading}>
-          Wystawione
+          {t("status_listed")}
         </Button>
         <Button size="sm" variant="outline" className="h-7 text-xs border-emerald-600 text-emerald-400 hover:bg-emerald-900 hover:text-white bg-transparent" onClick={() => bulkSetStatus("sold")} disabled={loading}>
-          Sprzedane
+          {t("status_sold")}
         </Button>
       </div>
 
@@ -84,7 +86,7 @@ export default function BulkActionsBar({ selectedIds, allProducts, pallets = [],
           <Package className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           <Select value={selectedPallet} onValueChange={setSelectedPallet} disabled={loading}>
             <SelectTrigger className="h-7 text-xs bg-slate-800 border-slate-600 text-slate-200 w-36">
-              <SelectValue placeholder="Przypisz paletę" />
+              <SelectValue placeholder={t("bulk_assign_pallet")} />
             </SelectTrigger>
             <SelectContent>
               {pallets.map(p => (
@@ -102,7 +104,7 @@ export default function BulkActionsBar({ selectedIds, allProducts, pallets = [],
 
       <Button size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1" onClick={() => onListSelected([...selectedIds])} disabled={loading}>
         <TrendingUp className="w-3.5 h-3.5" />
-        Wystaw wybrane
+        {t("bulk_list_selected")}
       </Button>
 
       <Button size="sm" className="h-7 text-xs bg-slate-700 hover:bg-slate-600 text-white gap-1 border border-slate-600" onClick={() => onShopifyPublish?.([...selectedIds])} disabled={loading}>

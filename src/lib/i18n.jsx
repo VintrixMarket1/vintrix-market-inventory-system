@@ -46,6 +46,9 @@ export const translations = {
     inv_size: "Size",
     inv_purchase: "Purchase",
     inv_sale: "Sale",
+    inv_convert: "Convert",
+    inv_return: "Return",
+    inv_products_on_stock: "Products in stock",
 
     // Product Form
     pf_add: "Add Product",
@@ -136,6 +139,19 @@ export const translations = {
     inv_all_subcategories: "All Subcategories",
     inv_all_pallets: "All pallets",
     inv_status: "Status",
+
+    // Bulk actions
+    bulk_selected: "selected",
+    bulk_change_status: "Change status:",
+    bulk_assign_pallet: "Assign pallet",
+    bulk_list_selected: "List selected",
+    bulk_updated: "Updated",
+    bulk_status_changed: (n) => `Changed status of ${n} products`,
+    bulk_assigned_pallet: (n, code) => `${n} products assigned to ${code}`,
+    bulk_deleted: "Deleted",
+    bulk_deleted_count: (n) => `Deleted ${n} products`,
+    bulk_delete_confirm: (n) => `Are you sure you want to delete ${n} products?`,
+    bulk_sorting_pallets: "Pallets in sorting",
 
     // Pallets
     pal_title: "Pallets",
@@ -300,6 +316,9 @@ export const translations = {
     inv_size: "Rozmiar",
     inv_purchase: "Zakup",
     inv_sale: "Sprzedaż",
+    inv_convert: "Konwertuj",
+    inv_return: "Zwrot",
+    inv_products_on_stock: "Produkty na stanie",
 
     // Product Form
     pf_add: "Dodaj produkt",
@@ -390,6 +409,19 @@ export const translations = {
     inv_all_subcategories: "Wszystkie podkategorie",
     inv_all_pallets: "Wszystkie palety",
     inv_status: "Status",
+
+    // Bulk actions
+    bulk_selected: "zaznaczonych",
+    bulk_change_status: "Zmień status:",
+    bulk_assign_pallet: "Przypisz paletę",
+    bulk_list_selected: "Wystaw wybrane",
+    bulk_updated: "Zaktualizowano",
+    bulk_status_changed: (n) => `Zmieniono status ${n} produktów`,
+    bulk_assigned_pallet: (n, code) => `${n} produktów przypisano do ${code}`,
+    bulk_deleted: "Usunięto",
+    bulk_deleted_count: (n) => `Usunięto ${n} produktów`,
+    bulk_delete_confirm: (n) => `Czy na pewno usunąć ${n} produktów?`,
+    bulk_sorting_pallets: "Palety w trakcie sortowania",
 
     // Pallets
     pal_title: "Palety",
