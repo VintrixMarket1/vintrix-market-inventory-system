@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
-  LayoutDashboard, Package, Tag, DollarSign, Zap, 
+  LayoutDashboard, Package, Tag, DollarSign,
   Menu, X, ChevronRight, Layers, BookOpen, Settings, FileText, MessageCircle, BarChart3
 } from "lucide-react";
 import { useLang } from "@/lib/i18n";
@@ -33,13 +33,12 @@ export default function Sidebar() {
     { path: "/WarehouseDocuments", label: "Dokumenty Mag.", icon: FileText },
     { path: "/MonthlyReport", label: "Raport Miesięczny", icon: BarChart3 },
     { path: "/Inquiries", label: "Zapytania klientów", icon: MessageCircle },
-    { path: "/QuickAdd", labelKey: "nav_quick_add", icon: Zap },
     { path: "/Settings", labelKey: "nav_settings", icon: Settings },
   ];
 
-  const pracownikAllowed = ["/Inventory", "/QuickAdd", "/Settings"];
+  const pracownikHidden = ["/Listings", "/Sales", "/WarehouseDocuments", "/MonthlyReport", "/Inquiries"];
   const navItems = isPracownik
-    ? allNavItems.filter(item => pracownikAllowed.includes(item.path))
+    ? allNavItems.filter(item => !pracownikHidden.includes(item.path))
     : allNavItems;
 
   const isActive = (path) => location.pathname === path;
@@ -84,7 +83,7 @@ export default function Sidebar() {
       <div className="p-4 border-t border-slate-700/50">
         <div className="bg-slate-800/50 rounded-lg p-3">
           <p className="text-xs text-slate-400">💡 Tip</p>
-          <p className="text-xs text-slate-500 mt-1">{t("nav_quick_add")} → szybkie dodawanie</p>
+          <p className="text-xs text-slate-500 mt-1">Vintrix Market Sp. z o.o.</p>
         </div>
       </div>
     </div>

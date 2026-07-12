@@ -16,7 +16,6 @@ import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Listings from './pages/Listings';
 import Sales from './pages/Sales.jsx';
-import QuickAdd from './pages/QuickAdd';
 import Pallets from './pages/Pallets';
 import AddProduct from './pages/AddProduct';
 import ProductModels from './pages/ProductModels';
@@ -67,8 +66,10 @@ const AuthenticatedApp = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/Inventory" replace />} />
         <Route element={<AppLayout />}>
+          <Route path="/Dashboard" element={<Dashboard />} />
           <Route path="/Inventory" element={<Inventory />} />
-          <Route path="/QuickAdd" element={<QuickAdd />} />
+          <Route path="/ProductModels" element={<ProductModels />} />
+          <Route path="/Pallets" element={<Pallets />} />
           <Route path="/AddProduct" element={<AddProduct />} />
           <Route path="/Settings" element={<Settings />} />
         </Route>
@@ -87,7 +88,6 @@ const AuthenticatedApp = () => {
         <Route path="/Pallets" element={<Pallets />} />
         <Route path="/Listings" element={<Listings />} />
         <Route path="/Sales" element={<Sales />} />
-        <Route path="/QuickAdd" element={<QuickAdd />} />
         <Route path="/AddProduct" element={<AddProduct />} />
         <Route path="/ProductModels" element={<ProductModels />} />
         <Route path="/ShopifySettings" element={<ShopifySettings />} />
