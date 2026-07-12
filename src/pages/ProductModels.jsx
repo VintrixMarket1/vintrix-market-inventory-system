@@ -42,6 +42,10 @@ export default function ProductModels() {
   });
 
   const filtered = products.filter(p => {
+    const nameLower = (p.product_name || "").toLowerCase();
+    if (nameLower.includes("nieznany") || nameLower.includes("unknown")) return false;
+    if (p.internal_code?.startsWith("UNK-")) return false;
+    if (!p.ai_verified) return false;
     const searchMatch = !search ||
       p.product_name?.toLowerCase().includes(search.toLowerCase()) ||
       p.brand?.toLowerCase().includes(search.toLowerCase()) ||
