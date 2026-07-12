@@ -3,12 +3,11 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, BookOpen } from "lucide-react";
-import { SUBCATEGORIES } from "@/lib/subcategories";
+import { CATEGORY_GROUPS, getCategoryLabel } from "@/lib/categoryConfig";
+import { useLang } from "@/lib/i18n";
 import ProductDetailModal from "@/components/catalog/ProductDetailModal";
 
-const categories = ["all", "clothing", "shoes", "accessories", "electronics", "home", "toys", "sports", "books", "other"];
 const genders = ["all", "men", "women", "unisex", "kids", "none"];
 
 const categoryColors = {
@@ -32,9 +31,9 @@ const statusColors = {
 export default function ProductModels() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
-  const [subcategory, setSubcategory] = useState("all");
   const [gender, setGender] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const { lang } = useLang();
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products"],
@@ -51,9 +50,8 @@ export default function ProductModels() {
       p.brand?.toLowerCase().includes(search.toLowerCase()) ||
       p.internal_code?.toLowerCase().includes(search.toLowerCase());
     const categoryMatch = category === "all" || p.category === category;
-    const subcategoryMatch = subcategory === "all" || p.subcategory === subcategory;
     const genderMatch = gender === "all" || (p.gender || "none") === gender;
-    return searchMatch && categoryMatch && subcategoryMatch && genderMatch;
+    return searchMatch && categoryMatch && genderMatch;
   });
 
   return (
@@ -74,39 +72,29 @@ export default function ProductModels() {
             className="pl-9"
           />
         </div>
-        <Select value={category} onValueChange={v => { setCategory(v); setSubcategory("all"); }}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map(c => (
-              <SelectItem key={c} value={c}>{c === "all" ? "All categories" : c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {category !== "all" && (SUBCATEGORIES[category] || []).length > 0 && (
-          <Select value={subcategory} onValueChange={setSubcategory}>
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder="Subcategory" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All subcategories</SelectItem>
-              {(SUBCATEGORIES[category] || []).map(s => (
-                <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+        <select
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+          className="h-9 w-48 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+        >
+          <option value="all">All categories</option>
+          {CATEGORY_GROUPS.map(group => (
+            <optgroup key={group.group} label={group.group}>
+              {group.items.map(item => (
+                <option key={item.value} value={item.value}>{getCategoryLabel(item.value, lang)}</option>
               ))}
-            </SelectContent>
-          </Select>
-        )}
-        <Select value={gender} onValueChange={setGender}>
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Gender" />
-          </SelectTrigger>
-          <SelectContent>
-            {genders.map(g => (
-              <SelectItem key={g} value={g}>{g === "all" ? "All genders" : g}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            </optgroup>
+          ))}
+        </select>
+        <select
+          value={gender}
+          onChange={e => setGender(e.target.value)}
+          className="h-9 w-36 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+        >
+          {genders.map(g => (
+            <option key={g} value={g}>{g === "all" ? "All genders" : g}</option>
+          ))}
+        </select>
       </div>
 
       {isLoading ? (
@@ -137,7 +125,7 @@ export default function ProductModels() {
                 <p className="text-[10px] text-slate-400 font-mono">{product.internal_code}</p>
                 <div className="flex items-center gap-1 flex-wrap">
                   <Badge className={`text-[10px] px-1.5 ${categoryColors[product.category] || "bg-slate-100 text-slate-600"}`}>
-                    {product.category}
+                    {getCategoryLabel(product.category, lang)}
                   </Badge>
                   {product.subcategory && (
                     <Badge className="text-[10px] px-1.5 bg-slate-100 text-slate-500">
