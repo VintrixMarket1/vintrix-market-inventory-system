@@ -99,7 +99,8 @@ export default function MonthlyReport() {
   const pwNet = sumNet(pwDocs);
   const rwNet = sumNet(rwDocs);
 
-  // Sprzedaże w miesiącu — sale_price i purchase_price są kwotami BRUTTO, przeliczamy na netto
+  // Sprzedaże w miesiącu — sale_price jest BRUTTO (przeliczamy na netto przez /1.23),
+  // purchase_price jest już NETTO (pochodzi z dokumentów PZ / kosztu palety)
   const monthSales = sales.filter(s => filterByMonth(s.sale_date));
   const totalRevenueNet = monthSales.reduce((s, x) => s + toNet(x.sale_price || 0), 0);
   const totalCostNet = monthSales.reduce((s, x) => s + (x.purchase_price || 0), 0);
@@ -144,7 +145,7 @@ export default function MonthlyReport() {
   const cumulativeReceiptsNet = prevReceiptsNet + monthReceiptsNet;
   const cumulativeIssuesNet = prevIssuesNet + monthIssuesNet;
 
-  // Podział sprzedaży per platforma — sale_price/purchase_price są brutto, przeliczamy na netto
+  // Podział sprzedaży per platforma — sale_price jest brutto (przeliczamy przez /1.23), purchase_price jest netto
   const byPlatform = monthSales.reduce((acc, s) => {
     const p = s.platform || "inne";
     if (!acc[p]) acc[p] = { count: 0, revenueNet: 0, profitNet: 0 };
@@ -187,7 +188,7 @@ export default function MonthlyReport() {
     ws1["!cols"] = [{ wch: 40 }, { wch: 18 }, { wch: 18 }];
     XLSX.utils.book_append_sheet(wb, ws1, "Podsumowanie");
 
-    // Arkusz 2 — Sprzedaże (sale_price i purchase_price są brutto)
+    // Arkusz 2 — Sprzedaże (sale_price jest brutto, purchase_price jest netto)
     const salesRows = monthSales.map((s, i) => ({
       "Lp.": i + 1,
       "Data": s.sale_date || "",
