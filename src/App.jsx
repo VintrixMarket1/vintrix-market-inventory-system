@@ -44,9 +44,6 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      navigateToLogin();
-      return null;
     }
   }
 
@@ -55,8 +52,13 @@ const AuthenticatedApp = () => {
     return <Onboarding onComplete={() => window.location.reload()} />;
   }
 
+  // Niezalogowany użytkownik — może przeglądać katalog
+  if (!user) {
+    return <CustomerCatalogWrapper />;
+  }
+
   // Klient (role: user) widzi tylko katalog
-  if (user && user.role === 'user') {
+  if (user.role === 'user') {
     return <CustomerCatalogWrapper />;
   }
 

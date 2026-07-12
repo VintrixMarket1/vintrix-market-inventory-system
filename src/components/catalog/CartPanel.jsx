@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useCart } from "@/lib/CartContext.jsx";
+import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { X, ShoppingCart, Trash2, Package } from "lucide-react";
 import { useLang } from "@/lib/i18n";
@@ -7,6 +8,7 @@ import CheckoutModal from "./CheckoutModal";
 
 export default function CartPanel({ user, onClose }) {
   const { t } = useLang();
+  const { navigateToLogin } = useAuth();
   const { cartItems, removeFromCart, cartTotal } = useCart();
   const [checkoutProduct, setCheckoutProduct] = useState(null);
 
@@ -62,7 +64,7 @@ export default function CartPanel({ user, onClose }) {
                   <Button
                     size="sm"
                     className="bg-emerald-600 hover:bg-emerald-700 text-xs h-7 px-3"
-                    onClick={() => setCheckoutProduct(product)}
+                    onClick={() => { if (!user) { navigateToLogin(); return; } setCheckoutProduct(product); }}
                     disabled={!product.suggested_sale_price}
                   >
                     {t("cart_pay")}

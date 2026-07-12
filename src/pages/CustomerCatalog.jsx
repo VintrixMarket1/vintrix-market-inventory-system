@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, LogOut, SlidersHorizontal, X, MessageCircle, ShoppingCart, Heart } from "lucide-react";
+import { Search, LogOut, LogIn, SlidersHorizontal, X, MessageCircle, ShoppingCart, Heart } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useLang } from "@/lib/i18n";
 import { CATEGORY_GROUPS, getCategoryLabel, getCategoryGroupLabel } from "@/lib/categoryConfig";
@@ -18,9 +18,17 @@ const CONDITIONS = ["new", "like_new", "used"];
 const CONDITION_COLORS = { new: "bg-emerald-900/60 text-emerald-300", like_new: "bg-sky-900/60 text-sky-300", used: "bg-stone-700/60 text-stone-300" };
 
 function CustomerCatalog() {
-  const { user, logout } = useAuth();
+  const { user, logout, navigateToLogin } = useAuth();
   const { toast } = useToast();
   const { t, lang } = useLang();
+
+  const requireAuth = () => {
+    if (!user) {
+      navigateToLogin();
+      return false;
+    }
+    return true;
+  };
 
   const condLabels = { new: t("cond_new"), like_new: t("cond_like_new"), used: t("cond_used") };
 
@@ -48,6 +56,7 @@ function CustomerCatalog() {
 
   const toggleFavorite = async (product, e) => {
     e.stopPropagation();
+    if (!requireAuth()) return;
     const isFav = favoriteProductIds.has(product.id);
     if (isFav) {
       const fav = favorites.find(f => f.product_id === product.id);
@@ -88,6 +97,7 @@ function CustomerCatalog() {
   const clearFilters = () => { setSelectedCategories([]); setSelectedConditions([]); setPriceMin(""); setPriceMax(""); };
 
   const handleSendInquiry = async (product, message) => {
+    if (!requireAuth()) return;
     await base44.entities.ProductInquiry.create({
       product_id: product.id, product_name: product.product_name,
       message, customer_name: user?.full_name || "", customer_email: user?.email || "", status: "new",
@@ -201,21 +211,32 @@ function CustomerCatalog() {
 
           {/* Actions */}
           <div className="flex items-center gap-1">
-            <span className="hidden md:block text-xs text-stone-500 mr-2">
-              {t("cat_hello")}, <span className="text-stone-200 font-medium">{user?.full_name?.split(" ")[0]}</span>
-            </span>
-            <button onClick={() => setShowMessages(true)} className="relative p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title={t("cat_messages")}>
-              <MessageCircle className="w-5 h-5" />
-            </button>
+            {user && (
+              <span className="hidden md:block text-xs text-stone-500 mr-2">
+                {t("cat_hello")}, <span className="text-stone-200 font-medium">{user?.full_name?.split(" ")[0]}</span>
+              </span>
+            )}
+            {user && (
+              <button onClick={() => setShowMessages(true)} className="relative p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title={t("cat_messages")}>
+                <MessageCircle className="w-5 h-5" />
+              </button>
+            )}
             <button onClick={() => setShowCart(true)} className="relative p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title={t("cat_cart")}>
               <ShoppingCart className="w-5 h-5" />
               {cartItems.length > 0 && (
                 <span className="absolute top-1.5 right-1.5 bg-amber-500 text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">{cartItems.length}</span>
               )}
             </button>
-            <button onClick={() => logout()} className="p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title={t("cat_logout")}>
-              <LogOut className="w-5 h-5" />
-            </button>
+            {user ? (
+              <button onClick={() => logout()} className="p-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all" title={t("cat_logout")}>
+                <LogOut className="w-5 h-5" />
+              </button>
+            ) : (
+              <button onClick={() => navigateToLogin()} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-all" title={t("cat_login")}>
+                <LogIn className="w-4 h-4" />
+                <span className="hidden sm:inline">{t("cat_login")}</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -322,8 +343,8 @@ function CustomerCatalog() {
                     isInCart={isInCart(product.id)}
                     onSelect={() => setSelectedProduct(product)}
                     onToggleFavorite={(e) => toggleFavorite(product, e)}
-                    onAddToCart={() => { addToCart(product); setShowCart(true); }}
-                    onBuyNow={() => setDirectCheckoutProduct(product)}
+                    onAddToCart={() => { addToCart(product); if (requireAuth()) setShowCart(true); }}
+                    onBuyNow={() => { if (requireAuth()) setDirectCheckoutProduct(product); }}
                     condLabels={condLabels}
                     t={t}
                   />

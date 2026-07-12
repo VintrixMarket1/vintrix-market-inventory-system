@@ -209,10 +209,11 @@ export const translations = {
     cat_products_count: "products", cat_no_results: "No products matching criteria",
     cat_clear_filters: "Clear filters", cat_buy_now: "Buy now", cat_on_request: "On request",
     cat_search_placeholder: "Search products, brands...", cat_search_placeholder_short: "Search...",
-    cat_hello: "Hi", cat_messages: "Messages", cat_cart: "Cart", cat_logout: "Logout",
+    cat_hello: "Hi", cat_messages: "Messages", cat_cart: "Cart", cat_logout: "Logout", cat_login: "Log in",
     cat_add_to_cart: "Add to cart", cat_in_cart: "In cart", cat_ask: "Ask",
     cat_premium_catalog: "Premium Catalog",
     cat_inquiry_sent: "Inquiry sent!", cat_contact_soon: "We'll contact you soon.",
+    pd_login_required: "Log in to make an offer or inquiry",
 
     // Product Detail
     pd_brand: "Brand", pd_size: "Size", pd_color: "Color", pd_gender: "Gender", pd_description: "Description",
@@ -479,10 +480,11 @@ export const translations = {
     cat_products_count: "produktów", cat_no_results: "Brak produktów spełniających kryteria",
     cat_clear_filters: "Wyczyść filtry", cat_buy_now: "Kup teraz", cat_on_request: "Na zapytanie",
     cat_search_placeholder: "Szukaj produktów, marek...", cat_search_placeholder_short: "Szukaj...",
-    cat_hello: "Cześć", cat_messages: "Wiadomości", cat_cart: "Koszyk", cat_logout: "Wyloguj",
+    cat_hello: "Cześć", cat_messages: "Wiadomości", cat_cart: "Koszyk", cat_logout: "Wyloguj", cat_login: "Zaloguj",
     cat_add_to_cart: "Dodaj do koszyka", cat_in_cart: "W koszyku", cat_ask: "Zapytaj",
     cat_premium_catalog: "Premium Catalog",
     cat_inquiry_sent: "Zapytanie wysłane!", cat_contact_soon: "Skontaktujemy się z Tobą wkrótce.",
+    pd_login_required: "Zaloguj się, aby złożyć ofertę lub zapytać",
 
     // Product Detail
     pd_brand: "Marka", pd_size: "Rozmiar", pd_color: "Kolor", pd_gender: "Przeznaczenie", pd_description: "Opis",

@@ -49,32 +49,20 @@ export const AuthProvider = ({ children }) => {
         console.error('App state check failed:', appError);
         
         // Handle app-level errors
-        if (appError.status === 403 && appError.data?.extra_data?.reason) {
-          const reason = appError.data.extra_data.reason;
-          if (reason === 'auth_required') {
-            setAuthError({
-              type: 'auth_required',
-              message: 'Authentication required'
-            });
-          } else if (reason === 'user_not_registered') {
-            setAuthError({
-              type: 'user_not_registered',
-              message: 'User not registered for this app'
-            });
-          } else {
-            setAuthError({
-              type: reason,
-              message: appError.message
-            });
-          }
-        } else {
+        if (appError.status === 403 && appError.data?.extra_data?.reason === 'user_not_registered') {
           setAuthError({
-            type: 'unknown',
-            message: appError.message || 'Failed to load app'
+            type: 'user_not_registered',
+            message: 'User not registered for this app'
           });
+          setIsLoadingPublicSettings(false);
+          setIsLoadingAuth(false);
+        } else {
+          // auth_required or other errors — allow browsing catalog without login
+          setIsAuthenticated(false);
+          setUser(null);
+          setIsLoadingPublicSettings(false);
+          setIsLoadingAuth(false);
         }
-        setIsLoadingPublicSettings(false);
-        setIsLoadingAuth(false);
       }
     } catch (error) {
       console.error('Unexpected error:', error);

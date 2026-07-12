@@ -9,10 +9,12 @@ import { Package, ChevronLeft, ChevronRight, MessageCircle, X, CheckCircle, Load
 import { getCategoryLabel } from "@/lib/categoryConfig";
 import { useLang } from "@/lib/i18n";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 function FavoriteButton({ product, user }) {
   const queryClient = useQueryClient();
+  const { navigateToLogin } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const { data: favorites = [] } = useQuery({
@@ -25,6 +27,7 @@ function FavoriteButton({ product, user }) {
 
   const toggle = async (e) => {
     e.stopPropagation();
+    if (!user) { navigateToLogin(); return; }
     setLoading(true);
     if (existing) {
       await base44.entities.Favorite.delete(existing.id);
@@ -48,6 +51,7 @@ function FavoriteButton({ product, user }) {
 
 function ActionPanel({ product, user, onSendInquiry }) {
   const { t } = useLang();
+  const { navigateToLogin } = useAuth();
   const [mode, setMode] = useState(null);
   const [message, setMessage] = useState("");
   const [offeredPrice, setOfferedPrice] = useState(product.suggested_sale_price ? String(Math.round(product.suggested_sale_price * 0.9)) : "");
@@ -86,10 +90,10 @@ function ActionPanel({ product, user, onSendInquiry }) {
 
   if (mode === null) return (
     <div className="flex gap-2">
-      <Button variant="outline" className="flex-1 h-11 text-sm font-semibold gap-2 border-slate-300" onClick={() => setMode("inquiry")}>
+      <Button variant="outline" className="flex-1 h-11 text-sm font-semibold gap-2 border-slate-300" onClick={() => { if (!user) { navigateToLogin(); return; } setMode("inquiry"); }}>
         <MessageCircle className="w-4 h-4 text-slate-500" /> {t("pd_ask")}
       </Button>
-      <Button className="flex-1 h-11 text-sm font-semibold gap-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => setMode("offer")}>
+      <Button className="flex-1 h-11 text-sm font-semibold gap-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => { if (!user) { navigateToLogin(); return; } setMode("offer"); }}>
         <HandCoins className="w-4 h-4" /> {t("pd_make_offer")}
       </Button>
     </div>
@@ -224,7 +228,7 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
 
           {/* Left: gallery */}
           <div className="md:w-[45%] bg-slate-900 flex flex-col shrink-0 relative" style={{ flexBasis: "auto" }}>
-            {user && <FavoriteButton product={product} user={user} />}
+            <FavoriteButton product={product} user={user} />
             {images.length > 0 ? (
               <>
                 <div className="relative md:flex-1" style={{ height: "clamp(200px, 55vw, 320px)" }}>
