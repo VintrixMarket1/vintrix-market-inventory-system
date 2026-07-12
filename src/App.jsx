@@ -34,6 +34,31 @@ import WarehouseDocuments from './pages/WarehouseDocuments';
 import MonthlyReport from './pages/MonthlyReport';
 import PalletDetail from './pages/PalletDetail';
 
+const PublicCatalog = () => {
+  const { user, isLoadingAuth, isLoadingPublicSettings } = useAuth();
+
+  if (isLoadingAuth || isLoadingPublicSettings) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // Force full_name completion for authenticated users
+  if (user && !user.full_name) {
+    return <Onboarding onComplete={() => window.location.reload()} />;
+  }
+
+  // Authenticated admin/pracownik → redirect to their dashboard
+  if (user && user.role !== 'user') {
+    return <Navigate to={user.role === 'pracownik' ? '/Inventory' : '/Dashboard'} replace />;
+  }
+
+  // Unauthenticated or client role → show catalog
+  return <CustomerCatalogWrapper />;
+};
+
 const ProtectedApp = () => {
   const { user } = useAuth();
 
@@ -119,6 +144,8 @@ function AppRoutes() {
       {/* OAuth callback routes (public) */}
       <Route path="/ShopifyCallback" element={<ShopifyCallback />} />
       <Route path="/AllegroCallback" element={<AllegroCallback />} />
+      {/* Public catalog — browse without login */}
+      <Route path="/" element={<PublicCatalog />} />
       {/* All other routes require authentication */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/*" element={<ProtectedApp />} />
