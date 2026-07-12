@@ -69,6 +69,7 @@ function CustomerCatalog() {
   const filtered = useMemo(() => {
     let result = products.filter(p => {
       if (p.status === "sold") return false;
+      if (!p.ai_verified) return false;
       const nameLower = (p.product_name || "").toLowerCase();
       if (nameLower.includes("nieznany") || nameLower.includes("unknown")) return false;
       if (p.internal_code?.startsWith("UNK-")) return false;
@@ -234,7 +235,7 @@ function CustomerCatalog() {
         {/* Tabs */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-1 border-t border-stone-800/50">
           {[
-            { key: "all", label: t("cat_all"), count: products.filter(p => p.status !== "sold" && !(p.product_name || "").toLowerCase().includes("nieznany") && !(p.internal_code || "").startsWith("UNK-")).length },
+            { key: "all", label: t("cat_all"), count: products.filter(p => p.status !== "sold" && p.ai_verified && !(p.product_name || "").toLowerCase().includes("nieznany") && !(p.internal_code || "").startsWith("UNK-")).length },
             { key: "favorites", label: t("cat_favorites"), count: favoriteProductIds.size },
           ].map(tab => (
             <button
