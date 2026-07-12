@@ -23,6 +23,7 @@ import ReturnModal from "../components/inventory/ReturnModal";
 export default function Inventory() {
   const { t } = useLang();
   const { user } = useAuth();
+  const isPracownik = user?.role === 'pracownik';
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
@@ -129,9 +130,11 @@ export default function Inventory() {
           <p className="text-sm text-slate-500 mt-1">{filtered.length} {t("inv_products")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowShopifyImport(true)} className="gap-1.5 text-emerald-700 border-emerald-300 hover:bg-emerald-50">
-            <ShoppingBag className="w-4 h-4" /> {t("inv_shopify")}
-          </Button>
+          {!isPracownik && (
+            <Button variant="outline" size="sm" onClick={() => setShowShopifyImport(true)} className="gap-1.5 text-emerald-700 border-emerald-300 hover:bg-emerald-50">
+              <ShoppingBag className="w-4 h-4" /> {t("inv_shopify")}
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => setShowCsvImport(true)} className="gap-1.5">
             <Plus className="w-4 h-4" /> {t("inv_import_csv")}
           </Button>
@@ -155,7 +158,7 @@ export default function Inventory() {
       <SearchFilters filters={filters} onChange={setFilters} pallets={pallets} />
 
       {/* Karty palet nieskalkulowanych */}
-      {unsettledPallets.length > 0 && (
+      {unsettledPallets.length > 0 && !isPracownik && (
         <div>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("bulk_sorting_pallets")}</span>
@@ -192,7 +195,7 @@ export default function Inventory() {
               <ProductCard
                 product={product}
                 onEdit={(p) => { setEditProduct(p); setShowForm(true); }}
-                onDelete={handleDelete}
+                onDelete={isPracownik ? undefined : handleDelete}
                 selected={bulkSelected.has(product.id)}
                 onToggleSelect={toggleBulkSelect}
               />
@@ -209,13 +212,13 @@ export default function Inventory() {
                     🔄 {t("inv_convert")}
                   </Button>
                 )}
-                {product.product_name !== "Nieznany produkt" && (product.status || "in_stock") !== "sold" && product.status !== "reclassified" && (
+                {!isPracownik && product.product_name !== "Nieznany produkt" && (product.status || "in_stock") !== "sold" && product.status !== "reclassified" && (
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setListingProduct(product)}>{t("inv_list")}</Button>
                 )}
-                {product.product_name !== "Nieznany produkt" && ((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && product.status !== "reclassified" && (
+                {!isPracownik && product.product_name !== "Nieznany produkt" && ((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && product.status !== "reclassified" && (
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                 )}
-                {product.status === "sold" && !product.is_multi_item && (
+                {!isPracownik && product.status === "sold" && !product.is_multi_item && (
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ {t("inv_return")}</Button>
                 )}
               </div>
@@ -281,19 +284,21 @@ export default function Inventory() {
                   <button onClick={() => { setEditProduct(product); setShowForm(true); }} className="p-1.5 bg-slate-100 rounded-lg hover:bg-slate-200">
                     <Edit2 className="w-3.5 h-3.5 text-slate-600" />
                   </button>
-                  <button onClick={() => handleDelete(product)} className="p-1.5 bg-slate-100 rounded-lg hover:bg-red-50">
-                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                  </button>
+                  {!isPracownik && (
+                    <button onClick={() => handleDelete(product)} className="p-1.5 bg-slate-100 rounded-lg hover:bg-red-50">
+                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                    </button>
+                  )}
                   {product.product_name === "Nieznany produkt" && product.status !== "reclassified" && (
                     <Button size="sm" className="text-xs h-7 px-2 bg-amber-500 hover:bg-amber-600 text-white" onClick={() => setConvertProduct(product)}>🔄 {t("inv_convert")}</Button>
                   )}
-                  {product.product_name !== "Nieznany produkt" && (product.status || "in_stock") !== "sold" && product.status !== "reclassified" && (
+                  {!isPracownik && product.product_name !== "Nieznany produkt" && (product.status || "in_stock") !== "sold" && product.status !== "reclassified" && (
                     <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={() => setListingProduct(product)}>{t("inv_list")}</Button>
                   )}
-                  {product.product_name !== "Nieznany produkt" && ((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && product.status !== "reclassified" && (
+                  {!isPracownik && product.product_name !== "Nieznany produkt" && ((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && product.status !== "reclassified" && (
                     <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-emerald-600 border-emerald-200" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                   )}
-                  {product.status === "sold" && !product.is_multi_item && (
+                  {!isPracownik && product.status === "sold" && !product.is_multi_item && (
                     <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ {t("inv_return")}</Button>
                   )}
                 </div>
@@ -348,7 +353,7 @@ export default function Inventory() {
           onClose={() => setShowShopifyImport(false)}
         />
       )}
-      {bulkSelected.size > 0 && (
+      {bulkSelected.size > 0 && !isPracownik && (
         <BulkActionsBar
           selectedIds={bulkSelected}
           allProducts={products}

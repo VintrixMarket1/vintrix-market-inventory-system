@@ -61,6 +61,22 @@ const AuthenticatedApp = () => {
     return <CustomerCatalogWrapper />;
   }
 
+  // Pracownik — ograniczony dostęp (dodawanie produktów + konwersja nieznanych)
+  if (user && user.role === 'pracownik') {
+    return (
+      <Routes>
+        <Route path="/" element={<Navigate to="/Inventory" replace />} />
+        <Route element={<AppLayout />}>
+          <Route path="/Inventory" element={<Inventory />} />
+          <Route path="/QuickAdd" element={<QuickAdd />} />
+          <Route path="/AddProduct" element={<AddProduct />} />
+          <Route path="/Settings" element={<Settings />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/Inventory" replace />} />
+      </Routes>
+    );
+  }
+
   // Admin — pełny dostęp
   return (
     <Routes>

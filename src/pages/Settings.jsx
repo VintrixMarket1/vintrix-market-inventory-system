@@ -12,6 +12,7 @@ import AllegroSettings from "./AllegroSettings";
 export default function Settings() {
   const { lang, setLang, t } = useLang();
   const { logout, user } = useAuth();
+  const isPracownik = user?.role === 'pracownik';
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState(lang);
   const [displayName, setDisplayName] = useState(user?.display_name || user?.full_name || "");
@@ -41,8 +42,8 @@ export default function Settings() {
       <Tabs defaultValue="general">
         <TabsList className="mb-4">
           <TabsTrigger value="general">Ogólne</TabsTrigger>
-          <TabsTrigger value="shopify"><ShoppingBag className="w-3.5 h-3.5 mr-1.5" />Shopify</TabsTrigger>
-          <TabsTrigger value="allegro"><Store className="w-3.5 h-3.5 mr-1.5" />Allegro</TabsTrigger>
+          {!isPracownik && <TabsTrigger value="shopify"><ShoppingBag className="w-3.5 h-3.5 mr-1.5" />Shopify</TabsTrigger>}
+          {!isPracownik && <TabsTrigger value="allegro"><Store className="w-3.5 h-3.5 mr-1.5" />Allegro</TabsTrigger>}
         </TabsList>
 
         {/* General */}

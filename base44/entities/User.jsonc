@@ -6,10 +6,11 @@
       "type": "string",
       "enum": [
         "admin",
-        "user"
+        "user",
+        "pracownik"
       ],
       "default": "user",
-      "description": "Rola u\u017cytkownika: admin = pe\u0142ny dost\u0119p, user = tylko katalog"
+      "description": "Rola u\u017cytkownika: admin = pe\u0142ny dost\u0119p, user = tylko katalog, pracownik = dodawanie produkt\u00f3w i konwersja nieznanych"
     },
     "display_name": {
       "type": "string",

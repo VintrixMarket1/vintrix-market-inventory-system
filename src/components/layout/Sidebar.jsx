@@ -5,6 +5,7 @@ import {
   Menu, X, ChevronRight, Layers, BookOpen, Settings, FileText, MessageCircle, BarChart3
 } from "lucide-react";
 import { useLang } from "@/lib/i18n";
+import { useAuth } from "@/lib/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
@@ -12,6 +13,8 @@ export default function Sidebar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useLang();
+  const { user } = useAuth();
+  const isPracownik = user?.role === 'pracownik';
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["admin_notifications_unread"],
@@ -20,7 +23,7 @@ export default function Sidebar() {
   });
   const unreadCount = notifications.length;
 
-  const navItems = [
+  const allNavItems = [
     { path: "/Dashboard", labelKey: "nav_dashboard", icon: LayoutDashboard },
     { path: "/Inventory", labelKey: "nav_inventory", icon: Package },
     { path: "/ProductModels", labelKey: "nav_catalog", icon: BookOpen },
@@ -33,6 +36,11 @@ export default function Sidebar() {
     { path: "/QuickAdd", labelKey: "nav_quick_add", icon: Zap },
     { path: "/Settings", labelKey: "nav_settings", icon: Settings },
   ];
+
+  const pracownikAllowed = ["/Inventory", "/QuickAdd", "/Settings"];
+  const navItems = isPracownik
+    ? allNavItems.filter(item => pracownikAllowed.includes(item.path))
+    : allNavItems;
 
   const isActive = (path) => location.pathname === path;
 

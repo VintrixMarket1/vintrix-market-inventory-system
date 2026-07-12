@@ -23,6 +23,7 @@ const statusLabels = {
 };
 
 export default function ProductCard({ product, onEdit, onDelete, selected, onToggleSelect }) {
+  const canDelete = !!onDelete;
   const mainImage = product.images && product.images.length > 0 ? product.images[0] : null;
 
   return (
@@ -61,9 +62,11 @@ export default function ProductCard({ product, onEdit, onDelete, selected, onTog
             <button onClick={() => onEdit(product)} className="p-1.5 bg-white rounded-lg shadow-sm hover:bg-slate-50">
               <Edit2 className="w-3.5 h-3.5 text-slate-600" />
             </button>
-            <button onClick={() => onDelete(product)} className="p-1.5 bg-white rounded-lg shadow-sm hover:bg-red-50">
-              <Trash2 className="w-3.5 h-3.5 text-red-500" />
-            </button>
+            {canDelete && (
+              <button onClick={() => onDelete(product)} className="p-1.5 bg-white rounded-lg shadow-sm hover:bg-red-50">
+                <Trash2 className="w-3.5 h-3.5 text-red-500" />
+              </button>
+            )}
           </div>
         </div>
       </div>
