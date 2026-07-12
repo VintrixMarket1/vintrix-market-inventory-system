@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Package, Tag, DollarSign, TrendingUp } from "lucide-react";
 import StatCard from "../components/dashboard/StatCard";
 import RecentActivity from "../components/dashboard/RecentActivity";
+import DashboardCharts from "../components/dashboard/DashboardCharts";
 import { useLang } from "@/lib/i18n";
 
 export default function Dashboard() {
@@ -55,6 +56,8 @@ export default function Dashboard() {
         <StatCard title={t("dash_sold")} value={sold} icon={DollarSign} color="amber" subtitle={t("dash_all_time")} />
         <StatCard title={t("dash_total_profit")} value={`${totalProfit.toFixed(0)} PLN`} icon={TrendingUp} color="emerald" subtitle={t("dash_revenue_minus_costs")} />
       </div>
+
+      <DashboardCharts sales={sales} products={products} pallets={pallets} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RecentActivity products={products} listings={listings} sales={sales} />
