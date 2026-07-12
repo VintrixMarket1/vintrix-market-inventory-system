@@ -1,11 +1,15 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { LangProvider } from '@/lib/i18n';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
 import CustomerCatalogWrapper from './pages/CustomerCatalog.jsx';
@@ -30,40 +34,21 @@ import WarehouseDocuments from './pages/WarehouseDocuments';
 import MonthlyReport from './pages/MonthlyReport';
 import PalletDetail from './pages/PalletDetail';
 
-const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, user } = useAuth();
+const ProtectedApp = () => {
+  const { user } = useAuth();
 
-  if (isLoadingPublicSettings || isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    }
-  }
-
-  // Wymuszamy uzupełnienie imienia i nazwiska
+  // Force full_name completion
   if (user && !user.full_name) {
     return <Onboarding onComplete={() => window.location.reload()} />;
   }
 
-  // Niezalogowany użytkownik — może przeglądać katalog
-  if (!user) {
-    return <CustomerCatalogWrapper />;
-  }
-
-  // Klient (role: user) widzi tylko katalog
+  // Client (role: user) sees only catalog
   if (user.role === 'user') {
     return <CustomerCatalogWrapper />;
   }
 
-  // Pracownik — ograniczony dostęp (dodawanie produktów + konwersja nieznanych)
-  if (user && user.role === 'pracownik') {
+  // Pracownik — restricted access (product creation + unknown conversion)
+  if (user.role === 'pracownik') {
     return (
       <Routes>
         <Route path="/" element={<Navigate to="/Inventory" replace />} />
@@ -80,7 +65,7 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Admin — pełny dostęp
+  // Admin — full access
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/Dashboard" replace />} />
@@ -124,19 +109,22 @@ function App() {
 }
 
 function AppRoutes() {
-  const location = useLocation();
-  const isCallback = location.pathname === "/ShopifyCallback" || location.pathname === "/AllegroCallback";
-  
-  if (isCallback) {
-    return (
-      <Routes>
-        <Route path="/ShopifyCallback" element={<ShopifyCallback />} />
-        <Route path="/AllegroCallback" element={<AllegroCallback />} />
-      </Routes>
-    );
-  }
-  
-  return <AuthenticatedApp />;
+  return (
+    <Routes>
+      {/* Public auth routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      {/* OAuth callback routes (public) */}
+      <Route path="/ShopifyCallback" element={<ShopifyCallback />} />
+      <Route path="/AllegroCallback" element={<AllegroCallback />} />
+      {/* All other routes require authentication */}
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route path="/*" element={<ProtectedApp />} />
+      </Route>
+    </Routes>
+  );
 }
 
 export default App
