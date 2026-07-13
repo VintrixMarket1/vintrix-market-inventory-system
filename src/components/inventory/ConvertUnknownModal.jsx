@@ -85,6 +85,9 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
     stock_quantity: "1",
     listing_title: "",
     listing_description: "",
+    warehouse_zone: product?.warehouse_zone || "",
+    shelf: product?.shelf || "",
+    box_number: product?.box_number || "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -307,6 +310,9 @@ Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, goto
       listing_description: form.listing_description || undefined,
       images: images.length > 0 ? images : undefined,
       pallet_id: product?.pallet_id || undefined,
+      warehouse_zone: form.warehouse_zone || undefined,
+      shelf: form.shelf || undefined,
+      box_number: form.box_number || undefined,
       status: "in_stock",
       ai_analyzed: !!aiResult,
       ai_verified: true,
@@ -671,6 +677,15 @@ Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, goto
                   <FieldRow label="Sugerowana cena sprzedaży (PLN)">
                     <Input type="number" min={0} step={0.01} value={form.suggested_sale_price} onChange={e => handleFormChange("suggested_sale_price", e.target.value)} className="text-sm font-mono" />
                   </FieldRow>
+                  <FieldRow label="Strefa magazynowa">
+                    <Input value={form.warehouse_zone} onChange={e => handleFormChange("warehouse_zone", e.target.value)} placeholder="np. A" className="text-sm font-mono" />
+                  </FieldRow>
+                  <FieldRow label="Regał / Półka">
+                    <Input value={form.shelf} onChange={e => handleFormChange("shelf", e.target.value)} placeholder="np. A-03" className="text-sm font-mono" />
+                  </FieldRow>
+                  <FieldRow label="Numer pudełka">
+                    <Input value={form.box_number} onChange={e => handleFormChange("box_number", e.target.value)} placeholder="np. BOX-12" className="text-sm font-mono" />
+                  </FieldRow>
                 </div>
 
                 <FieldRow label="Tytuł ogłoszenia">
@@ -757,6 +772,10 @@ Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, goto
                     {pallet && <>
                       <div className="text-slate-500">Paleta</div>
                       <div>{pallet.pallet_code}</div>
+                    </>}
+                    {(form.warehouse_zone || form.shelf || form.box_number) && <>
+                      <div className="text-slate-500">Lokalizacja</div>
+                      <div className="font-mono text-xs">{[form.warehouse_zone, form.shelf, form.box_number].filter(Boolean).join(" · ") || "—"}</div>
                     </>}
                   </div>
                   <div className="pt-2 border-t border-slate-200 text-xs text-slate-500">
