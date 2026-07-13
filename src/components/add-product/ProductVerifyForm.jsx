@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, CheckCircle, ArrowLeft } from "lucide-react";
+import { Sparkles, CheckCircle, ArrowLeft, Package } from "lucide-react";
 import AiConfidenceBadge from "./AiConfidenceBadge";
 import { useLang } from "@/lib/i18n";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -50,6 +50,8 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
     warehouse_zone: "",
     shelf: "",
     box_number: "",
+    is_multi_item: false,
+    stock_quantity: "",
   });
   const [selectedPallet, setSelectedPallet] = useState("");
   const [saving, setSaving] = useState(false);
@@ -76,6 +78,8 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
         listing_title: aiData.listing_title || "",
         listing_description: aiData.listing_description || "",
         purchase_price: "",
+        is_multi_item: aiData.is_multi_item || false,
+        stock_quantity: aiData.stock_quantity || "",
       });
     }
   }, [aiData]);
@@ -89,6 +93,8 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
         ...form,
         suggested_sale_price: parseFloat(form.suggested_sale_price) || 0,
         purchase_price: parseFloat(form.purchase_price) || 0,
+        is_multi_item: !!form.is_multi_item,
+        stock_quantity: form.is_multi_item ? (parseInt(form.stock_quantity) || 1) : null,
       },
       selectedPallet || null,
       generatePZ
@@ -207,6 +213,37 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
             <Label>{isPolish ? "Cena zakupu (PLN)" : "Purchase Price (PLN)"}</Label>
             <Input type="number" value={form.purchase_price} onChange={(e) => set("purchase_price", e.target.value)} placeholder={isPolish ? "lub oblicz z palety" : "or calc from pallet"} />
           </div>
+        </div>
+
+        {/* Multi-item */}
+        <div className="rounded-lg border border-slate-200 p-3 space-y-3 bg-slate-50">
+          <label className="flex items-center gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={!!form.is_multi_item}
+              onChange={e => {
+                set("is_multi_item", e.target.checked);
+                if (!e.target.checked) set("stock_quantity", "");
+              }}
+              className="w-4 h-4 rounded accent-emerald-600"
+            />
+            <Package className="w-4 h-4 text-slate-500" />
+            <span className="text-sm font-medium text-slate-700">{isPolish ? "Wielosztuka" : "Multi-item"}</span>
+            <span className="text-xs text-slate-400">{isPolish ? "ten sam produkt w wielu sztukach" : "same product in multiple quantities"}</span>
+          </label>
+          {form.is_multi_item && (
+            <div className="space-y-1.5 pl-6">
+              <Label>{isPolish ? "Liczba sztuk" : "Stock quantity"}</Label>
+              <Input
+                type="number"
+                min={1}
+                value={form.stock_quantity}
+                onChange={(e) => set("stock_quantity", e.target.value)}
+                placeholder="50"
+                className="max-w-[160px]"
+              />
+            </div>
+          )}
         </div>
 
         {/* SKU + warehouse location */}
