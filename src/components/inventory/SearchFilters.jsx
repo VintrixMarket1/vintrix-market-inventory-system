@@ -1,6 +1,5 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { CATEGORY_GROUPS, SUBCATEGORIES_BY_CATEGORY, getCategoryLabel, getCategoryGroupLabel } from "@/lib/categoryConfig";
@@ -21,6 +20,8 @@ export default function SearchFilters({ filters, onChange, pallets = [] }) {
     ? SUBCATEGORIES_BY_CATEGORY[filters.category] || []
     : [];
 
+  const selectClass = "h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+
   return (
     <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
       <div className="relative flex-1 min-w-48">
@@ -32,58 +33,53 @@ export default function SearchFilters({ filters, onChange, pallets = [] }) {
           onChange={e => update("search", e.target.value)}
         />
       </div>
-      <Select value={filters.category} onValueChange={v => { onChange({ ...filters, category: v, subcategory: "all" }); }}>
-        <SelectTrigger className="w-full sm:w-44">
-          <SelectValue placeholder={t("pf_category")} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t("inv_all_categories")}</SelectItem>
-          {CATEGORY_GROUPS.map(group => (
-            <SelectGroup key={group.group}>
-              <SelectLabel>{group.icon} {getCategoryGroupLabel(group.group, lang)}</SelectLabel>
-              {group.items.map(item => (
-                <SelectItem key={item.value} value={item.value}>{getCategoryLabel(item.value, lang)}</SelectItem>
-              ))}
-            </SelectGroup>
-          ))}
-        </SelectContent>
-      </Select>
-      {subcategories.length > 0 && (
-        <Select value={filters.subcategory || "all"} onValueChange={v => update("subcategory", v)}>
-          <SelectTrigger className="w-full sm:w-44">
-            <SelectValue placeholder={t("pf_subcategory")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("inv_all_subcategories")}</SelectItem>
-            {subcategories.map(s => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
+      <select
+        value={filters.category}
+        onChange={e => { onChange({ ...filters, category: e.target.value, subcategory: "all" }); }}
+        className={`${selectClass} w-full sm:w-44`}
+      >
+        <option value="all">{t("inv_all_categories")}</option>
+        {CATEGORY_GROUPS.map(group => (
+          <optgroup key={group.group} label={`${group.icon} ${getCategoryGroupLabel(group.group, lang)}`}>
+            {group.items.map(item => (
+              <option key={item.value} value={item.value}>{getCategoryLabel(item.value, lang)}</option>
             ))}
-          </SelectContent>
-        </Select>
+          </optgroup>
+        ))}
+      </select>
+      {subcategories.length > 0 && (
+        <select
+          value={filters.subcategory || "all"}
+          onChange={e => update("subcategory", e.target.value)}
+          className={`${selectClass} w-full sm:w-44`}
+        >
+          <option value="all">{t("inv_all_subcategories")}</option>
+          {subcategories.map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
       )}
       {pallets.length > 0 && (
-        <Select value={filters.pallet_id || "all"} onValueChange={v => update("pallet_id", v)}>
-          <SelectTrigger className="w-full sm:w-44">
-            <SelectValue placeholder={t("pf_pallet")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("inv_all_pallets")}</SelectItem>
-            {pallets.map(p => (
-              <SelectItem key={p.id} value={p.id}>{p.pallet_code} — {p.investor_name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
-      <Select value={filters.status} onValueChange={v => update("status", v)}>
-        <SelectTrigger className="w-full sm:w-36">
-          <SelectValue placeholder={t("inv_status")} />
-        </SelectTrigger>
-        <SelectContent>
-          {Object.entries(statusLabels).map(([val, label]) => (
-            <SelectItem key={val} value={val}>{label}</SelectItem>
+        <select
+          value={filters.pallet_id || "all"}
+          onChange={e => update("pallet_id", e.target.value)}
+          className={`${selectClass} w-full sm:w-44`}
+        >
+          <option value="all">{t("inv_all_pallets")}</option>
+          {pallets.map(p => (
+            <option key={p.id} value={p.id}>{p.pallet_code} — {p.investor_name}</option>
           ))}
-        </SelectContent>
-      </Select>
+        </select>
+      )}
+      <select
+        value={filters.status}
+        onChange={e => update("status", e.target.value)}
+        className={`${selectClass} w-full sm:w-36`}
+      >
+        {Object.entries(statusLabels).map(([val, label]) => (
+          <option key={val} value={val}>{label}</option>
+        ))}
+      </select>
     </div>
   );
 }
