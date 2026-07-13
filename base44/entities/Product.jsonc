@@ -8,7 +8,7 @@
     },
     "internal_code": {
       "type": "string",
-      "description": "Wewn\u0119trzny kod egzemplarza (SKU)"
+      "description": "Wewnetrzny kod egzemplarza (SKU)"
     },
     "product_name": {
       "type": "string",
@@ -107,7 +107,7 @@
         "kids",
         "none"
       ],
-      "description": "Przeznaczenie p\u0142ciowe"
+      "description": "Przeznaczenie plciowe"
     },
     "condition": {
       "type": "string",
@@ -121,7 +121,7 @@
     },
     "size": {
       "type": "string",
-      "description": "Rozmiar (dla odzie\u017cy/but\u00f3w)"
+      "description": "Rozmiar (dla odziezy/butow)"
     },
     "color": {
       "type": "string",
@@ -133,7 +133,7 @@
     },
     "suggested_sale_price": {
       "type": "number",
-      "description": "Sugerowana cena sprzeda\u017cy"
+      "description": "Sugerowana cena sprzedazy"
     },
     "notes": {
       "type": "string",
@@ -141,22 +141,22 @@
     },
     "listing_title": {
       "type": "string",
-      "description": "Tytu\u0142 og\u0142oszenia wygenerowany przez AI"
+      "description": "Tytul ogloszenia wygenerowany przez AI"
     },
     "listing_description": {
       "type": "string",
-      "description": "Opis og\u0142oszenia wygenerowany przez AI"
+      "description": "Opis ogloszenia wygenerowany przez AI"
     },
     "images": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "Zdj\u0119cia tego konkretnego egzemplarza"
+      "description": "Zdjecia tego konkretnego egzemplarza"
     },
     "barcode": {
       "type": "string",
-      "description": "Kod kreskowy lub kod r\u0119czny"
+      "description": "Kod kreskowy lub kod reczny"
     },
     "warehouse_zone": {
       "type": "string",
@@ -164,11 +164,11 @@
     },
     "shelf": {
       "type": "string",
-      "description": "Rega\u0142 / miejsce na p\u00f3\u0142ce"
+      "description": "Regal / miejsce na polce"
     },
     "box_number": {
       "type": "string",
-      "description": "Numer pude\u0142ka"
+      "description": "Numer pudelka"
     },
     "status": {
       "type": "string",
@@ -183,21 +183,21 @@
     },
     "pallet_id": {
       "type": "string",
-      "description": "Referencja do palety z kt\u00f3rej pochodzi produkt"
+      "description": "Referencja do palety z ktorej pochodzi produkt"
     },
     "ai_analyzed": {
       "type": "boolean",
       "default": false,
-      "description": "Czy produkt zosta\u0142 przeanalizowany przez AI"
+      "description": "Czy produkt zostal przeanalizowany przez AI"
     },
     "ai_verified": {
       "type": "boolean",
       "default": false,
-      "description": "Czy dane AI zosta\u0142y zweryfikowane przez operatora"
+      "description": "Czy dane AI zostaly zweryfikowane przez operatora"
     },
     "ai_analysis_result": {
       "type": "string",
-      "description": "Wynik analizy AI (JSON jako string) \u2014 zachowany dla historii"
+      "description": "Wynik analizy AI (JSON jako string) \u00e2 zachowany dla historii"
     },
     "shopify_product_id": {
       "type": "string",
@@ -205,7 +205,7 @@
     },
     "olx_listing_id": {
       "type": "string",
-      "description": "ID og\u0142oszenia na OLX"
+      "description": "ID ogloszenia na OLX"
     },
     "allegro_listing_id": {
       "type": "string",
@@ -213,7 +213,7 @@
     },
     "vinted_listing_id": {
       "type": "string",
-      "description": "ID og\u0142oszenia na Vinted"
+      "description": "ID ogloszenia na Vinted"
     },
     "ebay_listing_id": {
       "type": "string",
@@ -222,23 +222,23 @@
     "is_multi_item": {
       "type": "boolean",
       "default": false,
-      "description": "Czy produkt jest wielosztuk\u0105"
+      "description": "Czy produkt jest wielosztuka"
     },
     "stock_quantity": {
       "type": "number",
-      "description": "Stan magazynowy (liczba sztuk) \u2014 tylko dla wielosztuk"
+      "description": "Stan magazynowy (liczba sztuk) \u00e2 tylko dla wielosztuk"
     },
     "reclassified_from_id": {
       "type": "string",
-      "description": "ID starego produktu (Nieznany przedmiot), z kt\u00f3rego pochodzi ten produkt po konwersji"
+      "description": "ID starego produktu (Nieznany przedmiot), z ktorego pochodzi ten produkt po konwersji"
     },
     "reclassified_to_id": {
       "type": "string",
-      "description": "ID nowego produktu, na kt\u00f3ry zamieniono ten Nieznany przedmiot"
+      "description": "ID nowego produktu, na ktory zamieniono ten Nieznany przedmiot"
     },
     "dpt_document_id": {
       "type": "string",
-      "description": "ID dokumentu DPT powi\u0105zanego z przeklasyfikowaniem"
+      "description": "ID dokumentu DPT powiazanego z przeklasyfikowaniem"
     },
     "dpt_document_number": {
       "type": "string",
@@ -253,15 +253,33 @@
   ],
   "rls": {
     "create": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "pracownik"
+          }
+        }
+      ]
     },
     "read": {},
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "pracownik"
+          }
+        }
+      ]
     },
     "delete": {
       "user_condition": {
