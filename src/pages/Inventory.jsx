@@ -49,7 +49,7 @@ export default function Inventory() {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products"],
-    queryFn: () => base44.entities.Product.list("-created_date", 200),
+    queryFn: () => base44.entities.Product.list("-created_date"),
   });
 
   // Auto-open edit form when ?edit=<id> is in URL (e.g. coming from PalletDetail)
