@@ -164,6 +164,7 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
     setAnalyzing(true);
     setAiError(null);
 
+    try {
     // Step 1: Identify product (vision + structured JSON)
     const identifyPrompt = `Jesteś ekspertem od identyfikacji i wyceny produktów na rynku wtórnym (OLX, Vinted, Allegro).
 Przeanalizuj zdjęcia i/lub opis, a następnie zidentyfikuj produkt i odpowiedz w JSON.
@@ -268,6 +269,11 @@ Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, goto
     }));
     setAnalyzing(false);
     setStep("form");
+    } catch (err) {
+      console.error("AI analysis error:", err);
+      setAiError(err?.message || "Wystąpił błąd podczas analizy AI. Spróbuj ponownie lub wypełnij formularz ręcznie.");
+      setAnalyzing(false);
+    }
   };
 
   const handleFormChange = (field, value) => {
