@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Sparkles, CheckSquare, Square } from "lucide-react";
+import { Loader2, Sparkles, CheckSquare, Square, Download } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 import ShopifyActions from "./ShopifyActions";
 import AllegroActions from "./AllegroActions";
 import AllegroDescriptionEditor from "./AllegroDescriptionEditor";
@@ -33,8 +34,41 @@ export default function ListingForm({ open, onClose, product, listing, onSaved }
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [selectedImages, setSelectedImages] = useState(listing?.selected_images || []);
+  const [downloadingImages, setDownloadingImages] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const productImages = product?.images || [];
+
+  const downloadImage = async (url, index) => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    const ext = blob.type.split("/")[1] || "jpg";
+    const productName = (product?.product_name || "produkt").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+    a.download = `${productName}_${index + 1}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  };
+
+  const handleDownloadImages = async () => {
+    const toDownload = selectedImages.length > 0 ? selectedImages : productImages;
+    if (toDownload.length === 0) return;
+    setDownloadingImages(true);
+    for (let i = 0; i < toDownload.length; i++) {
+      try {
+        await downloadImage(toDownload[i], i);
+        await new Promise(r => setTimeout(r, 300));
+      } catch (err) {
+        console.error("Download failed:", err);
+      }
+    }
+    setDownloadingImages(false);
+  };
 
   const toggleImage = (url) => {
     setSelectedImages(prev =>
@@ -238,6 +272,19 @@ Wygeneruj czysty tekst bez HTML. Tylko zwykły tekst z podziałami na akapity. B
                   >
                     {selectedImages.length === productImages.length ? "Odznacz wszystkie" : "Zaznacz wszystkie"}
                   </button>
+                  {isAdmin && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadImages}
+                      disabled={downloadingImages}
+                      className="text-xs h-7 gap-1.5 ml-auto"
+                    >
+                      {downloadingImages ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                      {downloadingImages ? "Pobieranie..." : `Pobierz zdjęcia${selectedImages.length > 0 ? ` (${selectedImages.length})` : ` (${productImages.length})`}`}
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-4 gap-2">
