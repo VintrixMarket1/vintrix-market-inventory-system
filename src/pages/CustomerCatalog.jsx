@@ -371,7 +371,7 @@ function ProductCard({ product, isFavorite, isInCart, onSelect, onToggleFavorite
       {/* Image */}
       <div className="relative aspect-[3/4] bg-stone-800 overflow-hidden cursor-pointer" onClick={onSelect}>
         {product.images?.[0] ? (
-          <img src={product.images[0]} alt={product.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={product.images[0]} alt={product.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-4xl opacity-20">◈</div>
         )}

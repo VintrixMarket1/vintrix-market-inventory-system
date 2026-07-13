@@ -13,13 +13,25 @@ export default function ImageUploader({ uploadedImages, onImagesReady, onAnalyze
   const { t, lang } = useLang();
   const isPolish = lang === "pl";
 
+  const MAX_IMAGES = 10;
+
   const handleFiles = async (files) => {
+    const remaining = MAX_IMAGES - uploadedImages.length;
+    const toProcess = Array.from(files).slice(0, remaining);
+    if (toProcess.length === 0) return;
+
     setUploading(true);
     const newUrls = [];
-    for (const file of files) {
-      const compressed = await compressImage(file);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: compressed });
-      newUrls.push(file_url);
+    for (const file of toProcess) {
+      try {
+        const compressed = await compressImage(file);
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: compressed });
+        newUrls.push(file_url);
+        // Small delay between uploads to let GC reclaim memory on weak devices
+        await new Promise(r => setTimeout(r, 50));
+      } catch (e) {
+        console.error("Upload error:", e);
+      }
     }
     onImagesReady([...uploadedImages, ...newUrls]);
     setUploading(false);

@@ -5,13 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, CheckCircle, ArrowLeft } from "lucide-react";
 import AiConfidenceBadge from "./AiConfidenceBadge";
@@ -165,35 +158,39 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
           </div>
           <div className="space-y-1.5">
             <Label>{isPolish ? "Podkategoria" : "Subcategory"}</Label>
-            <Select value={form.subcategory || ""} onValueChange={(v) => set("subcategory", v)}>
-              <SelectTrigger><SelectValue placeholder={isPolish ? "Wybierz..." : "Select..."} /></SelectTrigger>
-              <SelectContent>
-                {(SUBCATEGORIES_BY_CATEGORY[form.category] || []).map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+              value={form.subcategory || ""}
+              onChange={(e) => set("subcategory", e.target.value)}
+              className="w-full h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">{isPolish ? "Wybierz..." : "Select..."}</option>
+              {(SUBCATEGORIES_BY_CATEGORY[form.category] || []).map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label>{isPolish ? "Przeznaczenie" : "Gender"}</Label>
-            <Select value={form.gender} onValueChange={(v) => set("gender", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {GENDERS.map((g) => <SelectItem key={g} value={g}>{GENDER_LABELS[g]}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <select
+              value={form.gender}
+              onChange={(e) => set("gender", e.target.value)}
+              className="w-full h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              {GENDERS.map((g) => <option key={g} value={g}>{GENDER_LABELS[g]}</option>)}
+            </select>
           </div>
           <div className="space-y-1.5">
             <Label>{isPolish ? "Stan *" : "Condition *"}</Label>
-            <Select value={form.condition} onValueChange={(v) => set("condition", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {CONDITIONS.map((c) => <SelectItem key={c} value={c}>{CONDITION_LABELS[c]}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <select
+              value={form.condition}
+              onChange={(e) => set("condition", e.target.value)}
+              className="w-full h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              {CONDITIONS.map((c) => <option key={c} value={c}>{CONDITION_LABELS[c]}</option>)}
+            </select>
           </div>
         </div>
 
@@ -240,19 +237,18 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
         {/* Pallet assignment */}
         <div className="space-y-1.5">
           <Label>{isPolish ? "Paleta (opcjonalnie)" : "Pallet (optional)"}</Label>
-          <Select value={selectedPallet} onValueChange={setSelectedPallet}>
-            <SelectTrigger>
-              <SelectValue placeholder={isPolish ? "Przypisz do palety..." : "Assign to pallet..."} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={null}>{isPolish ? "Brak palety" : "No pallet"}</SelectItem>
-              {pallets.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.pallet_code} — {p.investor_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <select
+            value={selectedPallet || ""}
+            onChange={(e) => setSelectedPallet(e.target.value || null)}
+            className="w-full h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <option value="">{isPolish ? "Brak palety" : "No pallet"}</option>
+            {pallets.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.pallet_code} — {p.investor_name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Generate PZ option — only when no pallet assigned */}

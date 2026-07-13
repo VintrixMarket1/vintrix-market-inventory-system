@@ -33,7 +33,7 @@ export default function ProductCard({ product, onEdit, onDelete, selected, onTog
         onClick={onToggleSelect ? (e) => { e.stopPropagation(); onToggleSelect(product.id); } : undefined}
       >
         {mainImage ? (
-          <img src={mainImage} alt={product.product_name} className="w-full h-full object-cover" />
+          <img src={mainImage} alt={product.product_name} className="w-full h-full object-cover" loading="lazy" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-slate-300">
             <span className="text-4xl">📦</span>

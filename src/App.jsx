@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { LangProvider } from '@/lib/i18n';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -124,7 +125,9 @@ function App() {
       <LangProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <AppRoutes />
+          <ErrorBoundary>
+            <AppRoutes />
+          </ErrorBoundary>
         </Router>
         <Toaster />
       </QueryClientProvider>
