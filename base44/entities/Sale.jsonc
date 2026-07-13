@@ -62,6 +62,29 @@
     "wz_document_number": {
       "type": "string",
       "description": "Numer dokumentu WZ"
+    },
+    "refund_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "partial",
+        "full"
+      ],
+      "default": "none",
+      "description": "Status zwrotu \u015brodk\u00f3w"
+    },
+    "refund_amount": {
+      "type": "number",
+      "description": "Kwota zwrotu (PLN)"
+    },
+    "refund_reason": {
+      "type": "string",
+      "description": "Pow\u00f3d zwrotu"
+    },
+    "refund_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data zwrotu"
     }
   },
   "required": [

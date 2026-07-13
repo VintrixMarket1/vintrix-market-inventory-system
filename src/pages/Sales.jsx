@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Download, TrendingUp, TrendingDown, Calendar, Pencil, Loader2, ShoppingCart, Package, Globe, Receipt } from "lucide-react";
+import { Search, Download, TrendingUp, TrendingDown, Calendar, Pencil, Loader2, ShoppingCart, Package, Globe, Receipt, RotateCcw } from "lucide-react";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
+import PartialRefundModal from "@/components/sales/PartialRefundModal";
 
 const platformColors = {
   vinted: "bg-teal-100 text-teal-700",
@@ -150,13 +151,14 @@ function SalesFilters({ search, setSearch, platformFilter, setPlatformFilter, da
 
 function SaleSummaryCards({ filtered }) {
   const totalRevenue = filtered.reduce((sum, s) => sum + (s.sale_price || 0), 0);
-  const totalProfit = filtered.reduce((sum, s) => sum + ((s.sale_price || 0) - (s.purchase_price || 0)), 0);
+  const totalRefunds = filtered.reduce((sum, s) => sum + (s.refund_amount || 0), 0);
+  const totalProfit = filtered.reduce((sum, s) => sum + ((s.sale_price || 0) - (s.purchase_price || 0) - (s.refund_amount || 0)), 0);
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="bg-white rounded-xl border border-slate-200/60 p-4">
         <p className="text-xs text-slate-500 uppercase tracking-wider">Przychód</p>
         <p className="text-xl font-bold text-slate-900 mt-1">{totalRevenue.toFixed(0)} PLN</p>
-        <p className="text-xs text-slate-400 mt-0.5">{filtered.length} sprzedaży</p>
+        <p className="text-xs text-slate-400 mt-0.5">{filtered.length} sprzedaży{totalRefunds > 0 ? ` · zwroty: ${totalRefunds.toFixed(0)} PLN` : ""}</p>
       </div>
       <div className={`rounded-xl border p-4 ${totalProfit >= 0 ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"}`}>
         <p className="text-xs text-slate-500 uppercase tracking-wider">Zysk</p>
@@ -169,10 +171,12 @@ function SaleSummaryCards({ filtered }) {
   );
 }
 
-function SaleRow({ sale, onEdit, index }) {
-  const profit = (sale.sale_price || 0) - (sale.purchase_price || 0);
+function SaleRow({ sale, onEdit, onRefund, index }) {
+  const profit = (sale.sale_price || 0) - (sale.purchase_price || 0) - (sale.refund_amount || 0);
   const datePrefix = sale.sale_date ? sale.sale_date.replace(/-/g, "") : "000000";
   const saleNumber = `${datePrefix}-${String(index + 1).padStart(3, "0")}`;
+  const refundStatus = sale.refund_status || "none";
+  const canRefund = sale.stripe_session_id && (sale.sale_price || 0) - (sale.refund_amount || 0) > 0;
   return (
     <div className="bg-white rounded-xl border border-slate-200/60 p-4 flex items-center gap-4">
       <div className="flex-shrink-0 text-[10px] font-mono text-slate-400 w-28 hidden sm:block">{saleNumber}</div>
@@ -193,6 +197,18 @@ function SaleRow({ sale, onEdit, index }) {
               {sale.wz_document_number}
             </span>
           )}
+          {refundStatus === "partial" && (
+            <Badge className="text-[10px] bg-amber-100 text-amber-700">
+              <RotateCcw className="w-2.5 h-2.5 mr-0.5" />
+              Zwrot: {(sale.refund_amount || 0).toFixed(2)} PLN
+            </Badge>
+          )}
+          {refundStatus === "full" && (
+            <Badge className="text-[10px] bg-blue-100 text-blue-700">
+              <RotateCcw className="w-2.5 h-2.5 mr-0.5" />
+              Pełny zwrot
+            </Badge>
+          )}
         </div>
       </div>
       <div className="text-right flex-shrink-0">
@@ -201,6 +217,11 @@ function SaleRow({ sale, onEdit, index }) {
           {profit >= 0 ? "+" : ""}{profit.toFixed(2)} PLN zysk
         </p>
       </div>
+      {canRefund && onRefund && (
+        <Button variant="ghost" size="icon" className="text-amber-500 hover:text-amber-700 flex-shrink-0" onClick={() => onRefund(sale)} title="Częściowy zwrot">
+          <RotateCcw className="w-4 h-4" />
+        </Button>
+      )}
       {onEdit && (
         <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-700 flex-shrink-0" onClick={() => onEdit(sale)}>
           <Pencil className="w-4 h-4" />
@@ -210,7 +231,7 @@ function SaleRow({ sale, onEdit, index }) {
   );
 }
 
-function SalesList({ sales, isLoading, onEdit, emptyMessage }) {
+function SalesList({ sales, isLoading, onEdit, onRefund, emptyMessage }) {
   if (isLoading) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin" /></div>;
   }
@@ -223,7 +244,7 @@ function SalesList({ sales, isLoading, onEdit, emptyMessage }) {
   }
   return (
     <div className="space-y-2">
-      {sales.map((sale, i) => <SaleRow key={sale.id} sale={sale} onEdit={onEdit} index={i} />)}
+      {sales.map((sale, i) => <SaleRow key={sale.id} sale={sale} onEdit={onEdit} onRefund={onRefund} index={i} />)}
     </div>
   );
 }
@@ -234,6 +255,7 @@ export default function Sales() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [editingSale, setEditingSale] = useState(null);
+  const [refundingSale, setRefundingSale] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -396,6 +418,7 @@ export default function Sales() {
   };
 
   const onSaved = () => { queryClient.invalidateQueries({ queryKey: ["sales"] }); setEditingSale(null); };
+  const onRefundSaved = () => { queryClient.invalidateQueries({ queryKey: ["sales"] }); setRefundingSale(null); };
 
   return (
     <div className="space-y-6">
@@ -427,7 +450,7 @@ export default function Sales() {
             onExport={() => exportExcel(allFiltered)}
             onFiscalExport={() => exportFiscalReport(allFiltered)}
           />
-          <SalesList sales={allFiltered} isLoading={isLoading} onEdit={setEditingSale} emptyMessage="Brak sprzedaży spełniających kryteria" />
+          <SalesList sales={allFiltered} isLoading={isLoading} onEdit={setEditingSale} onRefund={setRefundingSale} emptyMessage="Brak sprzedaży spełniających kryteria" />
         </TabsContent>
 
         {/* WEB STORE TAB */}
@@ -448,7 +471,7 @@ export default function Sales() {
               <p className="text-xs text-slate-400 mt-1">Sprzedaże pojawią się tutaj po potwierdzeniu płatności przez Stripe</p>
             </div>
           ) : (
-            <SalesList sales={webStoreFiltered} isLoading={isLoading} onEdit={setEditingSale} />
+            <SalesList sales={webStoreFiltered} isLoading={isLoading} onEdit={setEditingSale} onRefund={setRefundingSale} />
           )}
         </TabsContent>
       </Tabs>
@@ -458,6 +481,13 @@ export default function Sales() {
           sale={editingSale}
           onClose={() => setEditingSale(null)}
           onSaved={onSaved}
+        />
+      )}
+      {refundingSale && (
+        <PartialRefundModal
+          sale={refundingSale}
+          onClose={() => setRefundingSale(null)}
+          onSaved={onRefundSaved}
         />
       )}
     </div>
