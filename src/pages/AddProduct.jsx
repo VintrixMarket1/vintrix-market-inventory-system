@@ -144,50 +144,59 @@ If you cannot determine something from photos — use null.`,
   const handleSave = async (formData, palletId, generatePZ) => {
     const internalCode = formData.internal_code?.trim()
       || `${(formData.category || "OTH").slice(0, 3).toUpperCase()}-${Date.now().toString().slice(-8)}`;
-    const product = await base44.entities.Product.create({
-      ...formData,
-      internal_code: internalCode,
-      images: uploadedImages,
-      pallet_id: palletId || null,
-      ai_analyzed: true,
-      ai_verified: true,
-      status: "in_stock",
-    });
-    // Auto-update pallet status to sorting if still accepted
-    if (palletId) {
-      const pallets = await base44.entities.Pallet.filter({ id: palletId });
-      const p = pallets?.[0];
-      if (p && (p.status === "accepted" || p.status === "active")) {
-        await base44.entities.Pallet.update(palletId, { status: "sorting" });
-      }
-    }
-    // Generate PZ document if requested (only when no pallet)
+    let product = null;
     let pzNumber = null;
-    if (generatePZ && !palletId && product?.id) {
-      const today = new Date().toISOString().split("T")[0];
-      pzNumber = await generateDocumentNumber("PZ");
-      const qty = formData.is_multi_item && formData.stock_quantity > 0 ? formData.stock_quantity : 1;
-      const unitPrice = formData.purchase_price || 0;
-      await base44.entities.WarehouseDocument.create({
-        document_number: pzNumber,
-        document_type: "PZ",
-        date: today,
-        status: "confirmed",
-        counterparty: formData.brand || "—",
-        notes: `Przyjęcie produktu: ${formData.product_name}`,
-        created_by_name: userDisplayName,
-        items: [{
-          product_id: product.id,
-          product_name: formData.product_name,
-          internal_code: internalCode,
-          category: formData.category || "",
-          condition: formData.condition || "",
-          quantity: qty,
-          unit_price: unitPrice,
-          total_value: unitPrice * qty,
-        }],
-        total_value: unitPrice * qty,
+    try {
+      product = await base44.entities.Product.create({
+        ...formData,
+        internal_code: internalCode,
+        images: uploadedImages,
+        pallet_id: palletId || null,
+        ai_analyzed: true,
+        ai_verified: true,
+        status: "in_stock",
       });
+    } catch (err) {
+      console.error("Product create failed:", err);
+      throw err;
+    }
+    // Post-create operations — failures here should NOT block the success screen
+    try {
+      if (palletId) {
+        const pallets = await base44.entities.Pallet.filter({ id: palletId });
+        const p = pallets?.[0];
+        if (p && (p.status === "accepted" || p.status === "active")) {
+          await base44.entities.Pallet.update(palletId, { status: "sorting" });
+        }
+      }
+      if (generatePZ && !palletId && product?.id) {
+        const today = new Date().toISOString().split("T")[0];
+        pzNumber = await generateDocumentNumber("PZ");
+        const qty = formData.is_multi_item && formData.stock_quantity > 0 ? formData.stock_quantity : 1;
+        const unitPrice = formData.purchase_price || 0;
+        await base44.entities.WarehouseDocument.create({
+          document_number: pzNumber,
+          document_type: "PZ",
+          date: today,
+          status: "confirmed",
+          counterparty: formData.brand || "—",
+          notes: `Przyjęcie produktu: ${formData.product_name}`,
+          created_by_name: userDisplayName,
+          items: [{
+            product_id: product.id,
+            product_name: formData.product_name,
+            internal_code: internalCode,
+            category: formData.category || "",
+            condition: formData.condition || "",
+            quantity: qty,
+            unit_price: unitPrice,
+            total_value: unitPrice * qty,
+          }],
+          total_value: unitPrice * qty,
+        });
+      }
+    } catch (err) {
+      console.error("Post-create operation failed (product was saved):", err);
     }
     setSavedProduct({ pzNumber });
     setStep(STEPS.DONE);

@@ -83,6 +83,7 @@ const ProtectedApp = () => {
           <Route path="/Inventory" element={<Inventory />} />
           <Route path="/ProductModels" element={<ProductModels />} />
           <Route path="/Pallets" element={<Pallets />} />
+          <Route path="/PalletDetail" element={<PalletDetail />} />
           <Route path="/AddProduct" element={<AddProduct />} />
           <Route path="/Settings" element={<Settings />} />
         </Route>

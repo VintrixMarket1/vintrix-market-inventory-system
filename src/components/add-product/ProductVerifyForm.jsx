@@ -64,7 +64,8 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
 
   useEffect(() => {
     if (aiData) {
-      setForm({
+      setForm(prev => ({
+        ...prev,
         product_name: aiData.product_name || "",
         brand: aiData.brand || "",
         category: aiData.category || "other",
@@ -80,7 +81,7 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
         purchase_price: "",
         is_multi_item: aiData.is_multi_item || false,
         stock_quantity: aiData.stock_quantity || "",
-      });
+      }));
     }
   }, [aiData]);
 
@@ -88,17 +89,26 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
 
   const handleSave = async () => {
     setSaving(true);
-    await onSave(
-      {
-        ...form,
-        suggested_sale_price: parseFloat(form.suggested_sale_price) || 0,
-        purchase_price: parseFloat(form.purchase_price) || 0,
-        is_multi_item: !!form.is_multi_item,
-        stock_quantity: form.is_multi_item ? (parseInt(form.stock_quantity) || 1) : null,
-      },
-      selectedPallet || null,
-      generatePZ
-    );
+    try {
+      await onSave(
+        {
+          ...form,
+          warehouse_zone: form.warehouse_zone || "",
+          shelf: form.shelf || "",
+          box_number: form.box_number || "",
+          internal_code: form.internal_code || "",
+          suggested_sale_price: parseFloat(form.suggested_sale_price) || 0,
+          purchase_price: parseFloat(form.purchase_price) || 0,
+          is_multi_item: !!form.is_multi_item,
+          stock_quantity: form.is_multi_item ? (parseInt(form.stock_quantity) || 1) : null,
+        },
+        selectedPallet || null,
+        generatePZ
+      );
+    } catch (err) {
+      console.error("Save failed:", err);
+      alert(isPolish ? "Błąd zapisu produktu: " + (err?.message || err) : "Save error: " + (err?.message || err));
+    }
     setSaving(false);
   };
 
