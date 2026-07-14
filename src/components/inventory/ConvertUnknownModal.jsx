@@ -148,13 +148,25 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
     if (!files.length) return;
     setUploading(true);
     const uploaded = [];
-    for (const file of files) {
-      const compressed = await compressImage(file);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: compressed });
-      uploaded.push(file_url);
+    try {
+      for (const file of files) {
+        try {
+          const compressed = await compressImage(file);
+          const { file_url } = await base44.integrations.Core.UploadFile({ file: compressed });
+          uploaded.push(file_url);
+        } catch (err) {
+          console.error("Image upload failed for file:", file.name, err);
+        }
+      }
+      if (uploaded.length > 0) {
+        setImages(prev => [...prev, ...uploaded]);
+      }
+    } catch (err) {
+      console.error("Image upload error:", err);
     }
-    setImages(prev => [...prev, ...uploaded]);
     setUploading(false);
+    // Reset input so the same file can be re-selected
+    if (e.target) e.target.value = "";
   };
 
   const removeImage = (idx) => setImages(prev => prev.filter((_, i) => i !== idx));

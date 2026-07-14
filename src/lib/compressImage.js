@@ -8,8 +8,17 @@
  * @param {number} options.quality - JPEG quality 0-1 (default: 0.7)
  * @returns {Promise<File>} Compressed file
  */
-export async function compressImage(file, { maxWidth = 1024, maxHeight = 1024, quality = 0.7 } = {}) {
+export async function compressImage(file, { maxWidth = 800, maxHeight = 800, quality = 0.6 } = {}) {
+  // Fallback timeout — if canvas/toBlob hangs (OOM on mobile), resolve with original
   return new Promise((resolve) => {
+    let settled = false;
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        resolve(file);
+      }
+    }, 15000);
+
     const img = new Image();
     const url = URL.createObjectURL(file);
 
@@ -18,36 +27,53 @@ export async function compressImage(file, { maxWidth = 1024, maxHeight = 1024, q
 
       let { width, height } = img;
 
-      // Scale down proportionally
       if (width > maxWidth || height > maxHeight) {
         const ratio = Math.min(maxWidth / width, maxHeight / height);
         width = Math.round(width * ratio);
         height = Math.round(height * ratio);
       }
 
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
 
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, width, height);
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
 
-      canvas.toBlob(
-        (blob) => {
-          // Explicitly release canvas memory — critical on weak devices
-          canvas.width = 0;
-          canvas.height = 0;
-          const compressed = new File([blob], file.name, { type: "image/jpeg", lastModified: Date.now() });
-          resolve(compressed);
-        },
-        "image/jpeg",
-        quality
-      );
+        canvas.toBlob(
+          (blob) => {
+            canvas.width = 0;
+            canvas.height = 0;
+            if (!settled) {
+              settled = true;
+              clearTimeout(timeout);
+              if (blob) {
+                resolve(new File([blob], file.name, { type: "image/jpeg", lastModified: Date.now() }));
+              } else {
+                resolve(file);
+              }
+            }
+          },
+          "image/jpeg",
+          quality
+        );
+      } catch (err) {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timeout);
+          resolve(file);
+        }
+      }
     };
 
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      resolve(file); // fallback: return original if something goes wrong
+      if (!settled) {
+        settled = true;
+        clearTimeout(timeout);
+        resolve(file);
+      }
     };
 
     img.src = url;
