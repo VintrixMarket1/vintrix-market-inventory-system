@@ -101,30 +101,35 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
 
   const fileRef = useRef();
 
-  // Catalog search with debounce — load all non-unknown products, filter client-side
+  // Catalog search with debounce — fetch only when user types 2+ chars
   useEffect(() => {
     if (uploadMode !== "catalog") return;
+    const query = catalogSearch.trim();
+    if (query.length < 2) {
+      setCatalogProducts([]);
+      return;
+    }
     clearTimeout(catalogSearchTimeout.current);
     catalogSearchTimeout.current = setTimeout(async () => {
       setCatalogLoading(true);
-      // Fetch a large set of products (in_stock + listed + sold), exclude unknown
-      const [inStock, listed, sold] = await Promise.all([
-        base44.entities.Product.filter({ status: "in_stock" }, "-created_date", 200),
-        base44.entities.Product.filter({ status: "listed" }, "-created_date", 200),
-        base44.entities.Product.filter({ status: "sold" }, "-created_date", 200),
-      ]);
-      const all = [...inStock, ...listed, ...sold].filter(p => p.product_name !== "Nieznany produkt");
-      const lower = catalogSearch.trim().toLowerCase();
-      const filtered = lower
-        ? all.filter(p =>
-            p.product_name?.toLowerCase().includes(lower) ||
-            p.brand?.toLowerCase().includes(lower) ||
-            p.internal_code?.toLowerCase().includes(lower)
+      try {
+        // Fetch only in_stock products (most relevant for reclassification)
+        const products = await base44.entities.Product.filter({ status: "in_stock" }, "-created_date", 50);
+        const lower = query.toLowerCase();
+        const filtered = products
+          .filter(p =>
+            p.product_name !== "Nieznany produkt" &&
+            (p.product_name?.toLowerCase().includes(lower) ||
+             p.brand?.toLowerCase().includes(lower) ||
+             p.internal_code?.toLowerCase().includes(lower))
           )
-        : all;
-      setCatalogProducts(filtered.slice(0, 20));
+          .slice(0, 15);
+        setCatalogProducts(filtered);
+      } catch (err) {
+        console.error("Catalog search error:", err);
+      }
       setCatalogLoading(false);
-    }, 300);
+    }, 400);
   }, [catalogSearch, uploadMode]);
 
   const applyCatalogProduct = (p) => {
@@ -184,110 +189,68 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
     setAiError(null);
 
     try {
-    // Step 1: Identify product (vision + structured JSON)
-    const identifyPrompt = `Jesteś ekspertem od identyfikacji i wyceny produktów na rynku wtórnym (OLX, Vinted, Allegro).
-Przeanalizuj zdjęcia i/lub opis, a następnie zidentyfikuj produkt i odpowiedz w JSON.
+      // Limit to 3 images to reduce memory/processing on mobile
+      const imagesForAnalysis = images.slice(0, 3);
+
+      // Single combined LLM call — identification + listing copy in one response
+      const combinedPrompt = `Jesteś ekspertem od identyfikacji i wyceny produktów na rynku wtórnym (OLX, Vinted, Allegro).
+Przeanalizuj zdjęcia i/lub opis operatora. Zidentyfikuj produkt, wycen go i wygeneruj opis ogłoszenia.
 
 Uwagi od operatora: ${analysisNotes || "(brak uwag)"}
-${images.length === 0 ? "Brak zdjęć — opieraj się wyłącznie na uwagach operatora." : ""}
+${imagesForAnalysis.length === 0 ? "Brak zdjęć — opieraj się wyłącznie na uwagach operatora." : ""}
 
 Kategorie do wyboru: clothing_men, clothing_women, clothing_kids, clothing_sport, shoes_men, shoes_women, shoes_kids, shoes_sport, accessories_bags, accessories_belts, accessories_hats, accessories_scarves, accessories_jewelry, accessories_watches, accessories_sunglasses, accessories_wallets, electronics_phones, electronics_tablets, electronics_laptops, electronics_audio, electronics_tv, electronics_cameras, electronics_gaming, electronics_accessories, home_furniture, home_kitchen, home_agd_large, home_agd_cleaning, home_agd_personal, home_agd_laundry, home_bedding, home_decor, home_lighting, home_garden, home_tools, home_bathroom, toys_kids, toys_board_games, toys_outdoor, toys_educational, toys_lego, toys_dolls, sports_fitness, sports_cycling, sports_winter, sports_water, sports_team, sports_outdoor, books_fiction, books_nonfiction, books_kids, books_comics, books_textbooks, beauty_cosmetics, beauty_perfumes, beauty_haircare, beauty_skincare, automotive_parts, automotive_accessories, automotive_tools, pet_food, pet_accessories, pet_clothing, food_supplements, health_medical, music_instruments, music_vinyl, art_paintings, art_collectibles, other
 
-Zwróć dokładne dane identyfikacyjne produktu.`;
+Zasady opisu ogłoszenia:
+- Dozwolone tagi: p, ul, li, b, br. BRAK h1/h2/h3, div, span, atrybutów, CSS, emoji.
+- Zacznij od najmocniejszej cechy, podkreśl markę, szczery opis stanu.
+- listing_title: max 75 znaków.`;
 
-    const identified = await base44.integrations.Core.InvokeLLM({
-      prompt: identifyPrompt,
-      file_urls: images.length > 0 ? images : undefined,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          product_name: { type: "string" },
-          brand: { type: "string" },
-          model: { type: "string" },
-          category: { type: "string" },
-          subcategory: { type: "string" },
-          condition: { type: "string" },
-          color: { type: "string" },
-          size: { type: "string" },
-          suggested_sale_price: { type: "number" },
-          visible_damage: { type: "string" },
-          missing_parts: { type: "string" },
-          warnings: { type: "string" },
-          ai_summary: { type: "string" },
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: combinedPrompt,
+        file_urls: imagesForAnalysis.length > 0 ? imagesForAnalysis : undefined,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            product_name: { type: "string" },
+            brand: { type: "string" },
+            model: { type: "string" },
+            category: { type: "string" },
+            subcategory: { type: "string" },
+            condition: { type: "string" },
+            color: { type: "string" },
+            size: { type: "string" },
+            suggested_sale_price: { type: "number" },
+            visible_damage: { type: "string" },
+            missing_parts: { type: "string" },
+            warnings: { type: "string" },
+            ai_summary: { type: "string" },
+            listing_title: { type: "string" },
+            listing_description: { type: "string" },
+          }
         }
+      });
+
+      if (!result || typeof result !== "object") {
+        throw new Error("AI nie zwrócił prawidłowego wyniku");
       }
-    });
 
-    // Step 2: Generate listing title + rich HTML description (same approach as ProductForm)
-    const conditionLabel = { new: "nowy", like_new: "jak nowy / powystawowy", used: "używany" }[identified.condition] || identified.condition || "jak nowy";
-
-    const descriptionPrompt = `Jesteś ekspertem copywritingu e-commerce specjalizującym się w sprzedaży second-hand na OLX/Vinted/Allegro. Twój opis ma SPRZEDAĆ produkt — szybko i skutecznie.
-
-=== DANE PRODUKTU ===
-- Nazwa: ${identified.product_name || "Produkt"}
-- Marka: ${identified.brand || "nieznana"}
-- Stan: ${conditionLabel}
-- Rozmiar: ${identified.size || "nie podano"}
-- Kolor: ${identified.color || "nie podano"}
-- Kategoria: ${identified.category || "other"}${identified.subcategory ? ` / ${identified.subcategory}` : ""}
-- Notatki sprzedawcy: ${analysisNotes || "brak"}
-${identified.visible_damage ? `- Widoczne uszkodzenia: ${identified.visible_damage}` : ""}
-${identified.missing_parts ? `- Brakujące elementy: ${identified.missing_parts}` : ""}
-
-=== ZASADY COPYWRITINGU ===
-- Zacznij od najmocniejszej cechy produktu — tej, która przyciąga uwagę kupującego
-- Używaj konkretnych, opisowych przymiotników zamiast ogólników ("głęboka czerń, matowe wykończenie" zamiast "czarny")
-- Podkreśl wartość (co kupujący zyska) a nie tylko cechy
-- Stan opisz szczerze ale pozytywnie — co jest w dobrym stanie, co działa perfekcyjnie
-- NIE wspominaj o wysyłce, zwrotach, negocjacjach
-- NIE używaj nagłówków HTML (h1/h2/h3), emoji ani myślników
-- Pisz naturalnie, jak osoba polecająca produkt znajomemu
-
-=== WYMAGANIA TECHNICZNE ===
-- Dozwolone tagi: p, ul, li, b, br
-- BRAK atrybutów w tagach (żadnych class, style, id)
-- BRAK h1, h2, h3, div, span, CSS, img
-- Czysty HTML — bez komentarzy, bez wstępów
-
-=== STRUKTURA ===
-1. <p> — 2-3 zdania haczyka: co to jest + dlaczego warto kupić (podkreśl markę jeśli znana, wyjątkową cechę)
-2. <p> — szczery opis stanu: co sprawdzono, co jest jak nowe, ewentualne drobne ślady użytkowania widoczne na zdjęciach
-3. <ul> "Parametry:" — kluczowe dane w formacie <b>parametr:</b> wartość (rozmiar, kolor, materiał, model itp.)
-
-Wygeneruj WYŁĄCZNIE gotowy HTML. Zacznij od <p>.
-
-Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, gotowy na Allegro/OLX.`;
-
-    const copyResult = await base44.integrations.Core.InvokeLLM({
-      prompt: descriptionPrompt,
-      model: "gpt_5_5",
-      response_json_schema: {
-        type: "object",
-        properties: {
-          listing_title: { type: "string" },
-          listing_description: { type: "string" },
-        }
-      }
-    });
-
-    const result = { ...identified, ...copyResult };
-
-    setAiResult(result);
-    setForm(prev => ({
-      ...prev,
-      product_name: result.product_name || prev.product_name,
-      brand: result.brand || prev.brand,
-      category: result.category || prev.category,
-      subcategory: result.subcategory || prev.subcategory,
-      condition: result.condition || prev.condition,
-      color: result.color || prev.color,
-      size: result.size || prev.size,
-      listing_title: result.listing_title || prev.listing_title,
-      listing_description: result.listing_description || prev.listing_description,
-      suggested_sale_price: result.suggested_sale_price ? String(result.suggested_sale_price) : prev.suggested_sale_price,
-    }));
-    setAnalyzing(false);
-    setStep("form");
+      setAiResult(result);
+      setForm(prev => ({
+        ...prev,
+        product_name: result.product_name || prev.product_name,
+        brand: result.brand || prev.brand,
+        category: result.category || prev.category,
+        subcategory: result.subcategory || prev.subcategory,
+        condition: result.condition || prev.condition,
+        color: result.color || prev.color,
+        size: result.size || prev.size,
+        listing_title: result.listing_title || prev.listing_title,
+        listing_description: result.listing_description || prev.listing_description,
+        suggested_sale_price: result.suggested_sale_price ? String(result.suggested_sale_price) : prev.suggested_sale_price,
+      }));
+      setAnalyzing(false);
+      setStep("form");
     } catch (err) {
       console.error("AI analysis error:", err);
       setAiError(err?.message || "Wystąpił błąd podczas analizy AI. Spróbuj ponownie lub wypełnij formularz ręcznie.");
