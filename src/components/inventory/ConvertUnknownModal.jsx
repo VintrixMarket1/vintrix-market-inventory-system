@@ -15,6 +15,9 @@ import { compressImage } from "@/lib/compressImage";
 import { generateDocumentNumber } from "@/lib/documentNumber";
 import { exportDptPdf } from "@/lib/dptPdfExport";
 import { CATEGORY_GROUPS, CATEGORY_LABELS } from "@/lib/categoryConfig";
+import ModalErrorBoundary from "@/components/inventory/ModalErrorBoundary";
+
+const MAX_AI_IMAGES = 5;
 
 const CONDITION_OPTIONS = [
   { value: "new", label: "Nowy" },
@@ -146,14 +149,19 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
+    const remaining = MAX_AI_IMAGES - images.length;
+    const toProcess = files.slice(0, remaining);
+    if (toProcess.length === 0) return;
     setUploading(true);
     const uploaded = [];
     try {
-      for (const file of files) {
+      for (const file of toProcess) {
         try {
           const compressed = await compressImage(file);
           const { file_url } = await base44.integrations.Core.UploadFile({ file: compressed });
           uploaded.push(file_url);
+          // Small delay between uploads to let GC reclaim memory on weak devices
+          await new Promise(r => setTimeout(r, 50));
         } catch (err) {
           console.error("Image upload failed for file:", file.name, err);
         }
@@ -165,7 +173,6 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
       console.error("Image upload error:", err);
     }
     setUploading(false);
-    // Reset input so the same file can be re-selected
     if (e.target) e.target.value = "";
   };
 
@@ -548,7 +555,7 @@ Wygeneruj też tytuł ogłoszenia (max 75 znaków), zwięzły i atrakcyjny, goto
                   <div className="flex flex-wrap gap-2 mb-2">
                     {images.map((url, i) => (
                       <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 shrink-0">
-                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <img src={url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                         <button onClick={() => removeImage(i)} className="absolute top-0.5 right-0.5 bg-red-500 rounded-full p-0.5 text-white hover:bg-red-600">
                           <X className="w-3 h-3" />
                         </button>

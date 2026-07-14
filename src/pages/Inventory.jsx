@@ -18,6 +18,7 @@ import BulkActionsBar from "../components/inventory/BulkActionsBar";
 import ShopifyBulkPublishModal from "../components/shopify/ShopifyBulkPublishModal";
 import PalletSummaryCard from "../components/inventory/PalletSummaryCard";
 import ConvertUnknownModal from "../components/inventory/ConvertUnknownModal";
+import ModalErrorBoundary from "../components/inventory/ModalErrorBoundary";
 import ReturnModal from "../components/inventory/ReturnModal";
 
 export default function Inventory() {
@@ -387,6 +388,7 @@ export default function Inventory() {
         />
       )}
       {convertProduct && (
+        <ModalErrorBoundary onClose={() => setConvertProduct(null)}>
         <ConvertUnknownModal
           product={convertProduct}
           pallet={palletsMap[convertProduct.pallet_id]}
@@ -395,6 +397,7 @@ export default function Inventory() {
           onClose={() => setConvertProduct(null)}
           onConverted={() => { refresh(); setConvertProduct(null); }}
         />
+        </ModalErrorBoundary>
       )}
     </div>
   );
