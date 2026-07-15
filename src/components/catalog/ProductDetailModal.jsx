@@ -180,7 +180,7 @@ function ImageLightbox({ images, startIndex, onClose }) {
           <ChevronRight className="w-6 h-6" />
         </button>
       </>}
-      <img src={images[current]} alt="" className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl" />
+      <img src={images[current]} alt="" className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl" referrerPolicy="no-referrer" />
       {images.length > 1 && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2" style={{ zIndex: 10000 }}>
           {images.map((_, i) => (
@@ -234,6 +234,7 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
                 <div className="relative md:flex-1" style={{ height: "clamp(200px, 55vw, 320px)" }}>
                   <img src={images[activeImg]} alt={product.product_name}
                     className="absolute inset-0 w-full h-full object-cover cursor-zoom-in"
+                    referrerPolicy="no-referrer"
                     onClick={() => setLightbox(true)} />
                   <button onClick={() => setLightbox(true)} className="absolute bottom-3 right-3 bg-black/40 hover:bg-black/60 rounded-full p-1.5 text-white transition">
                     <ZoomIn className="w-4 h-4" />
@@ -251,7 +252,7 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
                   <div className="flex gap-1.5 p-2 overflow-x-auto bg-slate-800">
                     {images.map((url, i) => (
                       <button key={i} onClick={() => setActiveImg(i)} className={`w-12 h-12 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${i === activeImg ? "border-emerald-400" : "border-transparent opacity-60 hover:opacity-90"}`}>
-                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <img src={url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       </button>
                     ))}
                   </div>
