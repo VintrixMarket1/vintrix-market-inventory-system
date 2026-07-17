@@ -1,6 +1,6 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Edit2, Trash2 } from "lucide-react";
+import { MapPin, Edit2, Trash2, Flag } from "lucide-react";
 
 const conditionLabels = { new: "New", like_new: "Like New", used: "Used" };
 const conditionColors = {
@@ -22,9 +22,10 @@ const statusLabels = {
   reclassified: "Przeklasyfikowany",
 };
 
-export default function ProductCard({ product, onEdit, onDelete, selected, onToggleSelect }) {
+export default function ProductCard({ product, onEdit, onDelete, onFlag, selected, onToggleSelect }) {
   const canDelete = !!onDelete;
   const mainImage = product.images && product.images.length > 0 ? product.images[0] : null;
+  const isFlagged = product.action_flag;
 
   return (
     <div className={`bg-white rounded-xl border overflow-hidden hover:shadow-lg transition-all duration-200 group ${selected ? "border-emerald-400 ring-2 ring-emerald-200" : "border-slate-200/60"}`}>
@@ -56,9 +57,19 @@ export default function ProductCard({ product, onEdit, onDelete, selected, onTog
           <Badge className={`text-[10px] ${statusColors[product.status] || statusColors.in_stock}`}>
             {statusLabels[product.status] || (product.status || "in_stock").replace("_", " ")}
           </Badge>
+          {isFlagged && (
+            <Badge className="text-[10px] bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-0.5">
+              <Flag className="w-2.5 h-2.5" /> Akcja
+            </Badge>
+          )}
         </div>
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-200 flex items-end justify-end p-2 opacity-0 group-hover:opacity-100 pointer-events-none">
           <div className="flex gap-1.5 pointer-events-auto">
+            {onFlag && (
+              <button onClick={() => onFlag(product)} className={`p-1.5 rounded-lg shadow-sm ${isFlagged ? "bg-amber-100 hover:bg-amber-200" : "bg-white hover:bg-amber-50"}`} title="Oznacz do działania">
+                <Flag className={`w-3.5 h-3.5 ${isFlagged ? "text-amber-600" : "text-slate-400"}`} />
+              </button>
+            )}
             <button onClick={() => onEdit(product)} className="p-1.5 bg-white rounded-lg shadow-sm hover:bg-slate-50">
               <Edit2 className="w-3.5 h-3.5 text-slate-600" />
             </button>

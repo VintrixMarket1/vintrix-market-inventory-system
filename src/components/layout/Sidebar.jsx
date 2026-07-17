@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Package, Tag, DollarSign,
-  Menu, X, ChevronRight, Layers, BookOpen, Settings, FileText, MessageCircle, BarChart3
+  Menu, X, ChevronRight, Layers, BookOpen, Settings, FileText, MessageCircle, BarChart3, Flag
 } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthContext";
@@ -23,9 +23,17 @@ export default function Sidebar() {
   });
   const unreadCount = notifications.length;
 
+  const { data: actionFlagged = [] } = useQuery({
+    queryKey: ["action_queue_count"],
+    queryFn: () => base44.entities.Product.filter({ action_flag: true }, "-action_set_date", 200),
+    refetchInterval: 30000,
+  });
+  const actionCount = actionFlagged.length;
+
   const allNavItems = [
     { path: "/Dashboard", labelKey: "nav_dashboard", icon: LayoutDashboard },
     { path: "/Inventory", labelKey: "nav_inventory", icon: Package },
+    { path: "/ActionQueue", label: "Kolejka działań", icon: Flag },
     { path: "/ProductModels", labelKey: "nav_catalog", icon: BookOpen },
     { path: "/Pallets", labelKey: "nav_pallets", icon: Layers },
     { path: "/Listings", labelKey: "nav_listings", icon: Tag },
@@ -73,6 +81,9 @@ export default function Sidebar() {
             {item.label || t(item.labelKey)}
             {item.path === "/Inquiries" && unreadCount > 0 && (
               <span className="ml-auto bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5 leading-none font-bold">{unreadCount}</span>
+            )}
+            {item.path === "/ActionQueue" && actionCount > 0 && (
+              <span className="ml-auto bg-amber-500 text-white text-[10px] rounded-full px-1.5 py-0.5 leading-none font-bold">{actionCount}</span>
             )}
             {isActive(item.path) && unreadCount === 0 && <ChevronRight className="w-3.5 h-3.5 ml-auto text-emerald-400" />}
             {isActive(item.path) && unreadCount > 0 && item.path !== "/Inquiries" && <ChevronRight className="w-3.5 h-3.5 ml-auto text-emerald-400" />}

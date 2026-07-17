@@ -20,6 +20,7 @@ import PalletSummaryCard from "../components/inventory/PalletSummaryCard";
 import ConvertUnknownModal from "../components/inventory/ConvertUnknownModal";
 import ModalErrorBoundary from "../components/inventory/ModalErrorBoundary";
 import ReturnModal from "../components/inventory/ReturnModal";
+import ActionFlagModal from "../components/inventory/ActionFlagModal";
 
 export default function Inventory() {
   const { t } = useLang();
@@ -37,6 +38,7 @@ export default function Inventory() {
   const [shopifyBulkProducts, setShopifyBulkProducts] = useState(null);
   const [convertProduct, setConvertProduct] = useState(null);
   const [returnProduct, setReturnProduct] = useState(null);
+  const [flagProduct, setFlagProduct] = useState(null);
 
   const toggleBulkSelect = (id) => {
     setBulkSelected(prev => {
@@ -199,6 +201,7 @@ export default function Inventory() {
                 product={product}
                 onEdit={(p) => { setEditProduct(p); setShowForm(true); }}
                 onDelete={isPracownik ? undefined : handleDelete}
+                onFlag={(p) => setFlagProduct(p)}
                 selected={bulkSelected.has(product.id)}
                 onToggleSelect={toggleBulkSelect}
               />
@@ -398,6 +401,13 @@ export default function Inventory() {
           onConverted={() => { refresh(); setConvertProduct(null); }}
         />
         </ModalErrorBoundary>
+      )}
+      {flagProduct && (
+        <ActionFlagModal
+          product={flagProduct}
+          onClose={() => setFlagProduct(null)}
+          onSaved={refresh}
+        />
       )}
     </div>
   );

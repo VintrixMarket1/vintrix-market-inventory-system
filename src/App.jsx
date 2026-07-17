@@ -34,6 +34,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import WarehouseDocuments from './pages/WarehouseDocuments';
 import MonthlyReport from './pages/MonthlyReport';
 import PalletDetail from './pages/PalletDetail';
+import ActionQueue from './pages/ActionQueue';
 
 const PublicCatalog = () => {
   const { user, isLoadingAuth, isLoadingPublicSettings } = useAuth();
@@ -81,6 +82,7 @@ const ProtectedApp = () => {
         <Route element={<AppLayout />}>
           <Route path="/Dashboard" element={<Dashboard />} />
           <Route path="/Inventory" element={<Inventory />} />
+          <Route path="/ActionQueue" element={<ActionQueue />} />
           <Route path="/ProductModels" element={<ProductModels />} />
           <Route path="/Pallets" element={<Pallets />} />
           <Route path="/PalletDetail" element={<PalletDetail />} />
@@ -112,6 +114,7 @@ const ProtectedApp = () => {
         <Route path="/WarehouseDocuments" element={<WarehouseDocuments />} />
         <Route path="/MonthlyReport" element={<MonthlyReport />} />
         <Route path="/PalletDetail" element={<PalletDetail />} />
+        <Route path="/ActionQueue" element={<ActionQueue />} />
         <Route path="/Inquiries" element={<Inquiries />} />
       </Route>
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
