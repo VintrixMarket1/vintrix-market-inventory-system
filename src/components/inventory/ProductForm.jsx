@@ -76,9 +76,15 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
     setUploading(true);
     const urls = [];
     for (const file of files) {
-      const compressed = await compressImage(file);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: compressed });
-      urls.push(file_url);
+      try {
+        const compressed = await compressImage(file);
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: compressed });
+        urls.push(file_url);
+        // Small delay between uploads to let GC reclaim memory on weak devices
+        await new Promise(r => setTimeout(r, 50));
+      } catch (err) {
+        console.error("Image upload failed for file:", file.name, err);
+      }
     }
     setForm(prev => ({ ...prev, images: [...(prev.images || []), ...urls] }));
     setUploading(false);
