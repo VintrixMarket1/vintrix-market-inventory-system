@@ -101,8 +101,14 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
         await base44.entities.Product.update(product.id, { status: "sold" });
       }
     }
-    if (listing) {
-      await base44.entities.Listing.update(listing.id, { listing_status: "sold" });
+    // Usuń wszystkie ogłoszenia (Listings) powiązane z tym produktem
+    try {
+      const productListings = await base44.entities.Listing.filter({ product_id: product?.id });
+      if (productListings?.length) {
+        await base44.entities.Listing.deleteMany({ product_id: product?.id });
+      }
+    } catch (err) {
+      console.error("Listing cleanup error:", err);
     }
     setSaving(false);
     onSaved();
