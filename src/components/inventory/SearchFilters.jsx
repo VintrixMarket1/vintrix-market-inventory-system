@@ -80,6 +80,17 @@ export default function SearchFilters({ filters, onChange, pallets = [] }) {
           <option key={val} value={val}>{label}</option>
         ))}
       </select>
+      <select
+        value={filters.sortBy || "newest"}
+        onChange={e => update("sortBy", e.target.value)}
+        className={`${selectClass} w-full sm:w-40`}
+      >
+        <option value="newest">{t("sort_newest")}</option>
+        <option value="pallet">{t("sort_pallet")}</option>
+        <option value="name">{t("sort_name")}</option>
+        <option value="price_asc">{t("sort_price_asc")}</option>
+        <option value="price_desc">{t("sort_price_desc")}</option>
+      </select>
     </div>
   );
 }

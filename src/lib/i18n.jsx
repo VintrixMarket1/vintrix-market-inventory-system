@@ -139,6 +139,11 @@ export const translations = {
     inv_all_subcategories: "All Subcategories",
     inv_all_pallets: "All pallets",
     inv_status: "Status",
+    sort_newest: "Newest first",
+    sort_pallet: "By pallet",
+    sort_name: "By name",
+    sort_price_asc: "Price (low to high)",
+    sort_price_desc: "Price (high to low)",
 
     // Bulk actions
     bulk_selected: "selected",
@@ -410,6 +415,11 @@ export const translations = {
     inv_all_subcategories: "Wszystkie podkategorie",
     inv_all_pallets: "Wszystkie palety",
     inv_status: "Status",
+    sort_newest: "Od najnowszych",
+    sort_pallet: "Według palety",
+    sort_name: "Według nazwy",
+    sort_price_asc: "Cena (rosnąco)",
+    sort_price_desc: "Cena (malejąco)",
 
     // Bulk actions
     bulk_selected: "zaznaczonych",

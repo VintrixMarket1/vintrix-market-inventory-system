@@ -47,7 +47,7 @@ export default function Inventory() {
       return next;
     });
   };
-  const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "in_stock", pallet_id: "all" });
+  const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "in_stock", pallet_id: "all", sortBy: "newest" });
   const [viewMode, setViewMode] = useState("grid");
 
   const { data: products = [], isLoading } = useQuery({
@@ -97,6 +97,24 @@ export default function Inventory() {
     const statusMatch = filters.status === "all" || (p.status || "in_stock") === filters.status;
     const palletMatch = !filters.pallet_id || filters.pallet_id === "all" || p.pallet_id === filters.pallet_id;
     return searchMatch && categoryMatch && subcategoryMatch && statusMatch && palletMatch;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    switch (filters.sortBy) {
+      case "pallet": {
+        const codeA = a.pallet_id ? (palletsMap[a.pallet_id]?.pallet_code || "zzz") : "zzz";
+        const codeB = b.pallet_id ? (palletsMap[b.pallet_id]?.pallet_code || "zzz") : "zzz";
+        return codeA.localeCompare(codeB);
+      }
+      case "name":
+        return (a.product_name || "").localeCompare(b.product_name || "");
+      case "price_asc":
+        return (a.purchase_price || 0) - (b.purchase_price || 0);
+      case "price_desc":
+        return (b.purchase_price || 0) - (a.purchase_price || 0);
+      default:
+        return new Date(b.created_date) - new Date(a.created_date);
+    }
   });
 
   const handleDelete = async (product) => {
@@ -195,7 +213,7 @@ export default function Inventory() {
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {filtered.map(product => (
+          {sorted.map(product => (
             <div key={product.id}>
               <ProductCard
                 product={product}
@@ -233,7 +251,7 @@ export default function Inventory() {
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered.map(product => {
+          {sorted.map(product => {
             const conditionColors = { new: "bg-emerald-50 text-emerald-700 border-emerald-200", like_new: "bg-blue-50 text-blue-700 border-blue-200", used: "bg-amber-50 text-amber-700 border-amber-200" };
             const statusColors = { in_stock: "bg-slate-100 text-slate-600", listed: "bg-purple-100 text-purple-700", sold: "bg-emerald-100 text-emerald-700" };
             const images = product.images || [];
