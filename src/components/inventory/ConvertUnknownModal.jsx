@@ -202,13 +202,19 @@ ${imagesForAnalysis.length === 0 ? "Brak zdjęć — opieraj się wyłącznie na
 Kategorie do wyboru: clothing_men, clothing_women, clothing_kids, clothing_sport, shoes_men, shoes_women, shoes_kids, shoes_sport, accessories_bags, accessories_belts, accessories_hats, accessories_scarves, accessories_jewelry, accessories_watches, accessories_sunglasses, accessories_wallets, electronics_phones, electronics_tablets, electronics_laptops, electronics_audio, electronics_tv, electronics_cameras, electronics_gaming, electronics_accessories, home_furniture, home_kitchen, home_agd_large, home_agd_cleaning, home_agd_personal, home_agd_laundry, home_bedding, home_decor, home_lighting, home_garden, home_tools, home_bathroom, toys_kids, toys_board_games, toys_outdoor, toys_educational, toys_lego, toys_dolls, sports_fitness, sports_cycling, sports_winter, sports_water, sports_team, sports_outdoor, books_fiction, books_nonfiction, books_kids, books_comics, books_textbooks, beauty_cosmetics, beauty_perfumes, beauty_haircare, beauty_skincare, automotive_parts, automotive_accessories, automotive_tools, pet_food, pet_accessories, pet_clothing, food_supplements, health_medical, music_instruments, music_vinyl, art_paintings, art_collectibles, other
 
 Zasady opisu ogłoszenia:
-- Dozwolone tagi: p, ul, li, b, br. BRAK h1/h2/h3, div, span, atrybutów, CSS, emoji.
-- Zacznij od najmocniejszej cechy, podkreśl markę, szczery opis stanu.
+- Czysty tekst, BEZ HTML, BEZ tagów, BEZ markdown, BEZ emoji.
+- Zacznij od najmocniejszej cechy produktu — tej, która przyciąga uwagę kupującego.
+- Używaj konkretnych, opisowych przymiotników zamiast ogólników.
+- Podkreśl wartość (co kupujący zyska) a nie tylko cechy.
+- Stan opisz szczerze ale pozytywnie. Pisz naturalnie, angażująco — jak do znajomego.
+- 3-5 zdań: co to jest i do czego służy, dlaczego warto (marka, jakość), szczery opis stanu, konkretne parametry (rozmiar, kolor).
+- Dla odzieży/obuwia/akcesoriów zacznij od: "Proszę sprawdzić wymiary przed zakupem!" jeśli rozmiar jest istotny.
 - listing_title: max 75 znaków.`;
 
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: combinedPrompt,
         file_urls: imagesForAnalysis.length > 0 ? imagesForAnalysis : undefined,
+        model: "claude_sonnet_4_6",
         response_json_schema: {
           type: "object",
           properties: {
