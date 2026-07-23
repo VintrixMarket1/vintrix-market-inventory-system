@@ -83,8 +83,6 @@ export default function Inventory() {
   const unsettledPalletIds = new Set(unsettledPallets.map(p => p.id));
 
   const filtered = products.filter(p => {
-    // Ukryj produkty z nieskalkulowanych palet — są reprezentowane przez kartę palety
-    if (p.pallet_id && unsettledPalletIds.has(p.pallet_id)) return false;
     // Ukryj przeklasyfikowane produkty
     if (p.status === "reclassified") return false;
     const isUnknown = p.product_name === "Nieznany produkt";
