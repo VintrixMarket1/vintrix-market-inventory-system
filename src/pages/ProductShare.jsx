@@ -151,7 +151,7 @@ export default function ProductShare() {
 
             {/* Action panel */}
             {!isSold && (
-              <div className="bg-white rounded-2xl p-4 mt-4">
+              <div className="bg-white rounded-2xl p-4 mt-4 text-slate-900">
                 <ActionPanel product={product} user={user} onSendInquiry={handleSendInquiry} />
               </div>
             )}
