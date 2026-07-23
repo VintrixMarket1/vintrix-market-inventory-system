@@ -14,6 +14,7 @@ import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
 import CustomerCatalogWrapper from './pages/CustomerCatalog.jsx';
+import ProductShare from './pages/ProductShare';
 import Inquiries from './pages/Inquiries';
 
 import AppLayout from './components/layout/AppLayout';
@@ -153,6 +154,8 @@ function AppRoutes() {
       <Route path="/AllegroCallback" element={<AllegroCallback />} />
       {/* Public catalog — browse without login */}
       <Route path="/" element={<PublicCatalog />} />
+      {/* Public product share page */}
+      <Route path="/product/:id" element={<ProductShare />} />
       {/* All other routes require authentication */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/*" element={<ProtectedApp />} />

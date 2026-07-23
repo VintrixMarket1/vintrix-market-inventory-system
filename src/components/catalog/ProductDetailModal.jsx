@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Package, ChevronLeft, ChevronRight, MessageCircle, X, CheckCircle, Loader2, HandCoins, Heart, ZoomIn } from "lucide-react";
+import { Package, ChevronLeft, ChevronRight, MessageCircle, X, CheckCircle, Loader2, HandCoins, Heart, ZoomIn, Share2 } from "lucide-react";
 import { getCategoryLabel } from "@/lib/categoryConfig";
 import { useLang } from "@/lib/i18n";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 function FavoriteButton({ product, user }) {
@@ -49,7 +50,7 @@ function FavoriteButton({ product, user }) {
   );
 }
 
-function ActionPanel({ product, user, onSendInquiry }) {
+export function ActionPanel({ product, user, onSendInquiry }) {
   const { t } = useLang();
   const { navigateToLogin } = useAuth();
   const [mode, setMode] = useState(null);
@@ -141,7 +142,7 @@ function ActionPanel({ product, user, onSendInquiry }) {
   );
 }
 
-function ImageLightbox({ images, startIndex, onClose }) {
+export function ImageLightbox({ images, startIndex, onClose }) {
   const [current, setCurrent] = useState(startIndex);
   const touchStartX = useRef(null);
 
@@ -195,8 +196,17 @@ function ImageLightbox({ images, startIndex, onClose }) {
 
 export default function ProductDetailModal({ product, onClose, user, onSendInquiry }) {
   const { t, lang } = useLang();
+  const { toast } = useToast();
   const [activeImg, setActiveImg] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/product/${product.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: t("pd_share_copied") });
+    } catch {}
+  };
 
   const condLabels = { new: t("cond_new"), like_new: t("cond_like_new"), used: t("cond_used") };
   const genderLabels = { men: t("gender_men"), women: t("gender_women"), unisex: t("gender_unisex"), kids: t("gender_kids") };
@@ -222,6 +232,9 @@ export default function ProductDetailModal({ product, onClose, user, onSendInqui
       <div className="fixed inset-0 bg-black/60" style={{ zIndex: 500 }} onClick={onClose} />
       <div className="fixed inset-0 flex items-end md:items-center justify-center md:p-4" style={{ zIndex: 501, pointerEvents: "none" }}>
         <div className="bg-white md:rounded-2xl rounded-t-2xl w-full max-w-3xl h-[92vh] md:max-h-[92vh] md:h-auto overflow-hidden flex flex-col md:flex-row relative" style={{ pointerEvents: "auto" }} onClick={e => e.stopPropagation()}>
+          <button onClick={handleShare} className="absolute top-3 right-12 z-10 bg-white/90 hover:bg-white rounded-full p-1.5 shadow-md border border-slate-200 transition-all" title={t("pd_share")}>
+            <Share2 className="w-4 h-4 text-slate-600" />
+          </button>
           <button onClick={onClose} className="absolute top-3 right-3 z-10 bg-white/90 hover:bg-white rounded-full p-1.5 shadow-md border border-slate-200 transition-all">
             <X className="w-4 h-4 text-slate-600" />
           </button>

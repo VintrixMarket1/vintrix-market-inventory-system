@@ -227,6 +227,7 @@ export const translations = {
     pd_cancel: "Cancel", pd_send: "Send", pd_your_offer: "Your price offer", pd_asking_price: "Asking price",
     pd_your_price: "Your price (PLN)", pd_message_optional: "Message (optional)", pd_add_message: "Add message...",
     pd_send_offer: "Send offer", pd_offer_sent: "Offer sent!",
+    pd_share: "Share", pd_share_copied: "Link copied!", pd_back_to_catalog: "Back to catalog", pd_product_not_found: "Product not found",
 
     // Gender
     gender_men: "Men", gender_women: "Women", gender_unisex: "Unisex", gender_kids: "Kids",
@@ -503,6 +504,7 @@ export const translations = {
     pd_cancel: "Anuluj", pd_send: "Wyślij", pd_your_offer: "Twoja oferta cenowa", pd_asking_price: "Cena wywoławcza",
     pd_your_price: "Twoja cena (PLN)", pd_message_optional: "Wiadomość (opcjonalnie)", pd_add_message: "Dodaj wiadomość...",
     pd_send_offer: "Wyślij ofertę", pd_offer_sent: "Oferta wysłana!",
+    pd_share: "Udostępnij", pd_share_copied: "Link skopiowany!", pd_back_to_catalog: "Wróć do katalogu", pd_product_not_found: "Nie znaleziono produktu",
 
     // Gender
     gender_men: "Mężczyźni", gender_women: "Kobiety", gender_unisex: "Unisex", gender_kids: "Dzieci",
