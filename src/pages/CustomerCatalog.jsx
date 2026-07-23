@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, LogOut, LogIn, SlidersHorizontal, X, MessageCircle, ShoppingCart, Heart } from "lucide-react";
+import { Search, LogOut, LogIn, SlidersHorizontal, X, MessageCircle, ShoppingCart, Heart, Share2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useLang } from "@/lib/i18n";
 import { CATEGORY_GROUPS, getCategoryLabel, getCategoryGroupLabel } from "@/lib/categoryConfig";
@@ -104,6 +104,15 @@ function CustomerCatalog() {
       message, customer_name: user?.full_name || "", customer_email: user?.email || "", status: "new",
     });
     toast({ title: t("cat_inquiry_sent"), description: t("cat_contact_soon") });
+  };
+
+  const handleShare = async (product, e) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/product/${product.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: t("pd_share_copied") });
+    } catch {}
   };
 
   const buildDirectOffer = (product) => ({
@@ -346,6 +355,7 @@ function CustomerCatalog() {
                     onToggleFavorite={(e) => toggleFavorite(product, e)}
                     onAddToCart={() => { addToCart(product); if (requireAuth()) setShowCart(true); }}
                     onBuyNow={() => { if (requireAuth()) setDirectCheckoutProduct(product); }}
+                    onShare={(e) => handleShare(product, e)}
                     condLabels={condLabels}
                     t={t}
                   />
@@ -366,7 +376,7 @@ function CustomerCatalog() {
   );
 }
 
-function ProductCard({ product, isFavorite, isInCart, onSelect, onToggleFavorite, onAddToCart, onBuyNow, condLabels, t }) {
+function ProductCard({ product, isFavorite, isInCart, onSelect, onToggleFavorite, onAddToCart, onBuyNow, onShare, condLabels, t }) {
   return (
     <div className="group flex flex-col bg-stone-900 rounded-2xl overflow-hidden border border-stone-800 hover:border-stone-600 transition-all duration-300 hover:shadow-2xl hover:shadow-black/40">
       {/* Image */}
@@ -394,6 +404,15 @@ function ProductCard({ product, isFavorite, isInCart, onSelect, onToggleFavorite
             </span>
           )}
         </div>
+
+        {/* Share */}
+        <button
+          onClick={onShare}
+          className="absolute top-2.5 right-12 w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-lg bg-stone-900/80 text-stone-400 hover:text-white backdrop-blur-sm"
+          title={t("pd_share")}
+        >
+          <Share2 className="w-3.5 h-3.5" />
+        </button>
 
         {/* Favorite */}
         <button
