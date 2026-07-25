@@ -193,52 +193,76 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
       const imagesForAnalysis = images.slice(0, 3);
 
       // Single combined LLM call — identification + listing copy in one response
+      const categoriesList = "clothing_men, clothing_women, clothing_kids, clothing_sport, shoes_men, shoes_women, shoes_kids, shoes_sport, accessories_bags, accessories_belts, accessories_hats, accessories_scarves, accessories_jewelry, accessories_watches, accessories_sunglasses, accessories_wallets, electronics_phones, electronics_tablets, electronics_laptops, electronics_audio, electronics_tv, electronics_cameras, electronics_gaming, electronics_accessories, home_furniture, home_kitchen, home_agd_large, home_agd_cleaning, home_agd_personal, home_agd_laundry, home_bedding, home_decor, home_lighting, home_garden, home_tools, home_bathroom, toys_kids, toys_board_games, toys_outdoor, toys_educational, toys_lego, toys_dolls, sports_fitness, sports_cycling, sports_winter, sports_water, sports_team, sports_outdoor, books_fiction, books_nonfiction, books_kids, books_comics, books_textbooks, beauty_cosmetics, beauty_perfumes, beauty_haircare, beauty_skincare, automotive_parts, automotive_accessories, automotive_tools, pet_food, pet_accessories, pet_clothing, food_supplements, health_medical, music_instruments, music_vinyl, art_paintings, art_collectibles, other";
+
       const combinedPrompt = `Jesteś ekspertem od identyfikacji i wyceny produktów na rynku wtórnym (OLX, Vinted, Allegro).
 Przeanalizuj zdjęcia i/lub opis operatora. Zidentyfikuj produkt, wycen go i wygeneruj opis ogłoszenia.
 
 Uwagi od operatora: ${analysisNotes || "(brak uwag)"}
-${imagesForAnalysis.length === 0 ? "Brak zdjęć — opieraj się wyłącznie na uwagach operatora." : ""}
+${imagesForAnalysis.length === 0 ? "Brak zdjęć — opieraj się wyłącznie na uwagach operatora." : "Przeanalizuj załączone zdjęcia produktu."}
 
-Kategorie do wyboru: clothing_men, clothing_women, clothing_kids, clothing_sport, shoes_men, shoes_women, shoes_kids, shoes_sport, accessories_bags, accessories_belts, accessories_hats, accessories_scarves, accessories_jewelry, accessories_watches, accessories_sunglasses, accessories_wallets, electronics_phones, electronics_tablets, electronics_laptops, electronics_audio, electronics_tv, electronics_cameras, electronics_gaming, electronics_accessories, home_furniture, home_kitchen, home_agd_large, home_agd_cleaning, home_agd_personal, home_agd_laundry, home_bedding, home_decor, home_lighting, home_garden, home_tools, home_bathroom, toys_kids, toys_board_games, toys_outdoor, toys_educational, toys_lego, toys_dolls, sports_fitness, sports_cycling, sports_winter, sports_water, sports_team, sports_outdoor, books_fiction, books_nonfiction, books_kids, books_comics, books_textbooks, beauty_cosmetics, beauty_perfumes, beauty_haircare, beauty_skincare, automotive_parts, automotive_accessories, automotive_tools, pet_food, pet_accessories, pet_clothing, food_supplements, health_medical, music_instruments, music_vinyl, art_paintings, art_collectibles, other
+Zwróć obiekt JSON z WSZYSTKIMI polami wymienionymi poniżej — żadne pole nie może być pominięte:
+- "product_name" (string): Pełna nazwa produktu z marką jeśli ją znasz, np. "Ekspres do kawy Philips Senseo HD7866"
+- "brand" (string): Marka producenta, np. "Philips". Jeśli nie można ustalić, wpisz "Nieznana"
+- "model" (string): Model lub seria, jeśli widoczny na zdjęciu/znany. Jeśli nie, wpisz pusty string
+- "category" (string): DOKŁADNIE jedna wartość z listy kategorii poniżej
+- "subcategory" (string): Podkategoria jeśli dotyczy, inaczej pusty string
+- "condition" (string): "new", "like_new", lub "used" — na podstawie wyglądu produktu
+- "color" (string): Główny kolor produktu, np. "Czarny"
+- "size" (string): Rozmiar jeśli dotyczy (ubrania/obuwie), inaczej pusty string
+- "suggested_sale_price" (number): Sugerowana cena w PLN jako liczba, np. 49.99
+- "visible_damage" (string): Opis widocznych uszkodzeń, lub "Brak"
+- "missing_parts" (string): Brakujące elementy, lub "Brak"
+- "warnings" (string): Ważne uwagi/ostrzeżenia dla kupującego, lub pusty string
+- "ai_summary" (string): Krótkie podsumowanie identyfikacji (1-2 zdania)
+- "listing_title" (string): Tytuł ogłoszenia max 75 znaków
+- "listing_description" (string): Opis ogłoszenia według zasad poniżej
 
-Zasady opisu ogłoszenia:
-- Czysty tekst, BEZ HTML, BEZ tagów, BEZ markdown, BEZ emoji.
-- Zacznij od najmocniejszej cechy produktu — tej, która przyciąga uwagę kupującego.
-- Używaj konkretnych, opisowych przymiotników zamiast ogólników.
-- Podkreśl wartość (co kupujący zyska) a nie tylko cechy.
-- Stan opisz szczerze ale pozytywnie. Pisz naturalnie, angażująco — jak do znajomego.
-- 3-5 zdań: co to jest i do czego służy, dlaczego warto (marka, jakość), szczery opis stanu, konkretne parametry (rozmiar, kolor).
-- Dla odzieży/obuwia/akcesoriów zacznij od: "Proszę sprawdzić wymiary przed zakupem!" jeśli rozmiar jest istotny.
-- listing_title: max 75 znaków.`;
+Kategorie do wyboru (użyj DOKŁADNIE jednej): ${categoriesList}
+
+Zasady opisu listing_description:
+- Czysty tekst, BEZ HTML, BEZ tagów, BEZ markdown, BEZ emoji
+- Zacznij od najmocniejszej cechy produktu — tej, która przyciąga uwagę kupującego
+- Używaj konkretnych, opisowych przymiotników zamiast ogólników
+- Podkreśl wartość (co kupujący zyska) a nie tylko cechy
+- Stan opisz szczerze ale pozytywnie. Pisz naturalnie, angażująco — jak do znajomego
+- 3-5 zdań: co to jest i do czego służy, dlaczego warto (marka, jakość), szczery opis stanu, konkretne parametry (rozmiar, kolor)
+- Dla odzieży/obuwia/akcesoriów zacznij od: "Proszę sprawdzić wymiary przed zakupem!" jeśli rozmiar jest istotny
+
+WAŻNE: Musisz wypełnić WSZYSTKIE pola. Jeśli nie możesz ustalić wartości, wpisz "Nieznana" lub pusty string — nigdy nie pomijaj pola.`;
 
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: combinedPrompt,
         file_urls: imagesForAnalysis.length > 0 ? imagesForAnalysis : undefined,
-        model: "claude_sonnet_4_6",
         response_json_schema: {
           type: "object",
           properties: {
-            product_name: { type: "string" },
-            brand: { type: "string" },
-            model: { type: "string" },
-            category: { type: "string" },
-            subcategory: { type: "string" },
-            condition: { type: "string" },
-            color: { type: "string" },
-            size: { type: "string" },
-            suggested_sale_price: { type: "number" },
-            visible_damage: { type: "string" },
-            missing_parts: { type: "string" },
-            warnings: { type: "string" },
-            ai_summary: { type: "string" },
-            listing_title: { type: "string" },
-            listing_description: { type: "string" },
-          }
+            product_name: { type: "string", description: "Pełna nazwa produktu z marką" },
+            brand: { type: "string", description: "Marka producenta" },
+            model: { type: "string", description: "Model lub seria" },
+            category: { type: "string", description: "Jedna z kategorii z listy" },
+            subcategory: { type: "string", description: "Podkategoria" },
+            condition: { type: "string", description: "new, like_new lub used" },
+            color: { type: "string", description: "Główny kolor" },
+            size: { type: "string", description: "Rozmiar" },
+            suggested_sale_price: { type: "number", description: "Sugerowana cena w PLN" },
+            visible_damage: { type: "string", description: "Widoczne uszkodzenia lub Brak" },
+            missing_parts: { type: "string", description: "Brakujące elementy lub Brak" },
+            warnings: { type: "string", description: "Ostrzeżenia" },
+            ai_summary: { type: "string", description: "Krótkie podsumowanie" },
+            listing_title: { type: "string", description: "Tytuł ogłoszenia max 75 znaków" },
+            listing_description: { type: "string", description: "Opis ogłoszenia" },
+          },
+          required: ["product_name", "brand", "category", "condition", "ai_summary", "listing_title", "listing_description"]
         }
       });
 
       if (!result || typeof result !== "object") {
         throw new Error("AI nie zwrócił prawidłowego wyniku");
+      }
+
+      if (!result.product_name || !result.product_name.trim()) {
+        throw new Error("AI nie zidentyfikował produktu. Spróbuj dodać więcej zdjęć lub doprecyzuj uwagi.");
       }
 
       setAiResult(result);
