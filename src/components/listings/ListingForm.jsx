@@ -83,6 +83,8 @@ export default function ListingForm({ open, onClose, product, listing, onSaved }
   const generateDescription = async () => {
     setGenerating(true);
     const conditionMap = { new: "Nowy", like_new: "Jak nowy, stan bardzo dobry", used: "Używany, stan dobry" };
+    const condMapClothing = { new: "Brand new with tags", like_new: "Like new, excellent condition", used: "Used, good condition" };
+    const isClothing = product?.category?.startsWith("clothing_");
 
     let prompt;
     if (isAllegro) {
@@ -131,6 +133,45 @@ ekskluzywny, premium, profesjonalny, sprawdzony, gwarantowany, wyjątkowy, orygi
 - Każdy akapit odrębnym tagiem <p>
 
 Wygeneruj WYŁĄCZNIE gotowy HTML. Bez wstępów. Zacznij od h1. HTML musi być ściśle walidny.`;
+    } else if (isClothing) {
+      prompt = `You are an expert e-commerce copywriter for Vinted/OLX clothing listings. Create a listing description following this EXACT format and structure.
+
+=== PRODUCT DATA ===
+- Name: ${product?.product_name || form.listing_title}
+- Brand: ${product?.brand || "unknown"}
+- Condition: ${condMapClothing[product?.condition] || "Good condition"}
+- Size: ${product?.size || "not specified"}
+- Color: ${product?.color || "not specified"}
+- Category: ${product?.category}
+- Notes: ${product?.notes || "none"}
+
+=== REQUIRED FORMAT (follow exactly, line by line) ===
+Line 1 (always): "Please check measurements before purchasing!"
+(blank line)
+One descriptive paragraph: Mention brand, product type, colour, material/texture, style/design, and suitable occasions or seasons. 2-4 sentences.
+
+Condition: [e.g. "Brand new with tags" or "Like new, excellent condition"]
+
+Size on label: [size from data]
+Actual fit: [estimated fit, e.g. "Approx. Men's M"]
+
+Measurements:
+Chest: [value] cm
+Length: [value] cm
+Sleeve: [value] cm
+
+Material:
+[material composition if known, otherwise "Not specified on label — please see photos"]
+
+Features:
+[5-6 bullet points, one per line, describing key features: pattern, fabric qualities, design details, fit, versatility]
+
+=== RULES ===
+- Plain text only, NO HTML, NO markdown, NO emojis
+- If a measurement value is unknown, write "Not provided" but KEEP the line so the structure stays intact
+- Keep exact section headers: "Condition:", "Size on label:", "Actual fit:", "Measurements:", "Material:", "Features:"
+- Write naturally and persuasively, like a real seller
+- Output ONLY the description, no preamble or explanation.`;
     } else {
       const conditionLabel = { new: "nowy", like_new: "jak nowy / powystawowy", used: "używany" }[product?.condition] || "dobry";
       prompt = `Jesteś sprzedawcą na platformach Vinted/OLX. Napisz naturalny, ludzki opis ogłoszenia sprzedażowego.

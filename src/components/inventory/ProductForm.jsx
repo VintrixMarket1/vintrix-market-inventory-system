@@ -105,9 +105,52 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
       ? { new: "nowy", like_new: "jak nowy / powystawowy", used: "używany" }[form.condition] || form.condition
       : { new: "new", like_new: "like new / display model", used: "used" }[form.condition] || form.condition;
 
-    const isClothing = form.category?.startsWith("clothing") || form.category?.startsWith("shoes") || form.category?.startsWith("accessories");
+    const isClothing = form.category?.startsWith("clothing_");
 
-    const prompt = isPolish
+    const condMapClothing = { new: "Brand new with tags", like_new: "Like new, excellent condition", used: "Used, good condition" };
+
+    let prompt;
+    if (isClothing) {
+      prompt = `You are an expert e-commerce copywriter for Vinted/OLX clothing listings. Create a listing description following this EXACT format and structure.
+
+=== PRODUCT DATA ===
+- Name: ${form.product_name || "Product"}
+- Brand: ${form.brand || "unknown"}
+- Condition: ${condMapClothing[form.condition] || "Good condition"}
+- Size: ${form.size || "not specified"}
+- Color: ${form.color || "not specified"}
+- Category: ${form.category}${form.subcategory ? ` / ${form.subcategory}` : ""}
+- Notes: ${form.notes || "none"}
+
+=== REQUIRED FORMAT (follow exactly, line by line) ===
+Line 1 (always): "Please check measurements before purchasing!"
+(blank line)
+One descriptive paragraph: Mention brand, product type, colour, material/texture, style/design, and suitable occasions or seasons. 2-4 sentences.
+
+Condition: [e.g. "Brand new with tags" or "Like new, excellent condition"]
+
+Size on label: [size from data]
+Actual fit: [estimated fit, e.g. "Approx. Men's M"]
+
+Measurements:
+Chest: [value] cm
+Length: [value] cm
+Sleeve: [value] cm
+
+Material:
+[material composition if known, otherwise "Not specified on label — please see photos"]
+
+Features:
+[5-6 bullet points, one per line, describing key features: pattern, fabric qualities, design details, fit, versatility]
+
+=== RULES ===
+- Plain text only, NO HTML, NO markdown, NO emojis
+- If a measurement value is unknown, write "Not provided" but KEEP the line so the structure stays intact
+- Keep exact section headers: "Condition:", "Size on label:", "Actual fit:", "Measurements:", "Material:", "Features:"
+- Write naturally and persuasively, like a real seller
+- Output ONLY the description, no preamble or explanation.`;
+    } else {
+      prompt = isPolish
       ? `Jesteś ekspertem copywritingu e-commerce specjalizującym się w sprzedaży second-hand na OLX/Vinted/Allegro. Twój opis ma SPRZEDAĆ produkt — szybko i skutecznie.
 
 === DANE PRODUKTU ===
@@ -129,7 +172,6 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
 === FORMAT WYJŚCIOWY ===
 Czysty tekst, BEZ HTML, BEZ tagów, BEZ markdown.
 3-5 zdań: co to jest i do czego służy, dlaczego warto (marka, jakość), szczery opis stanu, konkretne parametry (rozmiar, kolor).
-${isClothing ? "Dla odzieży/obuwia zacznij od: 'Proszę sprawdzić wymiary przed zakupem!' jeśli rozmiar jest istotny." : ""}
 Pisz po polsku. Żadnych tagów HTML ani formatowania.`
       : `You are an e-commerce copywriting expert specializing in second-hand sales on OLX/Vinted/eBay. Your description must SELL the product — quickly and effectively.
 
@@ -145,8 +187,8 @@ Pisz po polsku. Żadnych tagów HTML ani formatowania.`
 === OUTPUT FORMAT ===
 Plain text, NO HTML, NO tags, NO markdown.
 3-5 sentences: what it is and its purpose, why it's worth buying (brand, quality), honest condition description, specific parameters (size, color).
-${isClothing ? "For clothing/shoes start with: 'Please check measurements before purchasing!' if size is relevant." : ""}
 No HTML tags or formatting whatsoever.`;
+    }
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
