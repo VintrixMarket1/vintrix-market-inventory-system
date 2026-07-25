@@ -145,31 +145,48 @@ Wygeneruj WYŁĄCZNIE gotowy HTML. Bez wstępów. Zacznij od h1. HTML musi być 
 - Category: ${product?.category}
 - Notes: ${product?.notes || "none"}
 
-=== REQUIRED FORMAT (follow exactly, line by line) ===
-Line 1 (always): "Please check measurements before purchasing!"
-(blank line)
-One descriptive paragraph: Mention brand, product type, colour, material/texture, style/design, and suitable occasions or seasons. 2-4 sentences.
+=== REQUIRED FORMAT (follow this example EXACTLY, including all blank lines between sections) ===
+Please check measurements before purchasing!
+Premium Addonee cable knit sweater in a stylish olive green colour. Made from 100% merino wool, this classic jumper features a timeless textured cable knit design, making it perfect for autumn, winter, smart casual outfits, office wear, or everyday comfort.
 
-Condition: [e.g. "Brand new with tags" or "Like new, excellent condition"]
+Condition: Brand new with tags
 
-Size on label: [size from data]
-Actual fit: [estimated fit, e.g. "Approx. Men's M"]
+Size on label: M
+Actual fit: Approx. Men's M
 
 Measurements:
-Chest: [value] cm
-Length: [value] cm
-Sleeve: [value] cm
+Chest: 50 cm
+Length: 57 cm
+Sleeve: 58 cm
 
 Material:
-[material composition if known, otherwise "Not specified on label — please see photos"]
+100% Merino Wool
 
 Features:
-[5-6 bullet points, one per line, describing key features: pattern, fabric qualities, design details, fit, versatility]
+Premium cable knit pattern
+Soft and breathable merino wool
+Ribbed mock neck, cuffs and hem
+Warm yet lightweight
+Classic regular fit
+Ideal for casual, business casual and winter layering
+
+Fast shipping
+
+${product?.internal_code || "PRODUCT-CODE"}
 
 === RULES ===
 - Plain text only, NO HTML, NO markdown, NO emojis
+- ALWAYS keep blank lines between every section as shown in the example — this is critical for readability
+- Line 1 is ALWAYS: "Please check measurements before purchasing!"
+- Then one descriptive paragraph (2-4 sentences: brand, type, colour, material, style, occasions)
+- Then blank line, then "Condition: [value]"
+- Then blank line, then "Size on label: [value]" and "Actual fit: [value]" on the next line
+- Then blank line, then "Measurements:" header followed by Chest/Length/Sleeve lines
+- Then blank line, then "Material:" header followed by material composition
+- Then blank line, then "Features:" header followed by 5-6 bullet points (one per line, no bullet characters)
+- Then blank line, then "Fast shipping"
+- Then blank line, then the product internal code (SKU)
 - If a measurement value is unknown, write "Not provided" but KEEP the line so the structure stays intact
-- Keep exact section headers: "Condition:", "Size on label:", "Actual fit:", "Measurements:", "Material:", "Features:"
 - Write naturally and persuasively, like a real seller
 - Output ONLY the description, no preamble or explanation.`;
     } else {
