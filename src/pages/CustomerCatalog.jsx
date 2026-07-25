@@ -72,7 +72,7 @@ function CustomerCatalog() {
 
   const { data: products = [] } = useQuery({
     queryKey: ["catalog_products"],
-    queryFn: () => base44.entities.Product.filter({ ai_verified: true, status: "in_stock" }, "-created_date", 500),
+    queryFn: () => base44.entities.Product.filter({ ai_verified: true, status: { $in: ["in_stock", "listed"] } }, "-created_date", 500),
   });
 
   const filtered = useMemo(() => {
