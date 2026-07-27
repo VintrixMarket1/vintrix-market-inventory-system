@@ -17,8 +17,6 @@ import { exportDptPdf } from "@/lib/dptPdfExport";
 import { CATEGORY_GROUPS, CATEGORY_LABELS } from "@/lib/categoryConfig";
 import ModalErrorBoundary from "@/components/inventory/ModalErrorBoundary";
 
-const MAX_AI_IMAGES = 5;
-
 const CONDITION_OPTIONS = [
   { value: "new", label: "Nowy" },
   { value: "like_new", label: "Jak nowy" },
@@ -154,23 +152,25 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    const remaining = MAX_AI_IMAGES - images.length;
-    const toProcess = files.slice(0, remaining);
-    if (toProcess.length === 0) return;
     setUploading(true);
-    const uploaded = [];
     try {
-      for (const file of toProcess) {
+      // Step 1: Compress images sequentially to avoid OOM on mobile
+      const compressed = [];
+      for (const file of files) {
         try {
-          const compressed = await compressImage(file);
-          const { file_url } = await base44.integrations.Core.UploadFile({ file: compressed });
-          uploaded.push(file_url);
-          // Small delay between uploads to let GC reclaim memory on weak devices
-          await new Promise(r => setTimeout(r, 50));
+          const c = await compressImage(file);
+          compressed.push(c);
         } catch (err) {
-          console.error("Image upload failed for file:", file.name, err);
+          console.error("Compression failed for:", file.name, err);
         }
       }
+      // Step 2: Upload in parallel (network-bound, not memory-bound)
+      const results = await Promise.allSettled(
+        compressed.map(c => base44.integrations.Core.UploadFile({ file: c }))
+      );
+      const uploaded = results
+        .filter(r => r.status === "fulfilled" && r.value?.file_url)
+        .map(r => r.value.file_url);
       if (uploaded.length > 0) {
         setImages(prev => [...prev, ...uploaded]);
       }
