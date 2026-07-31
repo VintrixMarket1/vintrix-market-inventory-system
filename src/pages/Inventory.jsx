@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Download, LayoutGrid, List, Edit2, Trash2, MapPin, ShoppingBag } from "lucide-react";
+import { Plus, Download, LayoutGrid, List, Edit2, Trash2, MapPin, ShoppingBag, ChevronDown, ChevronUp } from "lucide-react";
 import ProductCard from "../components/inventory/ProductCard";
 import ProductForm from "../components/inventory/ProductForm";
 import SearchFilters from "../components/inventory/SearchFilters";
@@ -49,6 +49,7 @@ export default function Inventory() {
   };
   const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "in_stock", pallet_id: "all", sortBy: "newest" });
   const [viewMode, setViewMode] = useState("grid");
+  const [palletsExpanded, setPalletsExpanded] = useState(true);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products"],
@@ -181,19 +182,29 @@ export default function Inventory() {
       {/* Karty palet nieskalkulowanych */}
       {unsettledPallets.length > 0 && !isPracownik && (
         <div>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("bulk_sorting_pallets")}</span>
+          <button
+            onClick={() => setPalletsExpanded(prev => !prev)}
+            className="flex items-center gap-2 mb-3 group"
+          >
+            {palletsExpanded ? (
+              <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
+            )}
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider group-hover:text-slate-700 transition-colors">{t("bulk_sorting_pallets")}</span>
             <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{unsettledPallets.length}</span>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {unsettledPallets.map(pallet => {
-              const palletProducts = products.filter(p => p.pallet_id === pallet.id);
-              const totalUnits = palletProducts.reduce((sum, p) => sum + (p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1), 0);
-              return (
-                <PalletSummaryCard key={pallet.id} pallet={pallet} productCount={totalUnits} />
-              );
-            })}
-          </div>
+          </button>
+          {palletsExpanded && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {unsettledPallets.map(pallet => {
+                const palletProducts = products.filter(p => p.pallet_id === pallet.id);
+                const totalUnits = palletProducts.reduce((sum, p) => sum + (p.is_multi_item && p.stock_quantity > 0 ? p.stock_quantity : 1), 0);
+                return (
+                  <PalletSummaryCard key={pallet.id} pallet={pallet} productCount={totalUnits} />
+                );
+              })}
+            </div>
+          )}
           {filtered.length > 0 && <div className="border-t border-slate-200 mt-4 pt-2"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("inv_products_on_stock")}</span></div>}
         </div>
       )}
