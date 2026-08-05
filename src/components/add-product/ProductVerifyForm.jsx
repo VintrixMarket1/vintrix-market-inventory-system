@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, CheckCircle, ArrowLeft, Package } from "lucide-react";
+import { Sparkles, CheckCircle, ArrowLeft, Package, AlertTriangle } from "lucide-react";
 import AiConfidenceBadge from "./AiConfidenceBadge";
 import { useLang } from "@/lib/i18n";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -114,21 +114,34 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
 
   return (
     <div className="space-y-6">
-      {/* AI confidence banner */}
-      <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-        <Sparkles className="w-5 h-5 text-emerald-600 shrink-0" />
-        <div className="flex-1">
-          <p className="text-sm font-medium text-emerald-800">
-            {isPolish ? "AI wypełniło formularz automatycznie" : "AI has filled the form automatically"}
-          </p>
-          <p className="text-xs text-emerald-600">
-            {isPolish
+      {/* AI result summary — same as conversion */}
+      {aiData && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Sparkles className="w-4 h-4 text-emerald-600" />
+            <span className="font-semibold text-emerald-800 text-sm">
+              {isPolish ? "Wynik analizy AI" : "AI analysis result"}
+            </span>
+          </div>
+          <p className="text-xs text-emerald-700">
+            {aiData.ai_summary || (isPolish
               ? "Sprawdź dane i popraw jeśli coś jest nieprawidłowe, następnie zapisz."
-              : "Review the data and correct anything that looks wrong, then save."}
+              : "Review the data and correct anything that looks wrong, then save.")}
           </p>
+          {aiData.warnings && (
+            <div className="flex items-start gap-1.5 mt-2 text-amber-700 bg-amber-50 rounded-lg px-2 py-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span className="text-xs">{aiData.warnings}</span>
+            </div>
+          )}
+          {((aiData.visible_damage && aiData.visible_damage !== "Brak") || (aiData.missing_parts && aiData.missing_parts !== "Brak")) && (
+            <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-600">
+              {aiData.visible_damage && aiData.visible_damage !== "Brak" && <div><span className="font-medium">Uszkodzenia:</span> {aiData.visible_damage}</div>}
+              {aiData.missing_parts && aiData.missing_parts !== "Brak" && <div><span className="font-medium">Braki:</span> {aiData.missing_parts}</div>}
+            </div>
+          )}
         </div>
-        {aiData?.confidence != null && <AiConfidenceBadge confidence={aiData.confidence} />}
-      </div>
+      )}
 
       {/* Images preview */}
       <div className="flex gap-2 overflow-x-auto pb-1">

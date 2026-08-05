@@ -38,101 +38,80 @@ export default function AddProduct() {
   const handleAnalyze = async () => {
     setStep(STEPS.ANALYZING);
     try {
-      const isPolish = lang === "pl";
+      // Limit to 3 images to reduce memory/processing on mobile (same as conversion)
+      const imagesForAnalysis = uploadedImages.slice(0, 3);
+
+      const categoriesList = "clothing_men, clothing_women, clothing_kids, clothing_sport, shoes_men, shoes_women, shoes_kids, shoes_sport, accessories_bags, accessories_belts, accessories_hats, accessories_scarves, accessories_jewelry, accessories_watches, accessories_sunglasses, accessories_wallets, electronics_phones, electronics_tablets, electronics_laptops, electronics_audio, electronics_tv, electronics_cameras, electronics_gaming, electronics_accessories, home_furniture, home_kitchen, home_agd_large, home_agd_cleaning, home_agd_personal, home_agd_laundry, home_bedding, home_decor, home_lighting, home_garden, home_tools, home_bathroom, toys_kids, toys_board_games, toys_outdoor, toys_educational, toys_lego, toys_dolls, sports_fitness, sports_cycling, sports_winter, sports_water, sports_team, sports_outdoor, books_fiction, books_nonfiction, books_kids, books_comics, books_textbooks, beauty_cosmetics, beauty_perfumes, beauty_haircare, beauty_skincare, automotive_parts, automotive_accessories, automotive_tools, pet_food, pet_accessories, pet_clothing, food_supplements, health_medical, music_instruments, music_vinyl, art_paintings, art_collectibles, other";
+
+      const combinedPrompt = `Jesteś ekspertem od identyfikacji i wyceny produktów na rynku wtórnym (OLX, Vinted, Allegro).
+Przeanalizuj zdjęcia i/lub opis operatora. Zidentyfikuj produkt, wycen go i wygeneruj opis ogłoszenia.
+
+Uwagi od operatora: ${aiNotes || "(brak uwag)"}
+${imagesForAnalysis.length === 0 ? "Brak zdjęć — opieraj się wyłącznie na uwagach operatora." : "Przeanalizuj załączone zdjęcia produktu."}
+
+Zwróć obiekt JSON z WSZYSTKIMI polami wymienionymi poniżej — żadne pole nie może być pominięte:
+- "product_name" (string): Pełna nazwa produktu z marką jeśli ją znasz, np. "Ekspres do kawy Philips Senseo HD7866"
+- "brand" (string): Marka producenta, np. "Philips". Jeśli nie można ustalić, wpisz "Nieznana"
+- "model" (string): Model lub seria, jeśli widoczny na zdjęciu/znany. Jeśli nie, wpisz pusty string
+- "category" (string): DOKŁADNIE jedna wartość z listy kategorii poniżej
+- "subcategory" (string): Podkategoria jeśli dotyczy, inaczej pusty string
+- "condition" (string): "new", "like_new", lub "used" — na podstawie wyglądu produktu
+- "color" (string): Główny kolor produktu, np. "Czarny"
+- "size" (string): Rozmiar jeśli dotyczy (ubrania/obuwie), inaczej pusty string
+- "suggested_sale_price" (number): Sugerowana cena w PLN jako liczba, np. 49.99
+- "visible_damage" (string): Opis widocznych uszkodzeń, lub "Brak"
+- "missing_parts" (string): Brakujące elementy, lub "Brak"
+- "warnings" (string): Ważne uwagi/ostrzeżenia dla kupującego, lub pusty string
+- "ai_summary" (string): Krótkie podsumowanie identyfikacji (1-2 zdania)
+- "listing_title" (string): Tytuł ogłoszenia max 75 znaków
+- "listing_description" (string): Opis ogłoszenia według zasad poniżej
+
+Kategorie do wyboru (użyj DOKŁADNIE jednej): ${categoriesList}
+
+Zasady opisu listing_description:
+- Czysty tekst, BEZ HTML, BEZ tagów, BEZ markdown, BEZ emoji
+- Zacznij od najmocniejszej cechy produktu — tej, która przyciąga uwagę kupującego
+- Używaj konkretnych, opisowych przymiotników zamiast ogólników
+- Podkreśl wartość (co kupujący zyska) a nie tylko cechy
+- Stan opisz szczerze ale pozytywnie. Pisz naturalnie, angażująco — jak do znajomego
+- 3-5 zdań: co to jest i do czego służy, dlaczego warto (marka, jakość), szczery opis stanu, konkretne parametry (rozmiar, kolor)
+- Dla odzieży/obuwia/akcesoriów zacznij od: "Proszę sprawdzić wymiary przed zakupem!" jeśli rozmiar jest istotny
+
+WAŻNE: Musisz wypełnić WSZYSTKIE pola. Jeśli nie możesz ustalić wartości, wpisz "Nieznana" lub pusty string — nigdy nie pomijaj pola.`;
+
       const result = await base44.integrations.Core.InvokeLLM({
-        model: "gpt_5_5",
-        file_urls: uploadedImages,
-        prompt: isPolish ? `### EKSPERT E-COMMERCE: ANALIZA PRODUKTU I COPYWRITING SPRZEDAŻOWY ###
-
-Jesteś ekspertem od e-commerce i copywritingu sprzedażowego z 15-letnim doświadczeniem w sprzedaży second-hand. Przeanalizuj zdjęcia i stwórz materiały sprzedażowe które NAPRAWDĘ sprzedają.
-${aiNotes ? `\n=== UWAGI OD SPRZEDAWCY (traktuj jako pewne informacje) ===\n${aiNotes}\n` : ""}
-=== ANALIZA WIZUALNA ===
-Przeanalizuj dokładnie zdjęcia i określ:
-- product_name: pełna nazwa (marka + model/typ + główna cecha, np. "Nike Air Max 90 białe sneakersy")
-- brand: dokładna marka (lub null jeśli nierozpoznawalna)
-- category: jedna z wartości: clothing_men, clothing_women, clothing_kids, clothing_sport, shoes_men, shoes_women, shoes_kids, shoes_sport, accessories_bags, accessories_belts, accessories_hats, accessories_scarves, accessories_jewelry, accessories_watches, accessories_sunglasses, accessories_wallets, electronics_phones, electronics_tablets, electronics_laptops, electronics_audio, electronics_tv, electronics_cameras, electronics_gaming, electronics_accessories, home_furniture, home_kitchen, home_agd_large, home_agd_cleaning, home_agd_personal, home_agd_laundry, home_bedding, home_decor, home_lighting, home_garden, home_tools, home_bathroom, toys_kids, toys_board_games, toys_outdoor, toys_educational, toys_lego, toys_dolls, sports_fitness, sports_cycling, sports_winter, sports_water, sports_team, sports_outdoor, books_fiction, books_nonfiction, books_kids, books_comics, books_textbooks, beauty_cosmetics, beauty_perfumes, beauty_haircare, beauty_skincare, automotive_parts, automotive_accessories, automotive_tools, pet_food, pet_accessories, pet_clothing, food_supplements, health_medical, music_instruments, music_vinyl, art_paintings, art_collectibles, other
-- gender: men, women, unisex, kids, none
-- condition: new (metki, nieużywany), like_new (minimalne ślady), used (widoczne użytkowanie)
-- size: rozmiar jeśli widoczny na zdjęciach lub metkach
-- color: dokładny kolor/kolory (opisowo, np. "głęboka czerń z białymi akcentami")
-- notes: obiektywne obserwacje o stanie — widoczne wady, uszkodzenia, ślady użytkowania (null jeśli brak)
-
-=== WYCENA RYNKOWA ===
-- suggested_sale_price: realistyczna cena second-hand w PLN
-  * Znane marki (Nike, Adidas, Apple, Samsung itp.): cena wyższa, 30-60% ceny nowej
-  * Stan "jak nowy": cena bliżej górnej granicy
-  * Stan "używany": cena 20-40% ceny nowej
-  * Uwzględnij sezonowość i aktualny popyt
-
-=== COPYWRITING SPRZEDAŻOWY ===
-listing_title (MAX 60 znaków!):
-- Format: [Marka] [Typ] [Kluczowa cecha] [Stan/Rozmiar]
-- Przykłady: "Nike Air Force 1 białe r.42 jak nowe", "Płaszcz wełniany H&M oversize szary M"
-- Zawsze konkretny, bez "super", "piękny", "polecam"
-
-listing_description (czysty tekst, BEZ HTML, BEZ emoji):
-- Zacznij od najmocniejszej cechy — tej która przyciągnie uwagę kupującego
-- 3-5 zdań: co to jest i do czego służy, dlaczego warto (marka, jakość, popularność modelu), szczery opis stanu
-- Zakończ konkretnymi parametrami (rozmiar, materiał, wymiary jeśli ważne)
-- Pisz jak osoba polecająca produkt znajomemu — naturalnie, rzeczowo, bez bełkotu
-
-=== FORMAT WYJŚCIOWY ===
-JSON z polami: product_name, brand, category, gender, condition, size, color, suggested_sale_price, notes, listing_title, listing_description, confidence (0-1)
-Jeśli nie możesz czegoś określić ze zdjęć — wstaw null.` : `### E-COMMERCE EXPERT: PRODUCT ANALYSIS & SALES COPYWRITING ###
-
-You are an e-commerce and sales copywriting expert with 15 years of second-hand experience. Analyze the photos and create marketing materials that ACTUALLY sell.
-${aiNotes ? `\n=== SELLER NOTES (treat as reliable facts) ===\n${aiNotes}\n` : ""}
-=== VISUAL ANALYSIS ===
-Carefully analyze the photos and determine:
-- product_name: full name (brand + model/type + main feature, e.g. "Nike Air Max 90 White Sneakers")
-- brand: exact brand name (or null if unrecognizable)
-- category: one of: clothing_men, clothing_women, clothing_kids, clothing_sport, shoes_men, shoes_women, shoes_kids, shoes_sport, accessories_bags, accessories_belts, accessories_hats, accessories_scarves, accessories_jewelry, accessories_watches, accessories_sunglasses, accessories_wallets, electronics_phones, electronics_tablets, electronics_laptops, electronics_audio, electronics_tv, electronics_cameras, electronics_gaming, electronics_accessories, home_furniture, home_kitchen, home_agd_large, home_agd_cleaning, home_agd_personal, home_agd_laundry, home_bedding, home_decor, home_lighting, home_garden, home_tools, home_bathroom, toys_kids, toys_board_games, toys_outdoor, toys_educational, toys_lego, toys_dolls, sports_fitness, sports_cycling, sports_winter, sports_water, sports_team, sports_outdoor, books_fiction, books_nonfiction, books_kids, books_comics, books_textbooks, beauty_cosmetics, beauty_perfumes, beauty_haircare, beauty_skincare, automotive_parts, automotive_accessories, automotive_tools, pet_food, pet_accessories, pet_clothing, food_supplements, health_medical, music_instruments, music_vinyl, art_paintings, art_collectibles, other
-- gender: men, women, unisex, kids, none
-- condition: new (tags on, unused), like_new (minimal signs), used (visible wear)
-- size: size if visible in photos or labels
-- color: precise color description (e.g. "deep black with white accents")
-- notes: objective condition observations — visible flaws, damage, wear (null if none)
-
-=== MARKET PRICING ===
-- suggested_sale_price: realistic second-hand price in PLN
-  * Known brands (Nike, Adidas, Apple, Samsung etc.): higher price, 30-60% of retail
-  * "Like new" condition: price toward upper end
-  * "Used" condition: 20-40% of retail price
-  * Consider seasonality and current demand
-
-=== SALES COPYWRITING ===
-listing_title (MAX 60 characters!):
-- Format: [Brand] [Type] [Key feature] [Condition/Size]
-- Examples: "Nike Air Force 1 white sz.42 like new", "H&M wool oversize coat grey M"
-- Always specific, no "super", "beautiful", "highly recommend"
-
-listing_description (plain text, NO HTML, NO emojis):
-- Open with the strongest feature — the one that grabs the buyer's attention
-- 3-5 sentences: what it is and its purpose, why it's worth buying (brand, quality, model popularity), honest condition description
-- End with specific parameters (size, material, dimensions if relevant)
-- Write like recommending a product to a friend — naturally, factually, without fluff
-
-=== OUTPUT FORMAT ===
-JSON with fields: product_name, brand, category, gender, condition, size, color, suggested_sale_price, notes, listing_title, listing_description, confidence (0-1)
-If you cannot determine something from photos — use null.`,
+        prompt: combinedPrompt,
+        file_urls: imagesForAnalysis.length > 0 ? imagesForAnalysis : undefined,
         response_json_schema: {
-        type: "object",
-        properties: {
-          product_name: { type: "string" },
-          brand: { type: "string" },
-          category: { type: "string" },
-          gender: { type: "string" },
-          condition: { type: "string" },
-          size: { type: "string" },
-          color: { type: "string" },
-          suggested_sale_price: { type: "number" },
-          notes: { type: "string" },
-          listing_title: { type: "string" },
-          listing_description: { type: "string" },
-          confidence: { type: "number" },
-        },
-      },
+          type: "object",
+          properties: {
+            product_name: { type: "string", description: "Pełna nazwa produktu z marką" },
+            brand: { type: "string", description: "Marka producenta" },
+            model: { type: "string", description: "Model lub seria" },
+            category: { type: "string", description: "Jedna z kategorii z listy" },
+            subcategory: { type: "string", description: "Podkategoria" },
+            condition: { type: "string", description: "new, like_new lub used" },
+            color: { type: "string", description: "Główny kolor" },
+            size: { type: "string", description: "Rozmiar" },
+            suggested_sale_price: { type: "number", description: "Sugerowana cena w PLN" },
+            visible_damage: { type: "string", description: "Widoczne uszkodzenia lub Brak" },
+            missing_parts: { type: "string", description: "Brakujące elementy lub Brak" },
+            warnings: { type: "string", description: "Ostrzeżenia" },
+            ai_summary: { type: "string", description: "Krótkie podsumowanie" },
+            listing_title: { type: "string", description: "Tytuł ogłoszenia max 75 znaków" },
+            listing_description: { type: "string", description: "Opis ogłoszenia" },
+          },
+          required: ["product_name", "brand", "category", "condition", "ai_summary", "listing_title", "listing_description"]
+        }
       });
+
+      if (!result || typeof result !== "object") {
+        throw new Error("AI nie zwrócił prawidłowego wyniku");
+      }
+      if (!result.product_name || !result.product_name.trim()) {
+        throw new Error("AI nie zidentyfikował produktu. Spróbuj dodać więcej zdjęć lub doprecyzuj uwagi.");
+      }
+
       setAiData(result);
       setStep(STEPS.VERIFY);
     } catch (e) {
