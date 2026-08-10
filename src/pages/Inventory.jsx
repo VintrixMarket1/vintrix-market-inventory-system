@@ -276,7 +276,17 @@ export default function Inventory() {
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                 )}
                 {!isPracownik && product.status === "sold" && !product.is_multi_item && (
-                  <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ {t("inv_return")}</Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-orange-600 border-orange-200 hover:bg-orange-50" disabled={refundLoadingId === product.id}>
+                        {refundLoadingId === product.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "↩ Zwrot"}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setReturnProduct(product)} className="text-orange-600 focus:text-orange-700">Pełny zwrot (na magazyn)</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openPartialRefund(product)} className="text-amber-600 focus:text-amber-700">Częściowy zwrot środków</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 {!isPracownik && product.is_multi_item && product.product_name !== "Nieznany produkt" && product.status !== "reclassified" && (
                   <DropdownMenu>
@@ -369,7 +379,17 @@ export default function Inventory() {
                     <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-emerald-600 border-emerald-200" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                   )}
                   {!isPracownik && product.status === "sold" && !product.is_multi_item && (
-                    <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ {t("inv_return")}</Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-orange-600 border-orange-200 hover:bg-orange-50" disabled={refundLoadingId === product.id}>
+                          {refundLoadingId === product.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "↩ Zwrot"}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setReturnProduct(product)} className="text-orange-600 focus:text-orange-700">Pełny zwrot (na magazyn)</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openPartialRefund(product)} className="text-amber-600 focus:text-amber-700">Częściowy zwrot środków</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                   {!isPracownik && product.is_multi_item && product.product_name !== "Nieznany produkt" && product.status !== "reclassified" && (
                     <DropdownMenu>
