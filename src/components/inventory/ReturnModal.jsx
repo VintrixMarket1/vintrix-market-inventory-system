@@ -16,7 +16,13 @@ export default function ReturnModal({ product, onClose, onReturned }) {
   const [reason, setReason] = useState("reklamacja");
   const [notes, setNotes] = useState("");
   const [newStatus, setNewStatus] = useState("in_stock");
+  const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
+
+  const isMulti = product?.is_multi_item;
+  const currentStock = product?.stock_quantity || 0;
+  const wasSold = (product?.status || "in_stock") === "sold";
+  const returnQty = isMulti ? Math.max(1, parseInt(quantity) || 1) : 1;
 
   const handleReturn = async () => {
     setLoading(true);
@@ -39,6 +45,7 @@ export default function ReturnModal({ product, onClose, onReturned }) {
     if (notes) notesText.push(notes);
     if (saleRecord?.wz_document_number) notesText.push(`Powiazany WZ: ${saleRecord.wz_document_number}`);
 
+    const unitPrice = product.purchase_price || 0;
     const docData = {
       document_number: docNumber,
       document_type: "PW",
@@ -52,20 +59,28 @@ export default function ReturnModal({ product, onClose, onReturned }) {
         internal_code: product.internal_code || "",
         category: product.category || "",
         condition: product.condition || "used",
-        quantity: 1,
-        unit_price: product.purchase_price || 0,
-        total_value: product.purchase_price || 0,
+        quantity: returnQty,
+        unit_price: unitPrice,
+        total_value: parseFloat((unitPrice * returnQty).toFixed(2)),
       }],
-      total_value: product.purchase_price || 0,
+      total_value: parseFloat((unitPrice * returnQty).toFixed(2)),
       created_by_name: userDisplayName,
     };
 
     const createdDoc = await base44.entities.WarehouseDocument.create(docData);
 
-    // 4. Przywróć produkt na magazyn z nowym statusem
-    await base44.entities.Product.update(product.id, {
-      status: newStatus,
-    });
+    // 4. Przywróć produkt na magazyn
+    if (isMulti) {
+      const newQty = currentStock + returnQty;
+      const update = { stock_quantity: newQty };
+      // Jeśli produkt był całkowicie wyprzedany (status sold) — przywróć go na stan
+      if (wasSold) update.status = newStatus;
+      await base44.entities.Product.update(product.id, update);
+    } else {
+      await base44.entities.Product.update(product.id, {
+        status: newStatus,
+      });
+    }
 
     // 5. Inwaliduj cache
     queryClient.invalidateQueries({ queryKey: ["products"] });
@@ -105,6 +120,7 @@ export default function ReturnModal({ product, onClose, onReturned }) {
           <p className="font-semibold text-slate-800">{product.product_name}</p>
           {product.internal_code && <p className="text-xs text-slate-400 font-mono mt-0.5">{product.internal_code}</p>}
           {product.brand && <p className="text-xs text-slate-500 mt-0.5">{product.brand}</p>}
+          {isMulti && <p className="text-xs text-blue-600 font-medium mt-1">Wielosztuk — stan: {currentStock} szt.</p>}
         </div>
 
         {/* Form */}
@@ -128,18 +144,35 @@ export default function ReturnModal({ product, onClose, onReturned }) {
             </Select>
           </div>
 
-          <div>
-            <label className="text-xs font-medium text-slate-600 mb-1 block">Status po zwrocie</label>
-            <Select value={newStatus} onValueChange={setNewStatus}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="in_stock">Na stanie (gotowy do sprzedaży)</SelectItem>
-                <SelectItem value="listed">Wystawiony</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {isMulti && (
+            <div>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">
+                Ilość zwróconych sztuk <span className="text-slate-400 font-normal">— obecnie na stanie: {currentStock} szt.</span>
+              </label>
+              <Input
+                type="number"
+                min={1}
+                value={quantity}
+                onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              />
+              <p className="text-xs text-slate-400 mt-1">Po zwrocie stan: {currentStock + returnQty} szt.</p>
+            </div>
+          )}
+
+          {(!isMulti || wasSold) && (
+            <div>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">Status po zwrocie</label>
+              <Select value={newStatus} onValueChange={setNewStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="in_stock">Na stanie (gotowy do sprzedaży)</SelectItem>
+                  <SelectItem value="listed">Wystawiony</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div>
             <label className="text-xs font-medium text-slate-600 mb-1 block">Dodatkowe uwagi (opcjonalnie)</label>
@@ -155,7 +188,10 @@ export default function ReturnModal({ product, onClose, onReturned }) {
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex gap-2">
             <FileText className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
             <p className="text-xs text-orange-700">
-              System wygeneruje dokument <strong>PW (Przyjęcie Wewnętrzne)</strong> z adnotacją "Zwrot towaru" i przywróci produkt na stan magazynowy.
+              System wygeneruje dokument <strong>PW (Przyjęcie Wewnętrzne)</strong> z adnotacją "Zwrot towaru"
+              {isMulti
+                ? ` i zwiększy stan magazynowy o ${returnQty} szt. (${currentStock} → ${currentStock + returnQty} szt.).`
+                : " i przywróci produkt na stan magazynowy."}
             </p>
           </div>
         </div>

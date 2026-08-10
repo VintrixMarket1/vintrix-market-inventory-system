@@ -251,7 +251,7 @@ export default function Inventory() {
                 {!isPracownik && product.product_name !== "Nieznany produkt" && ((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && product.status !== "reclassified" && (
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                 )}
-                {!isPracownik && product.status === "sold" && !product.is_multi_item && (
+                {!isPracownik && (product.status === "sold" || product.is_multi_item) && product.product_name !== "Nieznany produkt" && product.status !== "reclassified" && (
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ {t("inv_return")}</Button>
                 )}
               </div>
@@ -331,7 +331,7 @@ export default function Inventory() {
                   {!isPracownik && product.product_name !== "Nieznany produkt" && ((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && product.status !== "reclassified" && (
                     <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-emerald-600 border-emerald-200" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                   )}
-                  {!isPracownik && product.status === "sold" && !product.is_multi_item && (
+                  {!isPracownik && (product.status === "sold" || product.is_multi_item) && product.product_name !== "Nieznany produkt" && product.status !== "reclassified" && (
                     <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ {t("inv_return")}</Button>
                   )}
                 </div>
