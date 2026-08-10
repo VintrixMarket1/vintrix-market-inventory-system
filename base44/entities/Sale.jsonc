@@ -45,11 +45,11 @@
     },
     "customer_name": {
       "type": "string",
-      "description": "Nazwa kupuj\u0105cego"
+      "description": "Nazwa kupujacego"
     },
     "customer_email": {
       "type": "string",
-      "description": "Email kupuj\u0105cego"
+      "description": "Email kupujacego"
     },
     "shipping_option": {
       "type": "string",
@@ -71,7 +71,7 @@
         "full"
       ],
       "default": "none",
-      "description": "Status zwrotu \u015brodk\u00f3w"
+      "description": "Status zwrotu srodkow"
     },
     "refund_amount": {
       "type": "number",
@@ -79,7 +79,7 @@
     },
     "refund_reason": {
       "type": "string",
-      "description": "Pow\u00f3d zwrotu"
+      "description": "Powod zwrotu"
     },
     "refund_date": {
       "type": "string",
@@ -89,7 +89,15 @@
     "refund_keeps_product": {
       "type": "boolean",
       "default": true,
-      "description": "Czy klient zachowa\u0142 produkt przy cz\u0119\u015bciowym zwrocie (true = zachowa\u0142, produkt nie wraca do magazynu)"
+      "description": "Czy klient zachowal produkt przy czesciowym zwrocie (true = zachowal, produkt nie wraca do magazynu)"
+    },
+    "return_cost": {
+      "type": "number",
+      "description": "Koszty dodatkowe przy pelnym zwrocie (przesylka zwrotna, oplaty platformy np. Vinted) \u2014 PLN"
+    },
+    "return_cost_description": {
+      "type": "string",
+      "description": "Opis kosztow dodatkowych przy zwrocie"
     }
   },
   "required": [

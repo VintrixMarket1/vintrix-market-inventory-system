@@ -17,6 +17,8 @@ export default function ReturnModal({ product, onClose, onReturned }) {
   const [notes, setNotes] = useState("");
   const [newStatus, setNewStatus] = useState("in_stock");
   const [quantity, setQuantity] = useState(1);
+  const [returnCost, setReturnCost] = useState(0);
+  const [returnCostDescription, setReturnCostDescription] = useState("");
   const [loading, setLoading] = useState(false);
 
   const isMulti = product?.is_multi_item;
@@ -80,6 +82,16 @@ export default function ReturnModal({ product, onClose, onReturned }) {
       await base44.entities.Product.update(product.id, {
         status: newStatus,
       });
+    }
+
+    // 4b. Zapisz dodatkowe koszty zwrotu na rekordzie sprzedaży (przesyłka, opłaty platformy)
+    if (saleRecord && (parseFloat(returnCost) > 0 || returnCostDescription.trim())) {
+      try {
+        await base44.entities.Sale.update(saleRecord.id, {
+          return_cost: parseFloat(parseFloat(returnCost || 0).toFixed(2)),
+          return_cost_description: returnCostDescription.trim(),
+        });
+      } catch (_) {}
     }
 
     // 5. Inwaliduj cache
@@ -174,6 +186,25 @@ export default function ReturnModal({ product, onClose, onReturned }) {
             </div>
           )}
 
+          <div className="border-t border-slate-100 pt-4">
+            <label className="text-xs font-medium text-slate-600 mb-1 block">
+              Koszty dodatkowe zwrotu (PLN) <span className="text-slate-400 font-normal">— np. przesyłka zwrotna, opłata Vinted</span>
+            </label>
+            <Input
+              type="number"
+              min={0}
+              step="0.01"
+              value={returnCost}
+              onChange={e => setReturnCost(Math.max(0, parseFloat(e.target.value) || 0))}
+            />
+            <Input
+              className="mt-2"
+              placeholder="Opis kosztów (np. Przesyłka InPost 15 zł, Prowizja Vinted)"
+              value={returnCostDescription}
+              onChange={e => setReturnCostDescription(e.target.value)}
+            />
+          </div>
+
           <div>
             <label className="text-xs font-medium text-slate-600 mb-1 block">Dodatkowe uwagi (opcjonalnie)</label>
             <textarea
@@ -192,6 +223,7 @@ export default function ReturnModal({ product, onClose, onReturned }) {
               {isMulti
                 ? ` i zwiększy stan magazynowy o ${returnQty} szt. (${currentStock} → ${currentStock + returnQty} szt.).`
                 : " i przywróci produkt na stan magazynowy."}
+              {parseFloat(returnCost) > 0 && ` Koszty dodatkowe (${parseFloat(returnCost).toFixed(2)} PLN) zostaną zapisane na sprzedaży i uwzględnione w raporcie miesięcznym.`}
             </p>
           </div>
         </div>
