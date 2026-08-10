@@ -18,16 +18,41 @@ Deno.serve(async (req) => {
     const sale = sales?.[0];
     if (!sale) return Response.json({ error: 'Sprzedaż nie znaleziona' }, { status: 404 });
 
-    if (!sale.stripe_session_id) {
-      return Response.json({ error: 'Ta sprzedaż nie ma powiązanej płatności Stripe' }, { status: 400 });
-    }
-
     const alreadyRefunded = sale.refund_amount || 0;
     const maxRefundable = sale.sale_price - alreadyRefunded;
     if (refund_amount > maxRefundable) {
       return Response.json({ error: `Maksymalna kwota zwrotu to ${maxRefundable.toFixed(2)} PLN` }, { status: 400 });
     }
 
+    const newTotalRefund = alreadyRefunded + refund_amount;
+    const isFullRefund = newTotalRefund >= sale.sale_price;
+    const today = new Date().toISOString().split('T')[0];
+
+    // Sprzedaż bez Stripe (np. na_rynku, OLX, Allegro) — ręczne zarejestrowanie
+    // częściowego zwrotu. Klient zachowuje produkt, zwracamy część środków
+    // poza systemem Stripe (przelew BLIK / gotówka / inne).
+    if (!sale.stripe_session_id) {
+      await base44.asServiceRole.entities.Sale.update(sale_id, {
+        refund_amount: newTotalRefund,
+        refund_reason: reason || sale.refund_reason || '',
+        refund_date: today,
+        refund_status: isFullRefund ? 'full' : 'partial',
+        refund_keeps_product: true,
+      });
+
+      console.log(`Manual partial refund: sale ${sale_id}, amount ${refund_amount} PLN, by ${user.email}`);
+
+      return Response.json({
+        success: true,
+        refund_id: null,
+        manual: true,
+        refund_amount: refund_amount,
+        total_refunded: newTotalRefund,
+        status: isFullRefund ? 'full' : 'partial',
+      });
+    }
+
+    // Sprzedaż przez Stripe — zwrot przez API Stripe.
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 
     const session = await stripe.checkout.sessions.retrieve(sale.stripe_session_id);
@@ -47,14 +72,12 @@ Deno.serve(async (req) => {
       },
     });
 
-    const newTotalRefund = alreadyRefunded + refund_amount;
-    const isFullRefund = newTotalRefund >= sale.sale_price;
-
     await base44.asServiceRole.entities.Sale.update(sale_id, {
       refund_amount: newTotalRefund,
       refund_reason: reason || sale.refund_reason || '',
-      refund_date: new Date().toISOString().split('T')[0],
+      refund_date: today,
       refund_status: isFullRefund ? 'full' : 'partial',
+      refund_keeps_product: true,
     });
 
     console.log(`Refund processed: ${refund.id}, sale: ${sale_id}, amount: ${refund_amount} PLN, by: ${user.email}`);
@@ -62,6 +85,7 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       refund_id: refund.id,
+      manual: false,
       refund_amount: refund_amount,
       total_refunded: newTotalRefund,
       status: isFullRefund ? 'full' : 'partial',

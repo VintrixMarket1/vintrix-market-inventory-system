@@ -19,6 +19,7 @@ const platformColors = {
   allegro: "bg-orange-100 text-orange-700",
   ebay: "bg-red-100 text-red-700",
   web_store: "bg-violet-100 text-violet-700",
+  na_rynku: "bg-slate-100 text-slate-600",
 };
 
 const platformLabels = {
@@ -27,6 +28,7 @@ const platformLabels = {
   allegro: "Allegro",
   ebay: "eBay",
   web_store: "Sklep Internetowy",
+  na_rynku: "Na rynku",
 };
 
 const platforms = [
@@ -176,7 +178,7 @@ function SaleRow({ sale, onEdit, onRefund, index }) {
   const datePrefix = sale.sale_date ? sale.sale_date.replace(/-/g, "") : "000000";
   const saleNumber = `${datePrefix}-${String(index + 1).padStart(3, "0")}`;
   const refundStatus = sale.refund_status || "none";
-  const canRefund = sale.stripe_session_id && (sale.sale_price || 0) - (sale.refund_amount || 0) > 0;
+  const canRefund = (sale.sale_price || 0) - (sale.refund_amount || 0) > 0;
   return (
     <div className="bg-white rounded-xl border border-slate-200/60 p-4 flex items-center gap-4">
       <div className="flex-shrink-0 text-[10px] font-mono text-slate-400 w-28 hidden sm:block">{saleNumber}</div>

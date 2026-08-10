@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, RotateCcw, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Loader2, RotateCcw, AlertTriangle, CheckCircle2, Package } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 
@@ -45,7 +45,7 @@ export default function PartialRefundModal({ sale, onClose, onSaved }) {
 
       if (res.data?.success) {
         toast({
-          title: "Zwrot zrealizowany",
+          title: res.data?.manual ? "Zwrot zarejestrowany" : "Zwrot zrealizowany",
           description: `Zwrócono ${amt.toFixed(2)} PLN klientowi ${sale.customer_name || sale.customer_email || ""}`.trim(),
         });
         onSaved();
@@ -70,7 +70,7 @@ export default function PartialRefundModal({ sale, onClose, onSaved }) {
             Częściowy zwrot środków
           </DialogTitle>
           <DialogDescription>
-            Zwróć część kosztów zakupu klientowi zgłaszającemu nieprawidłowość.
+            Klient zgłasza problem niezgodny z opisem ogłoszenia — zwracamy część kosztów, klient zachowuje produkt.
           </DialogDescription>
         </DialogHeader>
 
@@ -114,6 +114,14 @@ export default function PartialRefundModal({ sale, onClose, onSaved }) {
           {/* Refund form */}
           {maxRefundable > 0 ? (
             <>
+              <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <Package className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-blue-800">
+                  <strong>Klient zachowuje produkt.</strong> Zwracana jest tylko część kwoty — produkt nie wraca do magazynu.
+                  {!sale.stripe_session_id && " Zwrot zostanie zarejestrowany ręcznie (sprzedaż spoza Stripe — np. BLIK, przelew)."}
+                </p>
+              </div>
+
               <div className="space-y-1.5">
                 <Label>Kwota zwrotu (PLN)</Label>
                 <Input

@@ -85,6 +85,11 @@
       "type": "string",
       "format": "date",
       "description": "Data zwrotu"
+    },
+    "refund_keeps_product": {
+      "type": "boolean",
+      "default": true,
+      "description": "Czy klient zachowa\u0142 produkt przy cz\u0119\u015bciowym zwrocie (true = zachowa\u0142, produkt nie wraca do magazynu)"
     }
   },
   "required": [
