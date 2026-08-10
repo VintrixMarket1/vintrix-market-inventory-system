@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Download, LayoutGrid, List, Edit2, Trash2, MapPin, ShoppingBag, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Download, LayoutGrid, List, Edit2, Trash2, MapPin, ShoppingBag, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import ProductCard from "../components/inventory/ProductCard";
 import ProductForm from "../components/inventory/ProductForm";
 import SearchFilters from "../components/inventory/SearchFilters";
@@ -20,6 +20,8 @@ import PalletSummaryCard from "../components/inventory/PalletSummaryCard";
 import ConvertUnknownModal from "../components/inventory/ConvertUnknownModal";
 import ModalErrorBoundary from "../components/inventory/ModalErrorBoundary";
 import ReturnModal from "../components/inventory/ReturnModal";
+import PartialRefundModal from "../components/sales/PartialRefundModal";
+import { useToast } from "@/components/ui/use-toast";
 import ActionFlagModal from "../components/inventory/ActionFlagModal";
 
 export default function Inventory() {
@@ -38,7 +40,10 @@ export default function Inventory() {
   const [shopifyBulkProducts, setShopifyBulkProducts] = useState(null);
   const [convertProduct, setConvertProduct] = useState(null);
   const [returnProduct, setReturnProduct] = useState(null);
+  const [refundSale, setRefundSale] = useState(null);
+  const [refundLoadingId, setRefundLoadingId] = useState(null);
   const [flagProduct, setFlagProduct] = useState(null);
+  const { toast } = useToast();
 
   const toggleBulkSelect = (id) => {
     setBulkSelected(prev => {
@@ -120,6 +125,24 @@ export default function Inventory() {
     if (!confirm(t("inv_delete_confirm"))) return;
     await base44.entities.Product.delete(product.id);
     queryClient.invalidateQueries({ queryKey: ["products"] });
+  };
+
+  // Częściowy zwrot środków dla produktu wielosztukowego — pobierz najnowszą sprzedaż i otwórz modal
+  const openPartialRefund = async (product) => {
+    setRefundLoadingId(product.id);
+    try {
+      const sales = await base44.entities.Sale.filter({ product_id: product.id });
+      if (!sales || sales.length === 0) {
+        toast({ title: "Brak sprzedaży", description: "Ten produkt nie ma zarejestrowanej sprzedaży.", variant: "destructive" });
+        return;
+      }
+      const latest = sales.sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+      setRefundSale(latest);
+    } catch (e) {
+      toast({ title: "Błąd", description: e?.message || "Nie udało się pobrać sprzedaży", variant: "destructive" });
+    } finally {
+      setRefundLoadingId(null);
+    }
   };
 
   const exportCSV = () => {
@@ -251,8 +274,13 @@ export default function Inventory() {
                 {!isPracownik && product.product_name !== "Nieznany produkt" && ((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && product.status !== "reclassified" && (
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                 )}
-                {!isPracownik && (product.status === "sold" || product.is_multi_item) && product.product_name !== "Nieznany produkt" && product.status !== "reclassified" && (
+                {!isPracownik && product.status === "sold" && !product.is_multi_item && (
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ {t("inv_return")}</Button>
+                )}
+                {!isPracownik && product.is_multi_item && product.product_name !== "Nieznany produkt" && product.status !== "reclassified" && (
+                  <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-amber-600 border-amber-200 hover:bg-amber-50" onClick={() => openPartialRefund(product)} disabled={refundLoadingId === product.id}>
+                    {refundLoadingId === product.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "↩ Zwrot środków"}
+                  </Button>
                 )}
               </div>
             </div>
@@ -331,8 +359,13 @@ export default function Inventory() {
                   {!isPracownik && product.product_name !== "Nieznany produkt" && ((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && product.status !== "reclassified" && (
                     <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-emerald-600 border-emerald-200" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
                   )}
-                  {!isPracownik && (product.status === "sold" || product.is_multi_item) && product.product_name !== "Nieznany produkt" && product.status !== "reclassified" && (
+                  {!isPracownik && product.status === "sold" && !product.is_multi_item && (
                     <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setReturnProduct(product)}>↩ {t("inv_return")}</Button>
+                  )}
+                  {!isPracownik && product.is_multi_item && product.product_name !== "Nieznany produkt" && product.status !== "reclassified" && (
+                    <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-amber-600 border-amber-200 hover:bg-amber-50" onClick={() => openPartialRefund(product)} disabled={refundLoadingId === product.id}>
+                      {refundLoadingId === product.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "↩ Zwrot środków"}
+                    </Button>
                   )}
                 </div>
               </div>
@@ -415,6 +448,13 @@ export default function Inventory() {
           product={returnProduct}
           onClose={() => setReturnProduct(null)}
           onReturned={() => { refresh(); setReturnProduct(null); }}
+        />
+      )}
+      {refundSale && (
+        <PartialRefundModal
+          sale={refundSale}
+          onClose={() => setRefundSale(null)}
+          onSaved={() => { refresh(); setRefundSale(null); }}
         />
       )}
       {convertProduct && (
