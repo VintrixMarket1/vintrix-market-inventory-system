@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
@@ -43,6 +43,8 @@ function CustomerCatalog() {
   const [showCart, setShowCart] = useState(false);
   const [directCheckoutProduct, setDirectCheckoutProduct] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 30;
   const { addToCart, isInCart, cartItems } = useCart();
   const queryClient = useQueryClient();
 
@@ -91,6 +93,13 @@ function CustomerCatalog() {
     if (activeTab === "favorites") result = result.filter(p => favoriteProductIds.has(p.id));
     return result;
   }, [products, search, selectedCategories, selectedConditions, priceMin, priceMax, activeTab, favoriteProductIds]);
+
+  // Reset do pierwszej strony przy zmianie filtrów / wyszukiwania
+  useEffect(() => { setPage(1); }, [search, selectedCategories, selectedConditions, priceMin, priceMax, activeTab]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const toggleCategory = (val) => setSelectedCategories(prev => prev.includes(val) ? prev.filter(c => c !== val) : [...prev, val]);
   const toggleCondition = (val) => setSelectedConditions(prev => prev.includes(val) ? prev.filter(c => c !== val) : [...prev, val]);
@@ -345,7 +354,7 @@ function CustomerCatalog() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-                {filtered.map(product => (
+                {paged.map(product => (
                   <ProductCard
                     key={product.id}
                     product={product}
@@ -363,6 +372,30 @@ function CustomerCatalog() {
               </div>
             )}
           </div>
+          {/* Paginacja */}
+          {filtered.length > PAGE_SIZE && (
+            <div className="flex items-center justify-center gap-4 mt-8">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-stone-900 border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                Poprzednia
+              </button>
+              <span className="text-sm text-stone-400 tracking-wide">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-stone-900 border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400"
+              >
+                Następna
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
