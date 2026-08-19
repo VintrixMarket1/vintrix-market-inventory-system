@@ -372,31 +372,31 @@ function CustomerCatalog() {
               </div>
             )}
           </div>
-          {/* Paginacja */}
-          {filtered.length > PAGE_SIZE && (
-            <div className="flex items-center justify-center gap-4 mt-8">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={currentPage <= 1}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-stone-900 border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                Poprzednia
-              </button>
-              <span className="text-sm text-stone-400 tracking-wide">
-                {currentPage} / {totalPages}
-              </span>
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage >= totalPages}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-stone-900 border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400"
-              >
-                Następna
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-              </button>
-            </div>
-          )}
         </div>
+        {/* Paginacja */}
+        {filtered.length > PAGE_SIZE && (
+          <div className="flex items-center justify-center gap-3 mt-8 flex-wrap">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-stone-900 border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              <span className="hidden sm:inline">Poprzednia</span>
+            </button>
+            <span className="text-sm text-stone-400 tracking-wide whitespace-nowrap px-2">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-stone-900 border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400"
+            >
+              <span className="hidden sm:inline">Następna</span>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        )}
       </div>
 
       {showMessages && <CustomerMessagesPanel user={user} onClose={() => setShowMessages(false)} />}
