@@ -84,10 +84,16 @@ export default function ReturnModal({ product, onClose, onReturned }) {
       });
     }
 
-    // 4b. Zapisz dodatkowe koszty zwrotu na rekordzie sprzedaży (przesyłka, opłaty platformy)
-    if (saleRecord && (parseFloat(returnCost) > 0 || returnCostDescription.trim())) {
+    // 4b. Zapisz zwrot gotówki (pełny) oraz dodatkowe koszty zwrotu na rekordzie sprzedaży
+    // — raport miesięczny uwzględnia rozchód gotówki zwróconej klientowi
+    if (saleRecord) {
       try {
         await base44.entities.Sale.update(saleRecord.id, {
+          refund_amount: saleRecord.sale_price,
+          refund_status: "full",
+          refund_date: returnDate,
+          refund_reason: reason,
+          refund_keeps_product: false,
           return_cost: parseFloat(parseFloat(returnCost || 0).toFixed(2)),
           return_cost_description: returnCostDescription.trim(),
         });
