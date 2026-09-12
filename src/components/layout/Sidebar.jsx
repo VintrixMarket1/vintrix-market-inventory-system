@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Package, Tag, DollarSign,
-  Menu, X, ChevronRight, Layers, BookOpen, Settings, FileText, MessageCircle, BarChart3, Flag
+  Menu, X, ChevronRight, Layers, BookOpen, Settings, FileText, MessageCircle, BarChart3, Flag, Percent
 } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthContext";
@@ -38,13 +38,14 @@ export default function Sidebar() {
     { path: "/Pallets", labelKey: "nav_pallets", icon: Layers },
     { path: "/Listings", labelKey: "nav_listings", icon: Tag },
     { path: "/Sales", labelKey: "nav_sales", icon: DollarSign },
+    { path: "/Discounts", labelKey: "nav_discounts", icon: Percent },
     { path: "/WarehouseDocuments", label: "Dokumenty Mag.", icon: FileText },
     { path: "/MonthlyReport", label: "Raport Miesięczny", icon: BarChart3 },
     { path: "/Inquiries", label: "Zapytania klientów", icon: MessageCircle },
     { path: "/Settings", labelKey: "nav_settings", icon: Settings },
   ];
 
-  const pracownikHidden = ["/Listings", "/Sales", "/WarehouseDocuments", "/MonthlyReport", "/Inquiries"];
+  const pracownikHidden = ["/Listings", "/Sales", "/Discounts", "/WarehouseDocuments", "/MonthlyReport", "/Inquiries"];
   const navItems = isPracownik
     ? allNavItems.filter(item => !pracownikHidden.includes(item.path))
     : allNavItems;

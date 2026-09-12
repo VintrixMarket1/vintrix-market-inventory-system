@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, TrendingUp, TrendingDown, Package, ShoppingCart, BarChart3, ArrowLeftRight } from "lucide-react";
+import { Download, TrendingUp, TrendingDown, Package, ShoppingCart, BarChart3, ArrowLeftRight, Percent } from "lucide-react";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -110,6 +110,9 @@ export default function MonthlyReport() {
   // Koszty dodatkowe przy zwrotach (przesyłki zwrotne, opłaty platform) — zapisane na sprzedaży
   const totalReturnCost = monthSales.reduce((s, x) => s + (x.return_cost || 0), 0);
 
+  // Suma udzielonych rabatów (kody rabatowe w sklepie internetowym) — kwoty brutto
+  const totalDiscount = monthSales.reduce((s, x) => s + (x.discount_amount || 0), 0);
+
   // Stan magazynowy na koniec wybranego miesiąca — liczony narastająco z dokumentów
   // PZ + PW (przyjęcia) - WZ - RW (wydania), wszystkie dokumenty do końca wybranego miesiąca
   const isBeforeOrInMonth = (dateStr) => {
@@ -180,6 +183,7 @@ export default function MonthlyReport() {
       ["Koszt własny sprzedaży", totalCostNet.toFixed(2), toGross(totalCostNet).toFixed(2)],
       ["Zysk brutto ze sprzedaży", totalProfitNet.toFixed(2), toGross(totalProfitNet).toFixed(2)],
       ["Koszty dodatkowe zwrotów", totalReturnCost.toFixed(2), toGross(totalReturnCost).toFixed(2)],
+      ["Udzielone rabaty (kody)", toNet(totalDiscount).toFixed(2), totalDiscount.toFixed(2)],
       [`Marża (%)`, `${marginPct.toFixed(1)}%`, `${marginPct.toFixed(1)}%`],
       ["", "", ""],
       ["STAN MAGAZYNOWY", "NETTO (PLN)", "BRUTTO (PLN)"],
@@ -204,11 +208,13 @@ export default function MonthlyReport() {
       "Koszt netto (PLN)": parseFloat((s.purchase_price || 0).toFixed(2)),
       "Koszt brutto (PLN)": parseFloat(toGross(s.purchase_price || 0).toFixed(2)),
       "Koszty zwrotów (PLN)": parseFloat((s.return_cost || 0).toFixed(2)),
+      "Rabat (PLN)": parseFloat((s.discount_amount || 0).toFixed(2)),
+      "Kod rabatowy": s.discount_code || "",
       "Zysk netto (PLN)": parseFloat((toNet(s.sale_price || 0) - (s.purchase_price || 0)).toFixed(2)),
       "Dok. WZ": s.wz_document_number || "",
     }));
     const ws2 = XLSX.utils.json_to_sheet(salesRows);
-    ws2["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 40 }, { wch: 14 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 16 }, { wch: 18 }, { wch: 18 }];
+    ws2["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 40 }, { wch: 14 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 14 }, { wch: 14 }];
     XLSX.utils.book_append_sheet(wb, ws2, "Sprzedaże");
 
     // Arkusz 3 — Dokumenty narastająco (stan magazynowy)
@@ -268,11 +274,12 @@ export default function MonthlyReport() {
           {/* Sales summary */}
           <div>
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Sprzedaż — {monthLabel} {selectedYear}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               <StatCard label="Przychód" net={totalRevenueNet} gross={toGross(totalRevenueNet)} color="blue" icon={ShoppingCart} />
               <StatCard label="Koszt własny" net={totalCostNet} gross={toGross(totalCostNet)} color="amber" icon={Package} />
               <StatCard label={totalProfitNet >= 0 ? "Zysk" : "Strata"} net={totalProfitNet} gross={toGross(totalProfitNet)} color={totalProfitNet >= 0 ? "emerald" : "red"} icon={totalProfitNet >= 0 ? TrendingUp : TrendingDown} />
               <StatCard label="Koszty zwrotów" net={totalReturnCost} gross={toGross(totalReturnCost)} color="red" icon={ArrowLeftRight} />
+              <StatCard label="Udzielone rabaty" net={toNet(totalDiscount)} gross={totalDiscount} color="purple" icon={Percent} />
               <div className="rounded-xl border border-slate-200 bg-white p-4">
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Marża</p>
                 <p className="text-xl font-bold text-slate-700">{marginPct.toFixed(1)}%</p>
@@ -378,6 +385,7 @@ export default function MonthlyReport() {
                       <th className="text-right px-4 py-2.5 font-medium">Przychód brutto</th>
                       <th className="text-right px-4 py-2.5 font-medium">Koszt netto</th>
                       <th className="text-right px-4 py-2.5 font-medium">Koszty zwrotów</th>
+                      <th className="text-right px-4 py-2.5 font-medium">Rabat</th>
                       <th className="text-right px-4 py-2.5 font-medium">Zysk netto</th>
                     </tr>
                   </thead>
@@ -395,6 +403,7 @@ export default function MonthlyReport() {
                           <td className="px-4 py-2.5 text-right text-slate-500">{(s.sale_price || 0).toFixed(2)}</td>
                           <td className="px-4 py-2.5 text-right text-slate-500">{purchasePriceNet.toFixed(2)}</td>
                           <td className="px-4 py-2.5 text-right text-red-600">{(s.return_cost || 0).toFixed(2)}</td>
+                          <td className="px-4 py-2.5 text-right text-purple-600">{(s.discount_amount || 0).toFixed(2)}</td>
                           <td className={`px-4 py-2.5 text-right font-semibold ${profit >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                             {profit >= 0 ? "+" : ""}{profit.toFixed(2)}
                           </td>

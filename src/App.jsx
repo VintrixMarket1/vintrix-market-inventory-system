@@ -36,6 +36,9 @@ import WarehouseDocuments from './pages/WarehouseDocuments';
 import MonthlyReport from './pages/MonthlyReport';
 import PalletDetail from './pages/PalletDetail';
 import ActionQueue from './pages/ActionQueue';
+import Discounts from './pages/Discounts';
+import Collections from './pages/Collections';
+import CollectionDetail from './pages/CollectionDetail';
 
 const PublicCatalog = () => {
   const { user, isLoadingAuth, isLoadingPublicSettings } = useAuth();
@@ -105,6 +108,7 @@ const ProtectedApp = () => {
         <Route path="/Pallets" element={<Pallets />} />
         <Route path="/Listings" element={<Listings />} />
         <Route path="/Sales" element={<Sales />} />
+        <Route path="/Discounts" element={<Discounts />} />
         <Route path="/AddProduct" element={<AddProduct />} />
         <Route path="/ProductModels" element={<ProductModels />} />
         <Route path="/ShopifySettings" element={<ShopifySettings />} />
@@ -156,6 +160,9 @@ function AppRoutes() {
       <Route path="/" element={<PublicCatalog />} />
       {/* Public product share page */}
       <Route path="/product/:id" element={<ProductShare />} />
+      {/* Public collection pages (SEO) */}
+      <Route path="/kolekcje" element={<Collections />} />
+      <Route path="/kolekcje/:slug" element={<CollectionDetail />} />
       {/* All other routes require authentication */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/*" element={<ProtectedApp />} />

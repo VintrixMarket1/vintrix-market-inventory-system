@@ -32,6 +32,9 @@ Deno.serve(async (req) => {
     const offerId = metadata.offer_id;
     const customerName = metadata.customer_name || '';
     const shippingOption = metadata.shipping_option || 'personal';
+    const discountCode = metadata.discount_code || '';
+    const discountCodeId = metadata.discount_code_id || '';
+    const discountAmount = parseFloat(metadata.discount_amount || '0') || 0;
 
     if (!productId) {
       console.error('No product_id in session metadata');
@@ -52,7 +55,11 @@ Deno.serve(async (req) => {
     let shippingCost = 0;
     if (shippingOption === 'paczkomat') shippingCost = 9.99;
     else if (shippingOption === 'kurier') shippingCost = 15.99;
-    const productSalePrice = Math.max(0, salePrice - shippingCost);
+    const basePriceMeta = metadata.base_price ? parseFloat(metadata.base_price) : null;
+    // Cena produktu po rabacie — preferowana wartość z metadanych (ustalona serwerowo przy kasie)
+    const productSalePrice = basePriceMeta !== null
+      ? Math.round((basePriceMeta - discountAmount) * 100) / 100
+      : Math.max(0, salePrice - shippingCost);
 
     const today = new Date().toISOString().split('T')[0];
 
@@ -130,12 +137,23 @@ Deno.serve(async (req) => {
       shipping_option: shippingOption,
       wz_document_id: wzDoc.id,
       wz_document_number: wzNumber,
+      discount_code: discountCode || undefined,
+      discount_amount: discountAmount || undefined,
     });
 
     // --- Update product status to sold ---
     await base44.asServiceRole.entities.Product.update(productId, {
       status: 'sold',
     });
+
+    // --- Atomowe zwiększenie licznika użyć kodu rabatowego ---
+    if (discountCodeId) {
+      try {
+        await base44.asServiceRole.entities.DiscountCode.updateMany({ id: discountCodeId }, { $inc: { used_count: 1 } });
+      } catch (err) {
+        console.error('Failed to increment discount code usage:', err.message);
+      }
+    }
 
     // --- Mark offer as completed if applicable ---
     if (offerId) {

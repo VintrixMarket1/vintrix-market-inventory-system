@@ -278,6 +278,35 @@ export const translations = {
     status_pending: "Pending", status_replied: "Replied", status_closed: "Closed",
     status_accepted: "Accepted", status_rejected_status: "Rejected", status_countered: "Counter-offer",
     status_your_counter: "Your counter-offer", status_you_accepted: "You accepted", status_you_rejected: "You rejected",
+
+    // Discounts admin
+    nav_discounts: "Discounts",
+    dc_title: "Discount Codes", dc_subtitle: "Create and manage promotional codes for the Vintrix catalog",
+    dc_add: "Add code", dc_code: "Code", dc_type: "Type", dc_percent: "Percentage", dc_amount: "Amount (PLN)",
+    dc_value: "Value", dc_expires: "Valid until", dc_max_uses: "Usage limit", dc_unlimited: "unlimited",
+    dc_min_order: "Min. order value (PLN)", dc_active: "Active", dc_inactive: "Inactive",
+    dc_of: "of", dc_expired: "Expired", dc_no_codes: "No discount codes yet",
+    dc_delete_confirm: "Delete this code?", dc_status: "Status", dc_actions: "Actions", dc_usage: "Usage",
+    dc_new_code: "New code", dc_edit_code: "Edit code", dc_deleted: "Code deleted",
+    dc_created: "Code added", dc_updated: "Code updated",
+    dc_code_required: "Code is required", dc_value_required: "Enter a value greater than 0",
+    dc_percent_max: "Percentage cannot exceed 100",
+
+    // Checkout discount
+    co_discount_code: "Discount code", co_discount_placeholder: "e.g. VINTRIX10",
+    co_apply: "Apply", co_discount_remove: "Remove", co_discount_line: "Discount",
+    co_discount_invalid: "This code does not exist or is inactive",
+    co_discount_expired: "This code has expired",
+    co_discount_limit: "Usage limit for this code is exhausted",
+    co_discount_min: "Minimum order value for this code is",
+
+    // Collections
+    col_title: "Collections", col_subtitle: "Browse our curated collections",
+    col_browse: "Browse collection", col_back: "Collections", col_not_found: "Collection not found",
+
+    // Product form promo
+    pf_regular_price: "Regular price (PLN)", pf_regular_price_hint: "crossed-out price shown next to the promo price",
+    pf_promo_end: "Promo end date",
   },
 
   pl: {
@@ -555,6 +584,35 @@ export const translations = {
     status_pending: "Oczekuje", status_replied: "Odpowiedziano", status_closed: "Zamknięte",
     status_accepted: "Zaakceptowana", status_rejected_status: "Odrzucona", status_countered: "Kontroferta",
     status_your_counter: "Twoja kontroferta", status_you_accepted: "Zaakceptowałeś", status_you_rejected: "Odrzuciłeś",
+
+    // Rabaty (admin)
+    nav_discounts: "Rabaty",
+    dc_title: "Kody rabatowe", dc_subtitle: "Twórz i zarządzaj kodami promocyjnymi do katalogu Vintrix",
+    dc_add: "Dodaj kod", dc_code: "Kod", dc_type: "Typ", dc_percent: "Procentowy", dc_amount: "Kwotowy (PLN)",
+    dc_value: "Wartość", dc_expires: "Ważny do", dc_max_uses: "Limit użyć", dc_unlimited: "bez limitu",
+    dc_min_order: "Min. wartość zamówienia (PLN)", dc_active: "Aktywny", dc_inactive: "Nieaktywny",
+    dc_of: "z", dc_expired: "Wygasł", dc_no_codes: "Brak kodów rabatowych",
+    dc_delete_confirm: "Usunąć ten kod?", dc_status: "Status", dc_actions: "Akcje", dc_usage: "Użycia",
+    dc_new_code: "Nowy kod", dc_edit_code: "Edytuj kod", dc_deleted: "Kod usunięty",
+    dc_created: "Kod dodany", dc_updated: "Kod zaktualizowany",
+    dc_code_required: "Kod jest wymagany", dc_value_required: "Podaj wartość większą od 0",
+    dc_percent_max: "Wartość procentowa nie może przekraczać 100",
+
+    // Kod rabatowy przy kasie
+    co_discount_code: "Kod rabatowy", co_discount_placeholder: "np. VINTRIX10",
+    co_apply: "Zastosuj", co_discount_remove: "Usuń", co_discount_line: "Rabat",
+    co_discount_invalid: "Taki kod nie istnieje lub jest nieaktywny",
+    co_discount_expired: "Ten kod wygasł",
+    co_discount_limit: "Limit użyć tego kodu został wyczerpany",
+    co_discount_min: "Minimalna wartość zamówienia dla tego kodu to",
+
+    // Kolekcje
+    col_title: "Kolekcje", col_subtitle: "Przeglądaj nasze starannie dobrane kolekcje",
+    col_browse: "Przeglądaj kolekcję", col_back: "Kolekcje", col_not_found: "Nie znaleziono kolekcji",
+
+    // Formularz produktu — promocja
+    pf_regular_price: "Cena regularna (PLN)", pf_regular_price_hint: "cena przekreślona obok ceny promocyjnej",
+    pf_promo_end: "Data zakończenia promocji",
   },
 };
 

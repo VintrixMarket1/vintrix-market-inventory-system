@@ -1,0 +1,68 @@
+{
+  "name": "DiscountCode",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "Kod rabatowy (wielkie litery, np. VINTRIX10)"
+    },
+    "discount_type": {
+      "type": "string",
+      "enum": [
+        "percent",
+        "amount"
+      ],
+      "description": "Typ rabatu: percent=Procentowy, amount=Kwotowy (PLN)"
+    },
+    "value": {
+      "type": "number",
+      "description": "Wartosc rabatu (% dla percent, PLN dla amount)"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date",
+      "description": "Data waznosci kodu (opcjonalnie)"
+    },
+    "max_uses": {
+      "type": "number",
+      "description": "Maksymalna liczba uzyc (brak = bez limitu)"
+    },
+    "used_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Liczba wykorzystan kodu"
+    },
+    "min_order_value": {
+      "type": "number",
+      "description": "Minimalna wartosc zamowienia (PLN, opcjonalnie)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Czy kod jest aktywny"
+    }
+  },
+  "required": [
+    "code",
+    "discount_type",
+    "value"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

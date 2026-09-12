@@ -133,7 +133,16 @@
     },
     "suggested_sale_price": {
       "type": "number",
-      "description": "Sugerowana cena sprzedazy"
+      "description": "Sugerowana cena sprzedazy (cena sprzedazy / promocyjna)"
+    },
+    "regular_price": {
+      "type": "number",
+      "description": "Cena regularna (przekreslona) pokazywana przy promocji \u2014 PLN"
+    },
+    "promo_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data zakonczenia promocji (opcjonalnie)"
     },
     "notes": {
       "type": "string",
@@ -197,7 +206,7 @@
     },
     "ai_analysis_result": {
       "type": "string",
-      "description": "Wynik analizy AI (JSON jako string) \u00e2 zachowany dla historii"
+      "description": "Wynik analizy AI (JSON jako string) \u2014 zachowany dla historii"
     },
     "shopify_product_id": {
       "type": "string",
@@ -226,7 +235,7 @@
     },
     "stock_quantity": {
       "type": "number",
-      "description": "Stan magazynowy (liczba sztuk) \u00e2 tylko dla wielosztuk"
+      "description": "Stan magazynowy (liczba sztuk) \u2014 tylko dla wielosztuk"
     },
     "reclassified_from_id": {
       "type": "string",

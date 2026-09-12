@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { offerId, directProductId, directPrice, shippingOption, customerData } = await req.json();
+    const { offerId, directProductId, directPrice, shippingOption, customerData, discountCode } = await req.json();
 
     if (!shippingOption || !customerData) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
@@ -43,6 +43,31 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'offerId or directProductId required' }, { status: 400 });
     }
 
+    // --- Walidacja kodu rabatowego po stronie serwera (źródło prawdy) ---
+    let discountAmount = 0;
+    let discountRecord = null;
+    if (discountCode) {
+      const normalizedCode = String(discountCode).trim().toUpperCase();
+      const records = await base44.asServiceRole.entities.DiscountCode.filter({ code: normalizedCode });
+      const rec = records?.[0];
+      const today = new Date().toISOString().split('T')[0];
+      if (!rec || !rec.is_active) {
+        return Response.json({ error: 'Invalid discount code' }, { status: 400 });
+      }
+      if (rec.expires_at && rec.expires_at < today) {
+        return Response.json({ error: 'Discount code expired' }, { status: 400 });
+      }
+      if (rec.max_uses != null && (rec.used_count || 0) >= rec.max_uses) {
+        return Response.json({ error: 'Discount code usage limit reached' }, { status: 400 });
+      }
+      if (rec.min_order_value != null && basePrice < rec.min_order_value) {
+        return Response.json({ error: 'Order value below minimum for this code' }, { status: 400 });
+      }
+      const raw = rec.discount_type === 'percent' ? (basePrice * rec.value) / 100 : rec.value;
+      discountAmount = Math.min(Math.round(raw * 100) / 100, Math.max(0, basePrice - 0.01));
+      discountRecord = rec;
+    }
+
     const lineItems = [
       {
         price_data: {
@@ -51,7 +76,7 @@ Deno.serve(async (req) => {
             name: productName || 'Produkt',
             description: offerId ? `Oferta zakupu #${offerId.slice(0, 8)}` : 'Zakup bezpośredni',
           },
-          unit_amount: Math.round(basePrice * 100),
+          unit_amount: Math.round((basePrice - discountAmount) * 100),
         },
         quantity: 1,
       },
@@ -91,6 +116,10 @@ Deno.serve(async (req) => {
         base44_app_id: Deno.env.get('BASE44_APP_ID'),
         offer_id: offerId || '',
         product_id: productId,
+        discount_code: discountRecord?.code || '',
+        discount_code_id: discountRecord?.id || '',
+        discount_amount: String(discountAmount),
+        base_price: String(basePrice),
         customer_name: customerData.fullName || '',
         shipping_option: shippingOption,
         shipping_address: shippingOption !== 'personal' ? JSON.stringify({

@@ -24,7 +24,15 @@
     },
     "sale_price": {
       "type": "number",
-      "description": "Final sale price"
+      "description": "Final sale price (po rabacie)"
+    },
+    "discount_code": {
+      "type": "string",
+      "description": "Kod rabatowy uzyty przy zakupie (sklep internetowy)"
+    },
+    "discount_amount": {
+      "type": "number",
+      "description": "Kwota rabatu (PLN)"
     },
     "sale_date": {
       "type": "string",

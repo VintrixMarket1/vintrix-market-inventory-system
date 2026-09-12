@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Package, Truck, MapPin, Store, Loader2, ShoppingCart, ChevronRight } from "lucide-react";
+import { X, Package, Truck, MapPin, Store, Loader2, ShoppingCart, ChevronRight, Tag } from "lucide-react";
 import { useLang } from "@/lib/i18n";
+import { useCart } from "@/lib/CartContext.jsx";
+import { evaluateDiscount } from "@/lib/discounts";
 
 export default function CheckoutModal({ offer, onClose }) {
   const { t } = useLang();
@@ -12,6 +15,9 @@ export default function CheckoutModal({ offer, onClose }) {
   const [shippingOption, setShippingOption] = useState("personal");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { discountCode, setDiscountCode } = useCart();
+  const [discountInput, setDiscountInput] = useState(discountCode || "");
+  const [discountError, setDiscountError] = useState("");
 
   const [form, setForm] = useState({
     fullName: "", email: "", phone: "",
@@ -27,7 +33,32 @@ export default function CheckoutModal({ offer, onClose }) {
 
   const acceptedPrice = offer.status === "customer_accepted" ? offer.counter_price : offer.offered_price;
   const selectedShipping = SHIPPING_OPTIONS.find(o => o.id === shippingOption);
-  const totalPrice = acceptedPrice + selectedShipping.price;
+  const { data: discountRecords = [] } = useQuery({
+    queryKey: ["discount", discountCode],
+    queryFn: () => base44.entities.DiscountCode.filter({ code: discountCode }),
+    enabled: !!discountCode,
+  });
+  const discountAmount = useMemo(() => {
+    if (!discountRecords.length) return 0;
+    const ev = evaluateDiscount(discountRecords[0], acceptedPrice);
+    return ev.ok ? ev.discountAmount : 0;
+  }, [discountRecords, acceptedPrice]);
+  const priceAfterDiscount = Math.max(0, acceptedPrice - discountAmount);
+  const totalPrice = priceAfterDiscount + selectedShipping.price;
+
+  const handleApplyDiscount = async () => {
+    const code = discountInput.trim().toUpperCase();
+    if (!code) { setDiscountCode(null); setDiscountError(""); return; }
+    const records = await base44.entities.DiscountCode.filter({ code });
+    const ev = evaluateDiscount(records[0], acceptedPrice);
+    if (!ev.ok) {
+      setDiscountCode(null);
+      setDiscountError(ev.minValue ? `${t(ev.errorKey)} ${ev.minValue} PLN` : t(ev.errorKey));
+      return;
+    }
+    setDiscountCode(code);
+    setDiscountError("");
+  };
 
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -47,8 +78,8 @@ export default function CheckoutModal({ offer, onClose }) {
     setError("");
     const isDirect = offer.id?.startsWith("direct_");
     const payload = isDirect
-      ? { directProductId: offer.product_id, directPrice: offer.offered_price, shippingOption, customerData: form }
-      : { offerId: offer.id, shippingOption, customerData: form };
+      ? { directProductId: offer.product_id, directPrice: offer.offered_price, shippingOption, customerData: form, discountCode: discountCode || undefined }
+      : { offerId: offer.id, shippingOption, customerData: form, discountCode: discountCode || undefined };
     const response = await base44.functions.invoke("createCheckoutSession", payload);
     if (response.data?.url) {
       window.location.href = response.data.url;
@@ -179,12 +210,49 @@ export default function CheckoutModal({ offer, onClose }) {
             </div>
           )}
 
+          {/* Discount code */}
+          <div className="space-y-2">
+            <h3 className="font-semibold text-slate-800 text-sm flex items-center gap-1.5">
+              <Tag className="w-4 h-4 text-slate-500" /> {t("co_discount_code")}
+            </h3>
+            {discountCode ? (
+              <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2.5">
+                <span className="font-mono font-bold text-emerald-700 text-sm">{discountCode}</span>
+                <button
+                  onClick={() => { setDiscountCode(null); setDiscountInput(""); setDiscountError(""); }}
+                  className="text-xs text-red-500 hover:text-red-700 font-medium"
+                >
+                  {t("co_discount_remove")}
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  value={discountInput}
+                  onChange={e => setDiscountInput(e.target.value.toUpperCase())}
+                  placeholder={t("co_discount_placeholder")}
+                  className="font-mono uppercase"
+                />
+                <Button type="button" variant="outline" onClick={handleApplyDiscount} disabled={!discountInput.trim()}>
+                  {t("co_apply")}
+                </Button>
+              </div>
+            )}
+            {discountError && <p className="text-xs text-red-600">{discountError}</p>}
+          </div>
+
           {/* Order total */}
           <div className="border-t border-slate-200 pt-4 space-y-2">
             <div className="flex justify-between text-sm text-slate-600">
               <span>{t("co_product")}</span>
               <span className="font-semibold">{acceptedPrice.toFixed(2)} PLN</span>
             </div>
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-sm text-emerald-700">
+                <span>{t("co_discount_line")} ({discountCode})</span>
+                <span className="font-semibold">-{discountAmount.toFixed(2)} PLN</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm text-slate-600">
               <span>{t("co_delivery")} ({selectedShipping.label})</span>
               <span className="font-semibold">

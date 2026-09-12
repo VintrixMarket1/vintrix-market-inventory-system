@@ -41,6 +41,8 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
     condition: "like_new",
     purchase_price: "",
     suggested_sale_price: "",
+    regular_price: "",
+    promo_end_date: "",
     quantity: 1,
     notes: "",
     images: [],
@@ -222,6 +224,8 @@ No HTML tags or formatting whatsoever.`;
       ...form,
       purchase_price: parseFloat(form.purchase_price) || 0,
       suggested_sale_price: parseFloat(form.suggested_sale_price) || 0,
+      regular_price: form.regular_price ? parseFloat(form.regular_price) : null,
+      promo_end_date: form.promo_end_date || null,
       quantity: parseInt(form.quantity) || 1,
       internal_code: form.internal_code || generateSKU(form.category),
       is_multi_item: !!form.is_multi_item,
@@ -354,6 +358,18 @@ No HTML tags or formatting whatsoever.`;
             <div className="space-y-1.5">
               <Label>{t("pf_sale_price")}</Label>
               <Input type="number" value={form.suggested_sale_price} onChange={e => handleChange("suggested_sale_price", e.target.value)} placeholder="0.00" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>{t("pf_regular_price")}</Label>
+              <Input type="number" value={form.regular_price || ""} onChange={e => handleChange("regular_price", e.target.value)} placeholder="0.00" />
+              <p className="text-xs text-slate-400">{t("pf_regular_price_hint")}</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("pf_promo_end")}</Label>
+              <Input type="date" value={form.promo_end_date || ""} onChange={e => handleChange("promo_end_date", e.target.value)} />
             </div>
           </div>
 
