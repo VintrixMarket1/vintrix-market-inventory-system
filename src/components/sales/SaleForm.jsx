@@ -42,17 +42,20 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
     setSaving(true);
     const qty = isMulti ? (parseInt(form.quantity) || 1) : 1;
     const finalPrice = parseFloat(form.final_sale_price) || parseFloat(form.sale_price) || 0;
+    // Koszt własny sprzedaży = cena jednostkowa × liczba sztuk (dla wielosztuk)
+    const unitPurchasePrice = parseFloat(form.purchase_price) || 0;
+    const totalPurchasePrice = parseFloat((unitPurchasePrice * qty).toFixed(2));
 
     // Create sale record
     const saleRecord = await base44.entities.Sale.create({
       ...form,
       sale_price: finalPrice,
-      purchase_price: parseFloat(form.purchase_price) || 0,
+      purchase_price: totalPurchasePrice,
       quantity: qty,
     });
 
-    // Auto-generate WZ document
-    const unitPrice = parseFloat(form.purchase_price) || 0;
+    // Auto-generate WZ document (unit_price × ilość — bez zmian)
+    const unitPrice = unitPurchasePrice;
     const wzNumber = await generateDocumentNumber("WZ");
 
     // Find related PZ document number from product's pallet or warehouse docs
@@ -174,8 +177,13 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
             <div className="bg-emerald-50 rounded-lg p-3 text-center">
               <p className="text-xs text-emerald-600">Profit (na podstawie ceny finalnej)</p>
               <p className="text-lg font-bold text-emerald-700">
-                {((parseFloat(form.final_sale_price) || parseFloat(form.sale_price)) - parseFloat(product.purchase_price)).toFixed(2)} PLN
+                {((parseFloat(form.final_sale_price) || parseFloat(form.sale_price)) - (parseFloat(product.purchase_price) * (isMulti ? (parseInt(form.quantity) || 1) : 1))).toFixed(2)} PLN
               </p>
+              {isMulti && (
+                <p className="text-xs text-emerald-600/80 mt-0.5">
+                  Koszt własny: {(parseFloat(product.purchase_price) * (parseInt(form.quantity) || 1)).toFixed(2)} PLN ({product.purchase_price} × {parseInt(form.quantity) || 1} szt.)
+                </p>
+              )}
             </div>
           ) : null}
           <div className="flex justify-end gap-2 pt-2">
