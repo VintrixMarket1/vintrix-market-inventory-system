@@ -56,6 +56,13 @@ export default function Inventory() {
   const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "in_stock", pallet_id: "all", sortBy: "newest" });
   const [viewMode, setViewMode] = useState("grid");
   const [palletsExpanded, setPalletsExpanded] = useState(true);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 30;
+
+  // Reset paginacji przy zmianie filtrów
+  useEffect(() => {
+    setPage(1);
+  }, [filters.search, filters.category, filters.subcategory, filters.status, filters.pallet_id, filters.sortBy]);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products"],
@@ -122,6 +129,10 @@ export default function Inventory() {
     }
   });
 
+  // Tylko bieżąca strona trafia do renderu — szybki działanie przy dużej liczbie produktów
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const visibleProducts = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   const handleDelete = async (product) => {
     if (!confirm(t("inv_delete_confirm"))) return;
     await base44.entities.Product.delete(product.id);
@@ -173,7 +184,7 @@ export default function Inventory() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t("inv_title")}</h1>
-          <p className="text-sm text-slate-500 mt-1">{filtered.length} {t("inv_products")}</p>
+          <p className="text-sm text-slate-500 mt-1">{filtered.length} {t("inv_products")} · wyświetlono {visibleProducts.length}</p>
         </div>
         <div className="flex gap-2">
           {!isPracownik && (
@@ -246,7 +257,7 @@ export default function Inventory() {
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {sorted.map(product => (
+          {visibleProducts.map(product => (
             <div key={product.id}>
               <ProductCard
                 product={product}
@@ -307,7 +318,7 @@ export default function Inventory() {
         </div>
       ) : (
         <div className="space-y-2">
-          {sorted.map(product => {
+          {visibleProducts.map(product => {
             const conditionColors = { new: "bg-emerald-50 text-emerald-700 border-emerald-200", like_new: "bg-blue-50 text-blue-700 border-blue-200", used: "bg-amber-50 text-amber-700 border-amber-200" };
             const statusColors = { in_stock: "bg-slate-100 text-slate-600", listed: "bg-purple-100 text-purple-700", sold: "bg-emerald-100 text-emerald-700" };
             const images = product.images || [];
@@ -408,6 +419,19 @@ export default function Inventory() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Paginacja — 30 produktów na stronę */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 py-2">
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+            Poprzednia
+          </Button>
+          <span className="text-sm text-slate-500">Strona {page} z {totalPages}</span>
+          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+            Następna
+          </Button>
         </div>
       )}
 
