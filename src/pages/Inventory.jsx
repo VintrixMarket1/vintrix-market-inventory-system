@@ -425,11 +425,11 @@ export default function Inventory() {
       {/* Paginacja — 30 produktów na stronę */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-3 py-2">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => { setPage(p => p - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
             Poprzednia
           </Button>
           <span className="text-sm text-slate-500">Strona {page} z {totalPages}</span>
-          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => { setPage(p => p + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
             Następna
           </Button>
         </div>
