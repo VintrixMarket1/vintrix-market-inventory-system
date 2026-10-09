@@ -24,7 +24,12 @@
     },
     "sale_price": {
       "type": "number",
-      "description": "Final sale price (po rabacie)"
+      "description": "Final sale price \u2014 cena LACZNA za cala sprzedaz (po rabacie)"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1,
+      "description": "Liczba sprzedanych sztuk (dla produktow wielosztukowych)"
     },
     "discount_code": {
       "type": "string",
@@ -41,7 +46,7 @@
     },
     "purchase_price": {
       "type": "number",
-      "description": "Original purchase price for profit calc"
+      "description": "Original purchase price for profit calc (laczny koszt = cena jedn. x ilosc)"
     },
     "product_name": {
       "type": "string",

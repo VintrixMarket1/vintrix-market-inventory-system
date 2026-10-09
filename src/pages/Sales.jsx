@@ -188,6 +188,11 @@ function SaleRow({ sale, onEdit, onRefund, index }) {
           <Badge className={`text-[10px] ${platformColors[sale.platform] || "bg-slate-100 text-slate-600"}`}>
             {platformLabels[sale.platform] || sale.platform}
           </Badge>
+          {(sale.quantity || 1) > 1 && (
+            <Badge className="text-[10px] bg-sky-100 text-sky-700">
+              {(sale.quantity || 1)} szt.
+            </Badge>
+          )}
           <span className="text-xs text-slate-400">
             {sale.sale_date ? format(new Date(sale.sale_date), "dd.MM.yyyy") : ""}
           </span>
@@ -298,6 +303,7 @@ export default function Sales() {
       "Klient": s.customer_name || "",
       "Email": s.customer_email || "",
       "Dostawa": s.shipping_option || "",
+      "Ilość (szt.)": s.quantity || 1,
       "Cena sprzedaży (PLN)": s.sale_price || 0,
       "Cena zakupu (PLN)": s.purchase_price || 0,
       "Zysk (PLN)": parseFloat(((s.sale_price || 0) - (s.purchase_price || 0)).toFixed(2)),

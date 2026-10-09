@@ -160,12 +160,19 @@ export default function SaleForm({ open, onClose, product, listing, onSaved }) {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>Final Sale Price (PLN) <span className="text-slate-400 font-normal text-xs">— kwota faktycznej sprzedaży</span></Label>
+            <Label>
+              {isMulti ? "Łączna cena sprzedaży (PLN)" : "Final Sale Price (PLN)"}
+              <span className="text-slate-400 font-normal text-xs">
+                {isMulti
+                  ? ` — suma za ${form.quantity} szt. (podaj łączną kwotę, nie za sztukę)`
+                  : " — kwota faktycznej sprzedaży"}
+              </span>
+            </Label>
             <Input
               type="number"
               value={form.final_sale_price}
               onChange={e => handleChange("final_sale_price", e.target.value)}
-              placeholder={form.sale_price ? `Domyślnie: ${form.sale_price} PLN` : "Wpisz kwotę sprzedaży"}
+              placeholder={isMulti ? `Łączna kwota za ${form.quantity} szt.` : (form.sale_price ? `Domyślnie: ${form.sale_price} PLN` : "Wpisz kwotę sprzedaży")}
               className="border-emerald-300 focus-visible:ring-emerald-400"
             />
           </div>
