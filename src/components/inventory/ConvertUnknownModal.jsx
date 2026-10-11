@@ -14,7 +14,8 @@ import {
 import { compressImage } from "@/lib/compressImage";
 import { generateDocumentNumber } from "@/lib/documentNumber";
 import { exportDptPdf } from "@/lib/dptPdfExport";
-import { CATEGORY_GROUPS, CATEGORY_LABELS } from "@/lib/categoryConfig";
+import { CATEGORY_LABELS } from "@/lib/categoryConfig";
+import CategorySelectButton from "@/components/categories/CategorySelectButton";
 import ModalErrorBoundary from "@/components/inventory/ModalErrorBoundary";
 
 const CONDITION_OPTIONS = [
@@ -657,19 +658,12 @@ WAŻNE: Musisz wypełnić WSZYSTKIE pola. Jeśli nie możesz ustalić wartości,
                     <Input value={form.brand} onChange={e => handleFormChange("brand", e.target.value)} placeholder="np. Philips" className="text-sm" />
                   </FieldRow>
                   <FieldRow label="Kategoria" required>
-                    <select
+                    <CategorySelectButton
                       value={form.category}
-                      onChange={e => handleFormChange("category", e.target.value)}
-                      className="w-full h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      {CATEGORY_GROUPS.map(group => (
-                        <optgroup key={group.group} label={`${group.icon} ${group.group}`}>
-                          {group.items.map(item => (
-                            <option key={item.value} value={item.value}>{item.label}</option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
+                      onChange={(c) => handleFormChange("category", c)}
+                      placeholder="Wybierz kategorię..."
+                      className="w-full"
+                    />
                   </FieldRow>
                   <FieldRow label="Stan" required>
                     <select

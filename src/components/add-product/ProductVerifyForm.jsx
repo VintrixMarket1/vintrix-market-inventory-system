@@ -10,7 +10,7 @@ import { Sparkles, CheckCircle, ArrowLeft, Package, Tag } from "lucide-react";
 import AiConfidenceBadge from "./AiConfidenceBadge";
 import { useLang } from "@/lib/i18n";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CATEGORY_GROUPS, SUBCATEGORIES_BY_CATEGORY } from "@/lib/categoryConfig";
+import CategoryTreePicker from "@/components/categories/CategoryTreePicker";
 import AllegroCategoryPicker from "@/components/listings/AllegroCategoryPicker";
 
 const CONDITIONS = ["new", "like_new", "used"];
@@ -159,36 +159,15 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label>{isPolish ? "Kategoria *" : "Category *"}</Label>
-            <select
-              value={form.category}
-              onChange={(e) => { set("category", e.target.value); set("subcategory", ""); }}
-              className="w-full h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              {CATEGORY_GROUPS.map(group => (
-                <optgroup key={group.group} label={`${group.icon} ${group.group}`}>
-                  {group.items.map(item => (
-                    <option key={item.value} value={item.value}>{item.label}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>{isPolish ? "Podkategoria" : "Subcategory"}</Label>
-            <select
-              value={form.subcategory || ""}
-              onChange={(e) => set("subcategory", e.target.value)}
-              className="w-full h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="">{isPolish ? "Wybierz..." : "Select..."}</option>
-              {(SUBCATEGORIES_BY_CATEGORY[form.category] || []).map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
+        <div className="space-y-1.5">
+          <Label>{isPolish ? "Kategoria *" : "Category *"}</Label>
+          <CategoryTreePicker
+            value={form.category}
+            subcategory={form.subcategory || ""}
+            showSubcategories
+            maxHeight="max-h-52"
+            onChange={(c, s) => { set("category", c); set("subcategory", s || ""); }}
+          />
         </div>
 
         {/* Allegro category */}

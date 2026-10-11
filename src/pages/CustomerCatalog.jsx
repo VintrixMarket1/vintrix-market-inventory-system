@@ -180,21 +180,28 @@ function CustomerCatalog({ initialCategories = [], collectionSlug = null }) {
       <div>
         <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-3">{t("cat_categories")}</p>
         <div className="space-y-4">
-          {CATEGORY_GROUPS.map(group => (
-            <div key={group.group}>
-              <p className="text-xs text-stone-500 mb-2">{group.icon} {getCategoryGroupLabel(group.group, lang)}</p>
-              <div className="space-y-1.5 pl-1">
-                {group.items.map(item => (
-                  <div key={item.value} onClick={() => toggleCategory(item.value)} className="flex items-center gap-3 cursor-pointer group touch-manipulation">
-                    <div className={`w-3.5 h-3.5 rounded border transition-all flex items-center justify-center shrink-0 ${selectedCategories.includes(item.value) ? "bg-amber-500 border-amber-500" : "border-stone-600 group-hover:border-stone-400"}`}>
-                      {selectedCategories.includes(item.value) && <svg className="w-2 h-2 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+          {CATEGORY_GROUPS.map(group => {
+            const groupSelected = group.items.some(item => selectedCategories.includes(item.value));
+            return (
+              <details key={group.group} open={groupSelected} className="group/cat">
+                <summary className="flex items-center gap-1.5 cursor-pointer select-none text-xs text-stone-500 hover:text-stone-300 mb-1.5 [&::-webkit-details-marker]:hidden">
+                  <svg className="w-3 h-3 shrink-0 transition-transform group-open/cat:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                  <span>{group.icon}</span>
+                  <span className={groupSelected ? "text-amber-400" : ""}>{getCategoryGroupLabel(group.group, lang)}</span>
+                </summary>
+                <div className="space-y-1.5 pl-5 mt-1">
+                  {group.items.map(item => (
+                    <div key={item.value} onClick={() => toggleCategory(item.value)} className="flex items-center gap-3 cursor-pointer group touch-manipulation">
+                      <div className={`w-3.5 h-3.5 rounded border transition-all flex items-center justify-center shrink-0 ${selectedCategories.includes(item.value) ? "bg-amber-500 border-amber-500" : "border-stone-600 group-hover:border-stone-400"}`}>
+                        {selectedCategories.includes(item.value) && <svg className="w-2 h-2 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                      </div>
+                      <span className={`text-xs transition-colors ${selectedCategories.includes(item.value) ? "text-amber-400" : "text-stone-400 group-hover:text-stone-200"}`}>{getCategoryLabel(item.value, lang)}</span>
                     </div>
-                    <span className="text-xs text-stone-400 group-hover:text-stone-200 transition-colors">{getCategoryLabel(item.value, lang)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+                  ))}
+                </div>
+              </details>
+            );
+          })}
         </div>
       </div>
     </div>

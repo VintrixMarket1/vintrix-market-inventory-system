@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, BookOpen } from "lucide-react";
-import { CATEGORY_GROUPS, getCategoryLabel } from "@/lib/categoryConfig";
+import { getCategoryLabel } from "@/lib/categoryConfig";
+import CategorySelectButton from "@/components/categories/CategorySelectButton";
 import { useLang } from "@/lib/i18n";
 import ProductDetailModal from "@/components/catalog/ProductDetailModal";
 
@@ -72,20 +73,12 @@ export default function ProductModels() {
             className="pl-9"
           />
         </div>
-        <select
-          value={category}
-          onChange={e => setCategory(e.target.value)}
-          className="h-9 w-48 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-        >
-          <option value="all">All categories</option>
-          {CATEGORY_GROUPS.map(group => (
-            <optgroup key={group.group} label={group.group}>
-              {group.items.map(item => (
-                <option key={item.value} value={item.value}>{getCategoryLabel(item.value, lang)}</option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+        <CategorySelectButton
+          value={category !== "all" ? category : ""}
+          placeholder={lang === "pl" ? "Wszystkie kategorie" : "All categories"}
+          onChange={(c) => setCategory(c || "all")}
+          className="w-48"
+        />
         <select
           value={gender}
           onChange={e => setGender(e.target.value)}

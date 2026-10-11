@@ -2,7 +2,7 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useLang } from "@/lib/i18n";
-import { CATEGORY_GROUPS, SUBCATEGORIES_BY_CATEGORY, getCategoryLabel, getCategoryGroupLabel } from "@/lib/categoryConfig";
+import CategorySelectButton from "@/components/categories/CategorySelectButton";
 
 export default function SearchFilters({ filters, onChange, pallets = [] }) {
   const { t, lang } = useLang();
@@ -15,10 +15,6 @@ export default function SearchFilters({ filters, onChange, pallets = [] }) {
     sold: t("status_sold"),
     unknown: t("status_unknown"),
   };
-
-  const subcategories = filters.category && filters.category !== "all"
-    ? SUBCATEGORIES_BY_CATEGORY[filters.category] || []
-    : [];
 
   const selectClass = "h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
@@ -33,32 +29,14 @@ export default function SearchFilters({ filters, onChange, pallets = [] }) {
           onChange={e => update("search", e.target.value)}
         />
       </div>
-      <select
-        value={filters.category}
-        onChange={e => { onChange({ ...filters, category: e.target.value, subcategory: "all" }); }}
-        className={`${selectClass} w-full sm:w-44`}
-      >
-        <option value="all">{t("inv_all_categories")}</option>
-        {CATEGORY_GROUPS.map(group => (
-          <optgroup key={group.group} label={`${group.icon} ${getCategoryGroupLabel(group.group, lang)}`}>
-            {group.items.map(item => (
-              <option key={item.value} value={item.value}>{getCategoryLabel(item.value, lang)}</option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
-      {subcategories.length > 0 && (
-        <select
-          value={filters.subcategory || "all"}
-          onChange={e => update("subcategory", e.target.value)}
-          className={`${selectClass} w-full sm:w-44`}
-        >
-          <option value="all">{t("inv_all_subcategories")}</option>
-          {subcategories.map(s => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-      )}
+      <CategorySelectButton
+        value={filters.category !== "all" ? filters.category : ""}
+        subcategory={filters.subcategory && filters.subcategory !== "all" ? filters.subcategory : ""}
+        showSubcategories
+        placeholder={t("inv_all_categories")}
+        onChange={(c, s) => onChange({ ...filters, category: c || "all", subcategory: s || "all" })}
+        className="w-full sm:w-56"
+      />
       {pallets.length > 0 && (
         <select
           value={filters.pallet_id || "all"}

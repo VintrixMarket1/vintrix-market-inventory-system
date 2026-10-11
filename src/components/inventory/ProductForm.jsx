@@ -11,7 +11,7 @@ import { Upload, X, Loader2, RefreshCw, Package, Sparkles, MessageSquare } from 
 import { compressImage } from "@/lib/compressImage";
 import { useQuery } from "@tanstack/react-query";
 import { useLang } from "@/lib/i18n";
-import { CATEGORY_GROUPS, SUBCATEGORIES_BY_CATEGORY, CATEGORY_LABELS, getCategoryLabel, getCategoryGroupLabel } from "@/lib/categoryConfig";
+import CategoryTreePicker from "@/components/categories/CategoryTreePicker";
 
 const generateSKU = (category) => {
   const prefix = (category || "other").slice(0, 3).toUpperCase();
@@ -276,34 +276,18 @@ No HTML tags or formatting whatsoever.`;
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-1.5">
-              <Label>{t("pf_category")} *</Label>
-              <select
-                value={form.category}
-                onChange={e => handleChange("category", e.target.value)}
-                className="w-full h-9 rounded-md border border-input px-3 py-1 text-sm bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                {CATEGORY_GROUPS.map(group => (
-                  <optgroup key={group.group} label={`${group.icon} ${getCategoryGroupLabel(group.group, lang)}`}>
-                    {group.items.map(item => (
-                      <option key={item.value} value={item.value}>{getCategoryLabel(item.value, lang)}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t("pf_subcategory")}</Label>
-              <Select value={form.subcategory || ""} onValueChange={v => handleChange("subcategory", v)}>
-                <SelectTrigger><SelectValue placeholder={t("common_select")} /></SelectTrigger>
-                <SelectContent className="max-h-64">
-                  {(SUBCATEGORIES_BY_CATEGORY[form.category] || []).map(s => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-1.5">
+            <Label>{t("pf_category")} *</Label>
+            <CategoryTreePicker
+              value={form.category}
+              subcategory={form.subcategory || ""}
+              showSubcategories
+              maxHeight="max-h-52"
+              onChange={(c, s) => { handleChange("category", c); handleChange("subcategory", s || ""); }}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>{t("pf_condition")} *</Label>
               <Select value={form.condition} onValueChange={v => handleChange("condition", v)}>
