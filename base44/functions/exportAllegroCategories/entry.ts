@@ -28,14 +28,15 @@ async function getAllegroToken(base44) {
   return conn.access_token;
 }
 
-async function fetchRetry(url, headers, attempts = 4) {
+async function fetchRetry(url, headers, attempts = 5) {
   let lastErr;
   for (let i = 0; i < attempts; i++) {
     try {
       const res = await fetch(url, { headers });
       if (res.status === 429 || res.status >= 500) {
         lastErr = new Error(`HTTP ${res.status}`);
-        await sleep(800 * (i + 1));
+        // Szanuj limity API — dłuższe wycofanie przy 429
+        await sleep(res.status === 429 ? 1500 * (i + 1) : 800 * (i + 1));
         continue;
       }
       if (!res.ok) {
@@ -58,63 +59,30 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const mode = body.mode || "categories";
+    const mode = body.mode || "children";
     const accessToken = await getAllegroToken(base44);
     const headers = {
       "Authorization": `Bearer ${accessToken}`,
       "Accept": "application/vnd.allegro.public.v1+json",
     };
 
-    if (mode === "categories") {
-      // Pobierz CAŁE drzewo kategorii z paginacją (page.id = cursor)
-      const all = [];
-      let url = "https://api.allegro.pl/sale/categories";
-      let pages = 0;
-      while (true) {
-        const data = await fetchRetry(url, headers);
-        pages++;
-        for (const c of data.categories || []) {
-          all.push({
-            id: String(c.id),
-            name: c.name,
-            parent_id: c.parent?.id ? String(c.parent.id) : null,
-            leaf: !!c.leaf,
-          });
-        }
-        if (!data.nextPage) break;
-        url = `https://api.allegro.pl/sale/categories?page.id=${encodeURIComponent(data.nextPage)}`;
-      }
-
-      // Mapa parentów + pełne ścieżki
-      const byId = new Map(all.map((c) => [c.id, c]));
-      const pathCache = new Map();
-      const buildPath = (id) => {
-        if (pathCache.has(id)) return pathCache.get(id);
-        const c = byId.get(id);
-        if (!c) return id;
-        const name = c.parent_id ? `${buildPath(c.parent_id)} > ${c.name}` : c.name;
-        pathCache.set(id, name);
-        return name;
-      };
-
-      // Końcowe podkategorie = kategorie bez dzieci (leaf=true wg API, weryfikacja po drzewie)
-      const parentIds = new Set(all.map((c) => c.parent_id).filter(Boolean));
-      const leaves = all.filter((c) => !parentIds.has(c.id));
-
-      const result = leaves.map((c) => ({
-        id: c.id,
+    // Tryb "children": kategorie główne (bez parent_id) lub podkategorie danej kategorii
+    if (mode === "children") {
+      const parentId = body.parent_id;
+      const url = parentId
+        ? `https://api.allegro.pl/sale/categories?parent.id=${encodeURIComponent(parentId)}`
+        : `https://api.allegro.pl/sale/categories`;
+      const data = await fetchRetry(url, headers);
+      const categories = (data.categories || []).map((c) => ({
+        id: String(c.id),
         name: c.name,
-        parent_id: c.parent_id,
-        path: buildPath(c.id),
+        parent_id: c.parent?.id ? String(c.parent.id) : null,
+        leaf: !!c.leaf,
       }));
-
-      return Response.json({
-        total_categories: all.length,
-        total_pages: pages,
-        leaves: result,
-      });
+      return Response.json({ categories, total: categories.length });
     }
 
+    // Tryb "parameters": parametry dla partii kategorii końcowych
     if (mode === "parameters") {
       const categoryIds = body.category_ids || [];
       if (!Array.isArray(categoryIds) || categoryIds.length === 0) {
@@ -133,24 +101,18 @@ Deno.serve(async (req) => {
               `https://api.allegro.pl/sale/categories/${id}/parameters`,
               headers
             );
+            // Minimalne dane parametrów — bez słowników marek i innych zbędnych wartości
             results[id] = (data.parameters || []).map((p) => ({
               id: p.id,
               name: p.name,
               type: p.type,
               required: p.required || false,
-              displayed_name: p.displayed_name || null,
-              unit: p.unit || null,
-              multiple: p.multiple || false,
-              ambiguous_value: p.ambiguousValue || false,
-              options: p.options || null,
-              restrictions: p.restrictions || null,
-              dictionary: (p.dictionary || []).map((d) => ({
-                id: String(d.id),
-                value: d.value,
-              })),
+              requiredForProduct: p.requiredForProduct || false,
+              requiredIf: p.requiredIf || null,
+              is_ean_gtin: /ean|gtin/i.test(p.name || ""),
             }));
           } catch (e) {
-            failed.push(id);
+            failed.push({ id, error: e?.message || String(e) });
           }
         }
       };
