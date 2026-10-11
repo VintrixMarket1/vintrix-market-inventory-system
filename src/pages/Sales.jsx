@@ -154,13 +154,14 @@ function SalesFilters({ search, setSearch, platformFilter, setPlatformFilter, da
 function SaleSummaryCards({ filtered }) {
   const totalRevenue = filtered.reduce((sum, s) => sum + (s.sale_price || 0), 0);
   const totalRefunds = filtered.reduce((sum, s) => sum + (s.refund_amount || 0), 0);
+  const netRevenue = totalRevenue - totalRefunds;
   const totalProfit = filtered.reduce((sum, s) => sum + ((s.sale_price || 0) - (s.purchase_price || 0) - (s.refund_amount || 0)), 0);
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="bg-white rounded-xl border border-slate-200/60 p-4">
-        <p className="text-xs text-slate-500 uppercase tracking-wider">Przychód</p>
-        <p className="text-xl font-bold text-slate-900 mt-1">{totalRevenue.toFixed(0)} PLN</p>
-        <p className="text-xs text-slate-400 mt-0.5">{filtered.length} sprzedaży{totalRefunds > 0 ? ` · zwroty: ${totalRefunds.toFixed(0)} PLN` : ""}</p>
+        <p className="text-xs text-slate-500 uppercase tracking-wider">Przychód (po zwrotach)</p>
+        <p className="text-xl font-bold text-slate-900 mt-1">{netRevenue.toFixed(0)} PLN</p>
+        <p className="text-xs text-slate-400 mt-0.5">{filtered.length} sprzedaży · brutto: {totalRevenue.toFixed(0)} PLN{totalRefunds > 0 ? ` · zwroty: -${totalRefunds.toFixed(0)} PLN` : ""}</p>
       </div>
       <div className={`rounded-xl border p-4 ${totalProfit >= 0 ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"}`}>
         <p className="text-xs text-slate-500 uppercase tracking-wider">Zysk</p>
@@ -305,9 +306,11 @@ export default function Sales() {
       "Dostawa": s.shipping_option || "",
       "Ilość (szt.)": s.quantity || 1,
       "Cena sprzedaży (PLN)": s.sale_price || 0,
+      "Zwrot (PLN)": s.refund_amount || 0,
+      "Status zwrotu": s.refund_status && s.refund_status !== "none" ? (s.refund_status === "full" ? "Pełny" : "Częściowy") : "",
       "Cena zakupu (PLN)": s.purchase_price || 0,
-      "Zysk (PLN)": parseFloat(((s.sale_price || 0) - (s.purchase_price || 0)).toFixed(2)),
-      "Marża (%)": s.purchase_price > 0 ? parseFloat((((s.sale_price - s.purchase_price) / s.purchase_price) * 100).toFixed(2)) : "",
+      "Zysk po zwrotach (PLN)": parseFloat(((s.sale_price || 0) - (s.purchase_price || 0) - (s.refund_amount || 0)).toFixed(2)),
+      "Marża (%)": s.purchase_price > 0 ? parseFloat((((s.sale_price - (s.refund_amount || 0) - s.purchase_price) / s.purchase_price) * 100).toFixed(2)) : "",
       "Dok. WZ": s.wz_document_number || "",
       "ID sprzedaży": s.id,
     }));
@@ -330,13 +333,17 @@ export default function Sales() {
     const rows = [];
     let runningTotal = 0;
 
+    // Pełne zwroty nie generują przychodu — wykluczamy je z raportu
+    const excludedFullRefunds = sorted.filter(s => (s.sale_price || 0) - (s.refund_amount || 0) <= 0);
+    const effective = sorted.filter(s => (s.sale_price || 0) - (s.refund_amount || 0) > 0);
+
     let currentDate = null;
     let dayGross = 0;
     let dayNet = 0;
     let dayCount = 0;
 
-    sorted.forEach((s, i) => {
-      const gross = s.sale_price || 0;
+    effective.forEach((s, i) => {
+      const gross = (s.sale_price || 0) - (s.refund_amount || 0);
       const net = parseFloat((gross / (1 + VAT_RATE)).toFixed(2));
       const vat = parseFloat((gross - net).toFixed(2));
       const date = s.sale_date || "—";
@@ -376,7 +383,7 @@ export default function Sales() {
       });
 
       // Ostatni element — emituj podsumowanie ostatniego dnia
-      if (i === sorted.length - 1 && currentDate) {
+      if (i === effective.length - 1 && currentDate) {
         rows.push({
           "Data": "",
           "Produkt": `— PODSUMOWANIE DNIA ${format(new Date(currentDate), "dd.MM.yyyy")} —`,
@@ -396,7 +403,7 @@ export default function Sales() {
     rows.push({
       "Data": "",
       "Produkt": "RAZEM PRZYCHÓD",
-      "Platforma": `${sorted.length} szt.`,
+      "Platforma": `${effective.length} szt.`,
       "Netto (PLN)": totalNet,
       "VAT 23% (PLN)": totalVat,
       "Brutto (PLN)": parseFloat(runningTotal.toFixed(2)),
@@ -412,6 +419,7 @@ export default function Sales() {
       ["NIP: 7322230672"],
       [`Data generowania: ${format(new Date(), "dd.MM.yyyy HH:mm")}`],
       dateFrom || dateTo ? [`Okres: ${dateFrom ? format(new Date(dateFrom), "dd.MM.yyyy") : "..."} — ${dateTo ? format(new Date(dateTo), "dd.MM.yyyy") : "..."}`] : [""],
+      excludedFullRefunds.length > 0 ? [`Wykluczono ${excludedFullRefunds.length} sprzedaż(y) z pełnym zwrotem środków`] : [""],
       [""],
     ];
 
