@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Loader2, RefreshCw, ExternalLink } from "lucide-react";
 import AllegroImportPanel from "@/components/allegro/AllegroImportPanel";
-import AllegroCategoryExport from "@/components/allegro/AllegroCategoryExport";
 
 export default function AllegroSettings({ embedded = false }) {
   const [status, setStatus] = useState(null);
@@ -100,16 +99,6 @@ export default function AllegroSettings({ embedded = false }) {
       </Card>
 
       {status?.connected && <AllegroImportPanel />}
-      {status?.connected && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Eksport kategorii Allegro</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AllegroCategoryExport />
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardHeader>
