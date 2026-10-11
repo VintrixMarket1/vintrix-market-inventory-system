@@ -1,0 +1,76 @@
+{
+  "name": "AllegroCategory",
+  "type": "object",
+  "properties": {
+    "dzial": {
+      "type": "string",
+      "description": "Dzia\u0142 Allegro (pierwszy poziom drzewa)"
+    },
+    "full_path": {
+      "type": "string",
+      "description": "Pe\u0142na \u015bcie\u017cka kategorii (poziomy rozdzielone ' > ')"
+    },
+    "category_id": {
+      "type": "string",
+      "description": "ID kategorii Allegro"
+    },
+    "ean_status": {
+      "type": "string",
+      "enum": [
+        "WYMAGANY",
+        "WARUNKOWO",
+        "OPCJONALNY",
+        "BRAK PARAMETRU EAN"
+      ],
+      "description": "Status wymogu EAN w tej kategorii"
+    },
+    "ean_required": {
+      "type": "boolean",
+      "description": "Czy EAN bezwarunkowo wymagany"
+    },
+    "ean_required_for_product": {
+      "type": "boolean",
+      "description": "Czy EAN wymagany dla produktu"
+    },
+    "ean_required_if": {
+      "type": "string",
+      "description": "Warunki wymagania EAN (JSON jako string)"
+    }
+  },
+  "required": [
+    "dzial",
+    "full_path",
+    "category_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "pracownik"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

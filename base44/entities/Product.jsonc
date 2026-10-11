@@ -220,6 +220,14 @@
       "type": "string",
       "description": "ID aukcji na Allegro"
     },
+    "allegro_category_id": {
+      "type": "string",
+      "description": "ID kategorii Allegro z lokalnego drzewa kategorii"
+    },
+    "allegro_category_path": {
+      "type": "string",
+      "description": "Pelna sciezka kategorii Allegro"
+    },
     "vinted_listing_id": {
       "type": "string",
       "description": "ID ogloszenia na Vinted"

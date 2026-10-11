@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, Upload, CheckCircle, AlertCircle, Sparkles, CheckSquare, Square, ChevronDown, ChevronUp, BookTemplate, LayoutTemplate, AlertTriangle, MessageSquare } from "lucide-react";
 import AllegroDescriptionEditor from "@/components/listings/AllegroDescriptionEditor";
-import AllegroCategory from "@/components/listings/AllegroCategory";
+import AllegroCategoryPicker from "@/components/listings/AllegroCategoryPicker";
 import AllegroProductSearch from "@/components/listings/AllegroProductSearch";
 import AiChatAssistant from "@/components/ai/AiChatAssistant";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -160,6 +160,8 @@ export default function AllegroPublish() {
       description: lst.listing_description || "",
       quantity: prd?.stock_quantity || 1,
       selected_images: lst.selected_images || [],
+      allegro_category_id: prd?.allegro_category_id || null,
+      allegro_category_name: prd?.allegro_category_path || null,
       producer_name: prd?.brand || "",
       producer_street: "ul. Przykładowa 1",
       producer_city: "Zgierz",
@@ -269,6 +271,13 @@ Wygeneruj WYŁĄCZNIE gotowy HTML. Zacznij od <h1>, zakończ na ostatnim tagu za
         listing_description: form.description,
         selected_images: form.selected_images,
       });
+      // Save chosen category on the product so it can be prefilled next time
+      if (product?.id && form.allegro_category_id) {
+        await base44.entities.Product.update(product.id, {
+          allegro_category_id: form.allegro_category_id,
+          allegro_category_path: form.allegro_category_name || "",
+        });
+      }
 
       const res = await base44.functions.invoke("publishToAllegro", {
         listing_id: listingId,
@@ -409,11 +418,12 @@ Wygeneruj WYŁĄCZNIE gotowy HTML. Zacznij od <h1>, zakończ na ostatnim tagu za
         )}
 
         {showCategoryPicker && (
-          <AllegroCategory
+          <AllegroCategoryPicker
             value={form.allegro_category_id}
-            onChange={(id, name) => {
+            valuePath={form.allegro_category_name}
+            onChange={(id, fullPath) => {
               set("allegro_category_id", id);
-              set("allegro_category_name", name);
+              set("allegro_category_name", fullPath);
               if (id) setShowCategoryPicker(false);
             }}
           />

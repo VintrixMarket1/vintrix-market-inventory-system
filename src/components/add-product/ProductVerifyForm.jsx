@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, CheckCircle, ArrowLeft, Package } from "lucide-react";
+import { Sparkles, CheckCircle, ArrowLeft, Package, Tag } from "lucide-react";
 import AiConfidenceBadge from "./AiConfidenceBadge";
 import { useLang } from "@/lib/i18n";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CATEGORY_GROUPS, SUBCATEGORIES_BY_CATEGORY } from "@/lib/categoryConfig";
+import AllegroCategoryPicker from "@/components/listings/AllegroCategoryPicker";
 
 const CONDITIONS = ["new", "like_new", "used"];
 const GENDERS = ["men", "women", "unisex", "kids", "none"];
@@ -52,7 +53,10 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
     box_number: "",
     is_multi_item: false,
     stock_quantity: "",
+    allegro_category_id: "",
+    allegro_category_path: "",
   });
+  const [showAllegroPicker, setShowAllegroPicker] = useState(false);
   const [selectedPallet, setSelectedPallet] = useState("");
   const [saving, setSaving] = useState(false);
   const [generatePZ, setGeneratePZ] = useState(false);
@@ -185,6 +189,38 @@ export default function ProductVerifyForm({ aiData, images, onSave, onBack }) {
               ))}
             </select>
           </div>
+        </div>
+
+        {/* Allegro category */}
+        <div className="space-y-1.5">
+          <Label>{isPolish ? "Kategoria Allegro (dla wystawiania ofert)" : "Allegro Category"}</Label>
+          {form.allegro_category_id && !showAllegroPicker ? (
+            <div className="flex items-center gap-2 border border-emerald-200 bg-emerald-50 rounded-lg px-3 py-2">
+              <Tag className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span className="text-xs text-emerald-800 font-medium truncate flex-1">{form.allegro_category_path}</span>
+              <button
+                onClick={() => setShowAllegroPicker(true)}
+                className="text-xs text-emerald-600 hover:text-emerald-800 underline shrink-0"
+              >
+                Zmień
+              </button>
+            </div>
+          ) : (
+            <AllegroCategoryPicker
+              value={form.allegro_category_id || null}
+              valuePath={form.allegro_category_path}
+              onChange={(id, fullPath) => {
+                set("allegro_category_id", id || "");
+                set("allegro_category_path", fullPath || "");
+                if (id) setShowAllegroPicker(false);
+              }}
+            />
+          )}
+          <p className="text-xs text-muted-foreground">
+            {isPolish
+              ? "Zapisz kategorię, aby przy wystawianiu na Allegro nie wybierać jej ponownie."
+              : "Save the category so you don't have to pick it again when publishing to Allegro."}
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
