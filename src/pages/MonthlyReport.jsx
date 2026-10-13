@@ -281,7 +281,8 @@ export default function MonthlyReport() {
           {/* Sales summary */}
           <div>
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Sprzedaż — {monthLabel} {selectedYear}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+              <StatCard label="Przychód przed zwrotami" net={toNet(totalRevenueGrossBeforeRefunds)} gross={totalRevenueGrossBeforeRefunds} color="slate" icon={ShoppingCart} />
               <StatCard label="Przychód (po zwrotach)" net={totalRevenueNet} gross={toGross(totalRevenueNet)} color="blue" icon={ShoppingCart} />
               <StatCard label="Zwroty środków" net={toNet(totalRefunds)} gross={totalRefunds} color="red" icon={RotateCcw} />
               <StatCard label="Koszt własny" net={totalCostNet} gross={toGross(totalCostNet)} color="amber" icon={Package} />
