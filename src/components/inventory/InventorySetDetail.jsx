@@ -46,7 +46,7 @@ export default function InventorySetDetail({ set, onBack }) {
             { internal_code: { $regex: esc, $options: "i" } },
           ],
         },
-        { limit: 8, fields: ["product_name", "internal_code", "warehouse_zone", "shelf", "box_number", "is_multi_item", "stock_quantity"] }
+        { limit: 50, fields: ["product_name", "internal_code", "warehouse_zone", "shelf", "box_number", "is_multi_item", "stock_quantity"] }
       );
       return page.items;
     },
@@ -176,7 +176,7 @@ export default function InventorySetDetail({ set, onBack }) {
             {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 animate-spin" />}
           </div>
           {term.length >= 2 && (
-            <div className="space-y-1">
+            <div className="space-y-1 max-h-80 overflow-y-auto">
               {candidates.length === 0 && !isSearching ? (
                 <p className="text-sm text-slate-400 px-1 py-2">Brak produktów w magazynie dla „{term}”</p>
               ) : (
