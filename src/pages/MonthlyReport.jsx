@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, TrendingUp, TrendingDown, Package, ShoppingCart, BarChart3, ArrowLeftRight, Percent } from "lucide-react";
+import { Download, TrendingUp, TrendingDown, Package, ShoppingCart, BarChart3, ArrowLeftRight, Percent, RotateCcw } from "lucide-react";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -102,7 +102,10 @@ export default function MonthlyReport() {
   // Sprzedaże w miesiącu — sale_price jest BRUTTO (przeliczamy na netto przez /1.23),
   // purchase_price jest już NETTO (pochodzi z dokumentów PZ / kosztu palety)
   const monthSales = sales.filter(s => filterByMonth(s.sale_date));
-  const totalRevenueNet = monthSales.reduce((s, x) => s + toNet(x.sale_price || 0), 0);
+  // Zwroty środków — odejmowane od przychodu brutto w miesiącu pierwotnej sprzedaży
+  const totalRevenueGrossBeforeRefunds = monthSales.reduce((s, x) => s + (x.sale_price || 0), 0);
+  const totalRefunds = monthSales.reduce((s, x) => s + (x.refund_amount || 0), 0);
+  const totalRevenueNet = toNet(totalRevenueGrossBeforeRefunds - totalRefunds);
   const totalCostNet = monthSales.reduce((s, x) => s + (x.purchase_price || 0), 0);
   const totalProfitNet = totalRevenueNet - totalCostNet;
   const marginPct = totalCostNet > 0 ? (totalProfitNet / totalCostNet) * 100 : 0;
@@ -155,9 +158,10 @@ export default function MonthlyReport() {
   const byPlatform = monthSales.reduce((acc, s) => {
     const p = s.platform || "inne";
     if (!acc[p]) acc[p] = { count: 0, revenueNet: 0, profitNet: 0 };
+    const revenueNet = toNet((s.sale_price || 0) - (s.refund_amount || 0));
     acc[p].count++;
-    acc[p].revenueNet += toNet(s.sale_price || 0);
-    acc[p].profitNet += toNet(s.sale_price || 0) - (s.purchase_price || 0);
+    acc[p].revenueNet += revenueNet;
+    acc[p].profitNet += revenueNet - (s.purchase_price || 0);
     return acc;
   }, {});
 
@@ -179,7 +183,9 @@ export default function MonthlyReport() {
       ["Rozchód wewnętrzny (RW)", rwNet.toFixed(2), toGross(rwNet).toFixed(2)],
       ["", "", ""],
       ["SPRZEDAŻ", "NETTO (PLN)", "BRUTTO (PLN)"],
-      ["Przychód ze sprzedaży", totalRevenueNet.toFixed(2), toGross(totalRevenueNet).toFixed(2)],
+      ["Przychód brutto przed zwrotami", toNet(totalRevenueGrossBeforeRefunds).toFixed(2), totalRevenueGrossBeforeRefunds.toFixed(2)],
+      ["Zwroty środków", toNet(totalRefunds).toFixed(2), totalRefunds.toFixed(2)],
+      ["Przychód po zwrotach", totalRevenueNet.toFixed(2), toGross(totalRevenueNet).toFixed(2)],
       ["Koszt własny sprzedaży", totalCostNet.toFixed(2), toGross(totalCostNet).toFixed(2)],
       ["Zysk brutto ze sprzedaży", totalProfitNet.toFixed(2), toGross(totalProfitNet).toFixed(2)],
       ["Koszty dodatkowe zwrotów", totalReturnCost.toFixed(2), toGross(totalReturnCost).toFixed(2)],
@@ -203,18 +209,19 @@ export default function MonthlyReport() {
       "Produkt": s.product_name || "",
       "Platforma": s.platform || "",
       "Klient": s.customer_name || "",
-      "Przychód netto (PLN)": parseFloat(toNet(s.sale_price || 0).toFixed(2)),
-      "Przychód brutto (PLN)": parseFloat((s.sale_price || 0).toFixed(2)),
+      "Zwrot (PLN)": parseFloat((s.refund_amount || 0).toFixed(2)),
+      "Przychód netto po zwrotach (PLN)": parseFloat(toNet((s.sale_price || 0) - (s.refund_amount || 0)).toFixed(2)),
+      "Przychód brutto po zwrotach (PLN)": parseFloat(((s.sale_price || 0) - (s.refund_amount || 0)).toFixed(2)),
       "Koszt netto (PLN)": parseFloat((s.purchase_price || 0).toFixed(2)),
       "Koszt brutto (PLN)": parseFloat(toGross(s.purchase_price || 0).toFixed(2)),
       "Koszty zwrotów (PLN)": parseFloat((s.return_cost || 0).toFixed(2)),
       "Rabat (PLN)": parseFloat((s.discount_amount || 0).toFixed(2)),
       "Kod rabatowy": s.discount_code || "",
-      "Zysk netto (PLN)": parseFloat((toNet(s.sale_price || 0) - (s.purchase_price || 0)).toFixed(2)),
+      "Zysk netto (PLN)": parseFloat((toNet((s.sale_price || 0) - (s.refund_amount || 0)) - (s.purchase_price || 0)).toFixed(2)),
       "Dok. WZ": s.wz_document_number || "",
     }));
     const ws2 = XLSX.utils.json_to_sheet(salesRows);
-    ws2["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 40 }, { wch: 14 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 14 }, { wch: 14 }];
+    ws2["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 40 }, { wch: 14 }, { wch: 20 }, { wch: 20 }, { wch: 16 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 14 }, { wch: 14 }];
     XLSX.utils.book_append_sheet(wb, ws2, "Sprzedaże");
 
     // Arkusz 3 — Dokumenty narastająco (stan magazynowy)
@@ -274,8 +281,9 @@ export default function MonthlyReport() {
           {/* Sales summary */}
           <div>
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Sprzedaż — {monthLabel} {selectedYear}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <StatCard label="Przychód" net={totalRevenueNet} gross={toGross(totalRevenueNet)} color="blue" icon={ShoppingCart} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+              <StatCard label="Przychód (po zwrotach)" net={totalRevenueNet} gross={toGross(totalRevenueNet)} color="blue" icon={ShoppingCart} />
+              <StatCard label="Zwroty środków" net={toNet(totalRefunds)} gross={totalRefunds} color="red" icon={RotateCcw} />
               <StatCard label="Koszt własny" net={totalCostNet} gross={toGross(totalCostNet)} color="amber" icon={Package} />
               <StatCard label={totalProfitNet >= 0 ? "Zysk" : "Strata"} net={totalProfitNet} gross={toGross(totalProfitNet)} color={totalProfitNet >= 0 ? "emerald" : "red"} icon={totalProfitNet >= 0 ? TrendingUp : TrendingDown} />
               <StatCard label="Koszty zwrotów" net={totalReturnCost} gross={toGross(totalReturnCost)} color="red" icon={ArrowLeftRight} />
@@ -383,6 +391,7 @@ export default function MonthlyReport() {
                       <th className="text-left px-4 py-2.5 font-medium">Platforma</th>
                       <th className="text-right px-4 py-2.5 font-medium">Przychód netto</th>
                       <th className="text-right px-4 py-2.5 font-medium">Przychód brutto</th>
+                      <th className="text-right px-4 py-2.5 font-medium">Zwrot</th>
                       <th className="text-right px-4 py-2.5 font-medium">Koszt netto</th>
                       <th className="text-right px-4 py-2.5 font-medium">Koszty zwrotów</th>
                       <th className="text-right px-4 py-2.5 font-medium">Rabat</th>
@@ -391,7 +400,7 @@ export default function MonthlyReport() {
                   </thead>
                   <tbody>
                     {monthSales.map((s) => {
-                      const salePriceNet = toNet(s.sale_price || 0);
+                      const salePriceNet = toNet((s.sale_price || 0) - (s.refund_amount || 0));
                       const purchasePriceNet = s.purchase_price || 0;
                       const profit = salePriceNet - purchasePriceNet;
                       return (
@@ -401,6 +410,7 @@ export default function MonthlyReport() {
                           <td className="px-4 py-2.5 text-slate-500 capitalize">{s.platform || "—"}</td>
                           <td className="px-4 py-2.5 text-right text-slate-900 font-semibold">{salePriceNet.toFixed(2)}</td>
                           <td className="px-4 py-2.5 text-right text-slate-500">{(s.sale_price || 0).toFixed(2)}</td>
+                          <td className={`px-4 py-2.5 text-right ${(s.refund_amount || 0) > 0 ? "text-blue-600" : "text-slate-400"}`}>{(s.refund_amount || 0).toFixed(2)}</td>
                           <td className="px-4 py-2.5 text-right text-slate-500">{purchasePriceNet.toFixed(2)}</td>
                           <td className="px-4 py-2.5 text-right text-red-600">{(s.return_cost || 0).toFixed(2)}</td>
                           <td className="px-4 py-2.5 text-right text-purple-600">{(s.discount_amount || 0).toFixed(2)}</td>
