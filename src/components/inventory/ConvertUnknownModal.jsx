@@ -113,11 +113,14 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
       setCatalogLoading(true);
       try {
         // Fetch only in_stock products (most relevant for reclassification)
-        const products = await base44.entities.Product.filter({ status: "in_stock" }, "-created_date", 50);
+        const page = await base44.entities.Product.filter(
+          { status: "in_stock", product_name: { $ne: "Nieznany produkt" } },
+          { sort: "-created_date", limit: 200 }
+        );
+        const products = page.items || [];
         const lower = query.toLowerCase();
         const filtered = products
           .filter(p =>
-            p.product_name !== "Nieznany produkt" &&
             (p.product_name?.toLowerCase().includes(lower) ||
              p.brand?.toLowerCase().includes(lower) ||
              p.internal_code?.toLowerCase().includes(lower))
