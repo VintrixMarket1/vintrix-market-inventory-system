@@ -41,6 +41,7 @@ export default function InventorySetDetail({ set, onBack }) {
       const page = await base44.entities.Product.filter(
         {
           status: { $in: ["in_stock", "listed"] },
+          product_name: { $ne: "Nieznany produkt" },
           $or: [
             { product_name: { $regex: esc, $options: "i" } },
             { internal_code: { $regex: esc, $options: "i" } },
