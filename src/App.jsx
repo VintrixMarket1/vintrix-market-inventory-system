@@ -33,6 +33,7 @@ import AllegroPublish from './pages/AllegroPublish';
 import AllegroTemplates from './pages/AllegroTemplates';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import WarehouseDocuments from './pages/WarehouseDocuments';
+import InventorySets from './pages/InventorySets';
 import MonthlyReport from './pages/MonthlyReport';
 import PalletDetail from './pages/PalletDetail';
 import ActionQueue from './pages/ActionQueue';
@@ -105,6 +106,7 @@ const ProtectedApp = () => {
       <Route element={<AppLayout />}>
         <Route path="/Dashboard" element={<Dashboard />} />
         <Route path="/Inventory" element={<Inventory />} />
+        <Route path="/InventorySets" element={<InventorySets />} />
         <Route path="/Pallets" element={<Pallets />} />
         <Route path="/Listings" element={<Listings />} />
         <Route path="/Sales" element={<Sales />} />

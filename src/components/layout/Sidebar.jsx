@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Package, Tag, DollarSign,
-  Menu, X, ChevronRight, Layers, BookOpen, Settings, FileText, MessageCircle, BarChart3, Flag, Percent
-} from "lucide-react";
+  Menu, X, ChevronRight, Layers, BookOpen, Settings, FileText, MessageCircle, BarChart3, Flag, Percent, ClipboardList
+  } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -33,6 +33,7 @@ export default function Sidebar() {
   const allNavItems = [
     { path: "/Dashboard", labelKey: "nav_dashboard", icon: LayoutDashboard },
     { path: "/Inventory", labelKey: "nav_inventory", icon: Package },
+    { path: "/InventorySets", label: "Inwentaryzacja", icon: ClipboardList },
     { path: "/ActionQueue", label: "Kolejka działań", icon: Flag },
     { path: "/ProductModels", labelKey: "nav_catalog", icon: BookOpen },
     { path: "/Pallets", labelKey: "nav_pallets", icon: Layers },
@@ -45,7 +46,7 @@ export default function Sidebar() {
     { path: "/Settings", labelKey: "nav_settings", icon: Settings },
   ];
 
-  const pracownikHidden = ["/Listings", "/Sales", "/Discounts", "/WarehouseDocuments", "/MonthlyReport", "/Inquiries"];
+  const pracownikHidden = ["/Listings", "/Sales", "/Discounts", "/WarehouseDocuments", "/MonthlyReport", "/Inquiries", "/InventorySets"];
   const navItems = isPracownik
     ? allNavItems.filter(item => !pracownikHidden.includes(item.path))
     : allNavItems;

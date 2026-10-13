@@ -1,0 +1,121 @@
+{
+  "name": "InventorySet",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nazwa zestawu inwentaryzacyjnego, np. 'Inwentaryzacja 1'"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "closed"
+      ],
+      "default": "open",
+      "description": "Status zestawu: open=W trakcie, closed=Zamkni\u0119ty"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "internal_code": {
+            "type": "string"
+          },
+          "is_multi_item": {
+            "type": "boolean"
+          },
+          "system_quantity": {
+            "type": "number",
+            "description": "Stan wg systemu w momencie dodania"
+          },
+          "actual_quantity": {
+            "type": "number",
+            "description": "Stan faktyczny po zliczeniu"
+          },
+          "warehouse_zone": {
+            "type": "string"
+          },
+          "shelf": {
+            "type": "string"
+          },
+          "box_number": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Pozycje zestawu (dodane produkty)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Uwagi do zestawu"
+    },
+    "closed_at": {
+      "type": "string",
+      "description": "Data i czas zamkni\u0119cia zestawu (ISO)"
+    },
+    "closed_by": {
+      "type": "string",
+      "description": "Email osoby zamykaj\u0105cej zestaw"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "pracownik"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "pracownik"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "pracownik"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
