@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -19,7 +19,6 @@ export default function ReturnModal({ product, onClose, onReturned }) {
   const [quantity, setQuantity] = useState(1);
   const [returnCost, setReturnCost] = useState(0);
   const [returnCostDescription, setReturnCostDescription] = useState("");
-  const [refundAmount, setRefundAmount] = useState(0);
   const [loading, setLoading] = useState(false);
 
   const isMulti = product?.is_multi_item;
@@ -27,31 +26,18 @@ export default function ReturnModal({ product, onClose, onReturned }) {
   const wasSold = (product?.status || "in_stock") === "sold";
   const returnQty = isMulti ? Math.max(1, parseInt(quantity) || 1) : 1;
 
-  // Powiązana sprzedaż — do prefila kwoty zwrotu środków
-  const [saleRecord, setSaleRecord] = useState(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const sales = await base44.entities.Sale.filter({ product_id: product.id });
-        const latest = [...sales].sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0] || null;
-        if (cancelled) return;
-        setSaleRecord(latest);
-        if (latest) {
-          const remaining = (latest.sale_price || 0) - (latest.refund_amount || 0);
-          const saleQty = latest.quantity || 1;
-          const prefill = isMulti ? remaining * (returnQty / saleQty) : remaining;
-          setRefundAmount(parseFloat(Math.max(0, prefill).toFixed(2)));
-        }
-      } catch (_) {}
-    })();
-    return () => { cancelled = true; };
-  }, [product.id]);
-
   const handleReturn = async () => {
     setLoading(true);
 
-    // 1. Powiązana sprzedaż — załadowana przy otwarciu modala (saleRecord ze stanu)
+    // 1. Znajdź powiązaną sprzedaż (żeby uzyskać cenę sprzedaży i numer WZ)
+    let saleRecord = null;
+    try {
+      const sales = await base44.entities.Sale.filter({ product_id: product.id });
+      if (sales.length > 0) {
+        // Weź najnowszą
+        saleRecord = sales.sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+      }
+    } catch (_) {}
 
     // 2. Wygeneruj numer dokumentu KOR-WZ (używamy PW jako forma przyjęcia zwrotu)
     const docNumber = await generateDocumentNumber("PW");
@@ -106,23 +92,6 @@ export default function ReturnModal({ product, onClose, onReturned }) {
           return_cost_description: returnCostDescription.trim(),
         });
       } catch (_) {}
-    }
-
-    // 4c. Zapisz kwotę zwrotu środków na sprzedaży (raport miesięczny odejmuje ją od przychodu)
-    const refundVal = parseFloat(parseFloat(refundAmount || 0).toFixed(2));
-    if (saleRecord && refundVal > 0) {
-      const alreadyRefunded = saleRecord.refund_amount || 0;
-      const remaining = (saleRecord.sale_price || 0) - alreadyRefunded;
-      const applied = Math.min(refundVal, Math.max(0, remaining));
-      if (applied > 0) {
-        const newTotalRefund = alreadyRefunded + applied;
-        await base44.entities.Sale.update(saleRecord.id, {
-          refund_amount: newTotalRefund,
-          refund_status: newTotalRefund >= (saleRecord.sale_price || 0) ? "full" : "partial",
-          refund_reason: reason,
-          refund_date: returnDate,
-        });
-      }
     }
 
     // 5. Inwaliduj cache
@@ -219,21 +188,6 @@ export default function ReturnModal({ product, onClose, onReturned }) {
 
           <div className="border-t border-slate-100 pt-4">
             <label className="text-xs font-medium text-slate-600 mb-1 block">
-              Kwota zwrotu środków (PLN)
-              {saleRecord && <span className="text-slate-400 font-normal"> — sprzedaż: {(saleRecord.sale_price || 0).toFixed(2)} PLN</span>}
-            </label>
-            <Input
-              type="number"
-              min={0}
-              step="0.01"
-              value={refundAmount}
-              onChange={e => setRefundAmount(Math.max(0, parseFloat(e.target.value) || 0))}
-            />
-            <p className="text-xs text-slate-400 mt-1">Zostanie odjęta od przychodu tej sprzedaży w raporcie miesięcznym (w miesiącu sprzedaży). Wpisz 0, jeśli środki nie zostały zwrócone.</p>
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-slate-600 mb-1 block">
               Koszty dodatkowe zwrotu (PLN) <span className="text-slate-400 font-normal">— np. przesyłka zwrotna, opłata Vinted</span>
             </label>
             <Input
@@ -269,7 +223,6 @@ export default function ReturnModal({ product, onClose, onReturned }) {
               {isMulti
                 ? ` i zwiększy stan magazynowy o ${returnQty} szt. (${currentStock} → ${currentStock + returnQty} szt.).`
                 : " i przywróci produkt na stan magazynowy."}
-              {refundAmount > 0 && ` Zwrot środków (${refundAmount.toFixed(2)} PLN) zostanie odjęty od przychodu sprzedaży w raporcie miesięcznym.`}
               {parseFloat(returnCost) > 0 && ` Koszty dodatkowe (${parseFloat(returnCost).toFixed(2)} PLN) zostaną zapisane na sprzedaży i uwzględnione w raporcie miesięcznym.`}
             </p>
           </div>
