@@ -103,30 +103,25 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
   // Catalog search with debounce — fetch only when user types 2+ chars
   useEffect(() => {
     if (uploadMode !== "catalog") return;
-    const query = catalogSearch.trim();
-    if (query.length < 2) {
-      setCatalogProducts([]);
-      return;
-    }
     clearTimeout(catalogSearchTimeout.current);
     catalogSearchTimeout.current = setTimeout(async () => {
+      const query = catalogSearch.trim();
       setCatalogLoading(true);
       try {
-        // Fetch only in_stock products (most relevant for reclassification)
-        const page = await base44.entities.Product.filter(
-          { status: "in_stock", product_name: { $ne: "Nieznany produkt" } },
-          { sort: "-created_date", limit: 200 }
-        );
-        const products = page.items || [];
-        const lower = query.toLowerCase();
-        const filtered = products
-          .filter(p =>
-            (p.product_name?.toLowerCase().includes(lower) ||
-             p.brand?.toLowerCase().includes(lower) ||
-             p.internal_code?.toLowerCase().includes(lower))
-          )
-          .slice(0, 15);
-        setCatalogProducts(filtered);
+        // Server-side search: all non-sold products, excluding reclassified and unknown
+        const searchQuery = {
+          product_name: { $ne: "Nieznany produkt" },
+          status: { $nin: ["sold", "reclassified"] },
+        };
+        if (query.length >= 2) {
+          searchQuery.$or = [
+            { product_name: { $regex: query, $options: "i" } },
+            { brand: { $regex: query, $options: "i" } },
+            { internal_code: { $regex: query, $options: "i" } },
+          ];
+        }
+        const page = await base44.entities.Product.filter(searchQuery, { sort: "-created_date", limit: 50 });
+        setCatalogProducts(page.items || []);
       } catch (err) {
         console.error("Catalog search error:", err);
       }
@@ -511,7 +506,7 @@ WAŻNE: Musisz wypełnić WSZYSTKIE pola. Jeśli nie możesz ustalić wartości,
                        </div>
                      )}
                      {!catalogLoading && catalogProducts.length === 0 && (
-                       <p className="text-sm text-slate-400 py-2 text-center">{catalogSearch.trim() ? "Brak wyników" : "Ładowanie…"}</p>
+                       <p className="text-sm text-slate-400 py-2 text-center">{catalogSearch.trim() ? "Brak wyników" : "Brak produktów w magazynie"}</p>
                      )}
                      <div className="space-y-2 max-h-64 overflow-y-auto">
                        {catalogProducts.map(p => (
