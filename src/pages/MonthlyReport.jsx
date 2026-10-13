@@ -141,13 +141,13 @@ export default function MonthlyReport() {
     return m < selectedMonth;
   };
   const prevMonthDocs = docs.filter(d => isBeforeMonth(d.date));
-  const prevReceiptsNet = prevMonthDocs.filter(d => d.document_type === "PZ").reduce((s, d) => s + (d.total_value || 0), 0);
-  const prevIssuesNet = prevMonthDocs.filter(d => d.document_type === "WZ").reduce((s, d) => s + (d.total_value || 0), 0);
+  const prevReceiptsNet = prevMonthDocs.filter(d => d.document_type === "PZ" || d.document_type === "PW").reduce((s, d) => s + (d.total_value || 0), 0);
+  const prevIssuesNet = prevMonthDocs.filter(d => d.document_type === "WZ" || d.document_type === "RW").reduce((s, d) => s + (d.total_value || 0), 0);
   const prevStockValueNet = prevReceiptsNet - prevIssuesNet;
 
-  // Przyjęcia i wydania w danym miesiącu — tylko PZ i WZ
-  const monthReceiptsNet = pzNet;
-  const monthIssuesNet = wzNet;
+  // Przyjęcia i wydania w danym miesiącu — PZ + PW oraz WZ + RW
+  const monthReceiptsNet = pzNet + pwNet;
+  const monthIssuesNet = wzNet + rwNet;
 
   // Stan na koniec miesiąca
   const totalStockValueNet = prevStockValueNet + monthReceiptsNet - monthIssuesNet;
