@@ -13,11 +13,8 @@ export default function ImageUploader({ uploadedImages, onImagesReady, onAnalyze
   const { t, lang } = useLang();
   const isPolish = lang === "pl";
 
-  const MAX_IMAGES = 10;
-
   const handleFiles = async (files) => {
-    const remaining = MAX_IMAGES - uploadedImages.length;
-    const toProcess = Array.from(files).slice(0, remaining);
+    const toProcess = Array.from(files);
     if (toProcess.length === 0) return;
 
     setUploading(true);
