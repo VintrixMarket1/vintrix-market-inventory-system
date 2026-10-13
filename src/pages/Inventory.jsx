@@ -24,6 +24,7 @@ import ReturnModal from "../components/inventory/ReturnModal";
 import PartialRefundModal from "../components/sales/PartialRefundModal";
 import { useToast } from "@/components/ui/use-toast";
 import ActionFlagModal from "../components/inventory/ActionFlagModal";
+import AddToSetModal from "../components/inventory/AddToSetModal";
 
 export default function Inventory() {
   const { t } = useLang();
@@ -44,6 +45,7 @@ export default function Inventory() {
   const [refundSale, setRefundSale] = useState(null);
   const [refundLoadingId, setRefundLoadingId] = useState(null);
   const [flagProduct, setFlagProduct] = useState(null);
+  const [addToSetProducts, setAddToSetProducts] = useState(null);
   const { toast } = useToast();
 
   const toggleBulkSelect = (id) => {
@@ -494,6 +496,10 @@ export default function Inventory() {
             const selected = products.filter(p => ids.includes(p.id));
             setShopifyBulkProducts(selected);
           }}
+          onAddToSet={(ids) => {
+            const selected = products.filter(p => ids.includes(p.id));
+            setAddToSetProducts(selected);
+          }}
         />
       )}
       {shopifyBulkProducts && (
@@ -502,6 +508,12 @@ export default function Inventory() {
           onClose={() => setShopifyBulkProducts(null)}
           products={shopifyBulkProducts}
           onDone={() => { refresh(); setBulkSelected(new Set()); setShopifyBulkProducts(null); }}
+        />
+      )}
+      {addToSetProducts && (
+        <AddToSetModal
+          products={addToSetProducts}
+          onClose={() => { setAddToSetProducts(null); setBulkSelected(new Set()); }}
         />
       )}
       {returnProduct && (
