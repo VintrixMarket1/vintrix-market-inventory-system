@@ -1,6 +1,6 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Edit2, Trash2, Flag, Maximize2 } from "lucide-react";
+import { MapPin, Edit2, Trash2, Flag } from "lucide-react";
 
 const conditionLabels = { new: "New", like_new: "Like New", used: "Used" };
 const conditionColors = {
@@ -22,7 +22,7 @@ const statusLabels = {
   reclassified: "Przeklasyfikowany",
 };
 
-export default function ProductCard({ product, onEdit, onDelete, onFlag, selected, onToggleSelect, onZoom }) {
+export default function ProductCard({ product, onEdit, onDelete, onFlag, selected, onToggleSelect }) {
   const canDelete = !!onDelete;
   const mainImage = product.images && product.images.length > 0 ? product.images[0] : null;
   const isFlagged = product.action_flag;
@@ -53,16 +53,7 @@ export default function ProductCard({ product, onEdit, onDelete, onFlag, selecte
             )}
           </div>
         )}
-        <div className="absolute top-2 right-2 flex gap-1 items-center">
-          {onZoom && mainImage && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onZoom(); }}
-              className="p-1.5 bg-white/90 rounded-lg shadow-sm hover:bg-white cursor-zoom-in"
-              title="Powiększ zdjęcie"
-            >
-              <Maximize2 className="w-3.5 h-3.5 text-slate-600" />
-            </button>
-          )}
+        <div className="absolute top-2 right-2 flex gap-1">
           <Badge className={`text-[10px] ${statusColors[product.status] || statusColors.in_stock}`}>
             {statusLabels[product.status] || (product.status || "in_stock").replace("_", " ")}
           </Badge>
