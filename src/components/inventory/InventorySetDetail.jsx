@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/AuthContext";
 import { Search, Plus, Trash2, Save, Loader2, Lock, CheckCircle2, AlertTriangle, PackageSearch, ArrowLeft } from "lucide-react";
 
@@ -32,6 +33,7 @@ export default function InventorySetDetail({ set, onBack }) {
   );
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [zoomImage, setZoomImage] = useState(null);
 
   // Miniaturki dla starszych pozycji bez zapisanego zdjęcia — jedno zapytanie o obrazy
   const { data: itemImages = {} } = useQuery({
@@ -209,7 +211,7 @@ export default function InventorySetDetail({ set, onBack }) {
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       {p.images && p.images[0] ? (
-                        <img src={p.images[0]} alt="" className="w-9 h-9 rounded-md object-cover border border-slate-100 shrink-0" loading="lazy" />
+                        <img src={p.images[0]} alt="" className="w-9 h-9 rounded-md object-cover border border-slate-100 shrink-0 cursor-zoom-in hover:opacity-90 transition-opacity" loading="lazy" onClick={(e) => { e.stopPropagation(); setZoomImage(p.images[0]); }} title="Kliknij, aby powiększyć" />
                       ) : (
                         <div className="w-9 h-9 rounded-md bg-slate-100 flex items-center justify-center text-sm shrink-0">📦</div>
                       )}
@@ -248,7 +250,7 @@ export default function InventorySetDetail({ set, onBack }) {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
                     {thumb ? (
-                      <img src={thumb} alt={item.product_name} className="w-16 h-16 rounded-lg object-cover border border-slate-100 shrink-0" loading="lazy" />
+                      <img src={thumb} alt={item.product_name} className="w-16 h-16 rounded-lg object-cover border border-slate-100 shrink-0 cursor-zoom-in hover:opacity-90 transition-opacity" loading="lazy" onClick={() => setZoomImage(thumb)} title="Kliknij, aby powiększyć" />
                     ) : (
                       <div className="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center text-2xl shrink-0">📦</div>
                     )}
@@ -320,6 +322,18 @@ export default function InventorySetDetail({ set, onBack }) {
           <Lock className="w-4 h-4" /> Zestaw jest zamknięty — podgląd bez możliwości edycji.
         </div>
       )}
+
+      {/* Powiększenie zdjęcia produktu */}
+      <Dialog open={!!zoomImage} onOpenChange={(o) => { if (!o) setZoomImage(null); }}>
+        <DialogContent className="max-w-3xl p-2">
+          <DialogHeader className="p-4 pb-1">
+            <DialogTitle className="text-sm font-medium text-slate-600">Zdjęcie produktu</DialogTitle>
+          </DialogHeader>
+          {zoomImage && (
+            <img src={zoomImage} alt="Powiększone zdjęcie produktu" className="w-full max-h-[70vh] object-contain rounded-lg" />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
