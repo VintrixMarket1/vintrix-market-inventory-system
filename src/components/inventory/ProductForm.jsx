@@ -57,6 +57,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
     stock_quantity: "",
   });
   const [saving, setSaving] = useState(false);
+  const [zoomImage, setZoomImage] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [showChat, setShowChat] = useState(false);
@@ -430,7 +431,13 @@ No HTML tags or formatting whatsoever.`;
             <div className="flex flex-wrap gap-2">
               {(form.images || []).map((url, i) => (
                 <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={url}
+                    alt=""
+                    className="w-full h-full object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
+                    onClick={() => setZoomImage(url)}
+                    title="Kliknij, aby powiększyć"
+                  />
                   <button onClick={() => removeImage(i)} className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5">
                     <X className="w-3 h-3 text-white" />
                   </button>
@@ -472,6 +479,18 @@ No HTML tags or formatting whatsoever.`;
           </div>
         )}
         </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Powiększenie zdjęcia produktu */}
+    <Dialog open={!!zoomImage} onOpenChange={(o) => { if (!o) setZoomImage(null); }}>
+      <DialogContent className="max-w-3xl p-2">
+        <DialogHeader className="p-4 pb-1">
+          <DialogTitle className="text-sm font-medium text-slate-600">{form.product_name || "Zdjęcie produktu"}</DialogTitle>
+        </DialogHeader>
+        {zoomImage && (
+          <img src={zoomImage} alt="Powiększone zdjęcie produktu" className="w-full max-h-[70vh] object-contain rounded-lg" />
+        )}
       </DialogContent>
     </Dialog>
     </>

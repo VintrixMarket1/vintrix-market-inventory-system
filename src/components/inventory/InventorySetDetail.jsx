@@ -11,6 +11,7 @@ import { Search, Plus, Trash2, Save, Loader2, Lock, CheckCircle2, AlertTriangle,
 const emptyItem = (p) => ({
   product_id: p.id,
   product_name: p.product_name,
+  image: (p.images && p.images[0]) || null,
   internal_code: p.internal_code || "",
   is_multi_item: !!p.is_multi_item,
   system_quantity: p.is_multi_item ? (p.stock_quantity || 0) : 1,
@@ -32,6 +33,25 @@ export default function InventorySetDetail({ set, onBack }) {
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Miniaturki dla starszych pozycji bez zapisanego zdjęcia — jedno zapytanie o obrazy
+  const { data: itemImages = {} } = useQuery({
+    queryKey: ["inventory_set_item_images", set.id],
+    queryFn: async () => {
+      const ids = (set.items || []).map((i) => i.product_id).filter(Boolean);
+      if (ids.length === 0) return {};
+      const page = await base44.entities.Product.filter(
+        { id: { $in: ids } },
+        { limit: 500, fields: ["images"] }
+      );
+      const map = {};
+      page.items.forEach((p) => {
+        if (p.images && p.images.length > 0) map[p.id] = p.images[0];
+      });
+      return map;
+    },
+  });
+  const imgFor = (item) => item.image || itemImages[item.product_id] || null;
+
   const term = search.trim();
   const { data: candidates = [], isFetching: isSearching } = useQuery({
     queryKey: ["inventory_set_candidates", term],
@@ -47,7 +67,7 @@ export default function InventorySetDetail({ set, onBack }) {
             { internal_code: { $regex: esc, $options: "i" } },
           ],
         },
-        { limit: 50, fields: ["product_name", "internal_code", "warehouse_zone", "shelf", "box_number", "is_multi_item", "stock_quantity"] }
+        { limit: 50, fields: ["product_name", "internal_code", "warehouse_zone", "shelf", "box_number", "is_multi_item", "stock_quantity", "images"] }
       );
       return page.items;
     },
@@ -187,12 +207,19 @@ export default function InventorySetDetail({ set, onBack }) {
                     onClick={() => addItem(p)}
                     className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-left"
                   >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-900 truncate">{p.product_name}</p>
-                      <p className="text-xs text-slate-400">
-                        {p.internal_code || "—"}
-                        {p.is_multi_item ? ` · ${p.stock_quantity || 0} szt.` : ""}
-                      </p>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {p.images && p.images[0] ? (
+                        <img src={p.images[0]} alt="" className="w-9 h-9 rounded-md object-cover border border-slate-100 shrink-0" loading="lazy" />
+                      ) : (
+                        <div className="w-9 h-9 rounded-md bg-slate-100 flex items-center justify-center text-sm shrink-0">📦</div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-900 truncate">{p.product_name}</p>
+                        <p className="text-xs text-slate-400">
+                          {p.internal_code || "—"}
+                          {p.is_multi_item ? ` · ${p.stock_quantity || 0} szt.` : ""}
+                        </p>
+                      </div>
                     </div>
                     <Badge className="bg-emerald-100 text-emerald-700 gap-1 shrink-0">
                       <Plus className="w-3 h-3" /> Dodaj
@@ -215,23 +242,31 @@ export default function InventorySetDetail({ set, onBack }) {
         <div className="space-y-2">
           {items.map((item, idx) => {
             const diff = Number(item.actual_quantity) - Number(item.system_quantity);
+            const thumb = imgFor(item);
             return (
               <div key={item.product_id} className="bg-white rounded-xl border border-slate-200/60 p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm text-slate-900 truncate">{item.product_name}</p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      {item.internal_code && (
-                        <span className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-mono">{item.internal_code}</span>
-                      )}
-                      {item.is_multi_item && <Badge className="text-[10px] bg-sky-100 text-sky-700">Wielosztuka</Badge>}
-                      {diff === 0 ? (
-                        <Badge className="text-[10px] bg-emerald-100 text-emerald-700">Zgodna liczba</Badge>
-                      ) : diff > 0 ? (
-                        <Badge className="text-[10px] bg-blue-100 text-blue-700">+{diff} nadwyżka</Badge>
-                      ) : (
-                        <Badge className="text-[10px] bg-red-100 text-red-700">{diff} brak</Badge>
-                      )}
+                  <div className="flex items-start gap-3 min-w-0">
+                    {thumb ? (
+                      <img src={thumb} alt={item.product_name} className="w-16 h-16 rounded-lg object-cover border border-slate-100 shrink-0" loading="lazy" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center text-2xl shrink-0">📦</div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm text-slate-900 truncate">{item.product_name}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {item.internal_code && (
+                          <span className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-mono">{item.internal_code}</span>
+                        )}
+                        {item.is_multi_item && <Badge className="text-[10px] bg-sky-100 text-sky-700">Wielosztuka</Badge>}
+                        {diff === 0 ? (
+                          <Badge className="text-[10px] bg-emerald-100 text-emerald-700">Zgodna liczba</Badge>
+                        ) : diff > 0 ? (
+                          <Badge className="text-[10px] bg-blue-100 text-blue-700">+{diff} nadwyżka</Badge>
+                        ) : (
+                          <Badge className="text-[10px] bg-red-100 text-red-700">{diff} brak</Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   {isOpen && (
