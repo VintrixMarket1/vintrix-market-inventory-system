@@ -25,6 +25,8 @@ import PartialRefundModal from "../components/sales/PartialRefundModal";
 import { useToast } from "@/components/ui/use-toast";
 import ActionFlagModal from "../components/inventory/ActionFlagModal";
 import AddToSetModal from "../components/inventory/AddToSetModal";
+import ImageLightbox from "../components/inventory/ImageLightbox";
+import { Maximize2 } from "lucide-react";
 
 export default function Inventory() {
   const { t } = useLang();
@@ -46,6 +48,7 @@ export default function Inventory() {
   const [refundLoadingId, setRefundLoadingId] = useState(null);
   const [flagProduct, setFlagProduct] = useState(null);
   const [addToSetProducts, setAddToSetProducts] = useState(null);
+  const [zoomImage, setZoomImage] = useState(null);
   const { toast } = useToast();
 
   const toggleBulkSelect = (id) => {
@@ -268,6 +271,7 @@ export default function Inventory() {
                 onFlag={(p) => setFlagProduct(p)}
                 selected={bulkSelected.has(product.id)}
                 onToggleSelect={toggleBulkSelect}
+                onZoom={() => { if (product.images?.length) setZoomImage(product.images[0]); }}
               />
               {product.pallet_id && palletsMap[product.pallet_id] && (
                 <div className="mt-1 px-1">
@@ -338,7 +342,12 @@ export default function Inventory() {
                 {/* Images strip */}
                 <div className="flex gap-1 shrink-0 cursor-pointer" onClick={() => toggleBulkSelect(product.id)}>
                   {images.length > 0 ? images.slice(0, 4).map((url, i) => (
-                    <div key={i} className="w-14 h-14 rounded-lg overflow-hidden border border-slate-100 shrink-0">
+                    <div
+                      key={i}
+                      className="w-14 h-14 rounded-lg overflow-hidden border border-slate-100 shrink-0 cursor-zoom-in hover:border-emerald-300"
+                      onClick={(e) => { e.stopPropagation(); setZoomImage(url); }}
+                      title="Kliknij, aby powiększyć"
+                    >
                       <img src={url} alt="" className="w-full h-full object-cover" />
                     </div>
                   )) : (
@@ -549,6 +558,7 @@ export default function Inventory() {
           onSaved={refresh}
         />
       )}
+      <ImageLightbox url={zoomImage} onClose={() => setZoomImage(null)} />
     </div>
   );
 }
