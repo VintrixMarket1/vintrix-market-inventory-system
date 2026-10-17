@@ -57,6 +57,7 @@ export default function Inventory() {
     });
   };
   const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "in_stock", pallet_id: "all", sortBy: "newest" });
+  const [locationFilter, setLocationFilter] = useState("");
   const [viewMode, setViewMode] = useState("grid");
   const [palletsExpanded, setPalletsExpanded] = useState(true);
   const [page, setPage] = useState(1);
@@ -133,21 +134,23 @@ export default function Inventory() {
   });
 
   // Tylko bieżąca strona trafia do renderu — szybki działanie przy dużej liczbie produktów
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const visibleProducts = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const locationKey = (p) => [p.warehouse_zone, p.shelf, p.box_number].filter(Boolean).join(" / ") || "Bez strefy";
 
-  // Widok lokacji: grupowanie bieżącej strony po strefie / regale / pudełku
-  const locationGroups = viewMode === "location" ? Object.entries(
-    visibleProducts.reduce((acc, p) => {
-      const key = [p.warehouse_zone || "Bez strefy", p.shelf || "", p.box_number || ""].filter(Boolean).join(" / ");
-      (acc[key] = acc[key] || []).push(p);
-      return acc;
-    }, {})
-  ).sort(([a], [b]) => {
-    if (a === "Bez strefy") return 1;
-    if (b === "Bez strefy") return -1;
-    return a.localeCompare(b, "pl", { numeric: true });
-  }) : [];
+  // Widok lokacji: pokazuj produkty z wybranej/wpisanej lokacji
+  const lf = (viewMode === "location" ? locationFilter : "").trim().toLowerCase();
+  const locationList = viewMode === "location" && lf
+    ? sorted.filter(p => locationKey(p).toLowerCase().includes(lf))
+    : sorted;
+
+  // Lista wszystkich lokacji w systemie (do podpowiedzi)
+  const distinctLocations = React.useMemo(() => {
+    const set = new Set();
+    products.forEach(p => { if (p.status !== "reclassified") set.add(locationKey(p)); });
+    return [...set].sort((a, b) => ((a === "Bez strefy" ? 1 : 0) - (b === "Bez strefy" ? 1 : 0)) || a.localeCompare(b, "pl", { numeric: true }));
+  }, [products]);
+
+  const totalPages = Math.max(1, Math.ceil(locationList.length / PAGE_SIZE));
+  const visibleProducts = locationList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleDelete = async (product) => {
     if (!confirm(t("inv_delete_confirm"))) return;
@@ -275,38 +278,54 @@ export default function Inventory() {
           </Button>
         </div>
       ) : viewMode === "location" ? (
-        <div className="space-y-8">
-          {locationGroups.map(([loc, groupProducts]) => (
-            <div key={loc}>
-              <div className="flex items-center gap-2 mb-3">
-                <MapPin className="w-4 h-4 text-slate-400" />
-                <h2 className="text-sm font-semibold text-slate-700">{loc}</h2>
-                <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{groupProducts.length}</span>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {groupProducts.map(product => (
-                  <ProductGridItem
-                    key={product.id}
-                    product={product}
-                    t={t}
-                    isPracownik={isPracownik}
-                    palletsMap={palletsMap}
-                    refundLoadingId={refundLoadingId}
-                    selected={bulkSelected.has(product.id)}
-                    onToggleSelect={toggleBulkSelect}
-                    onEdit={(p) => { setEditProduct(p); setShowForm(true); }}
-                    onDelete={isPracownik ? undefined : handleDelete}
-                    onFlag={(p) => setFlagProduct(p)}
-                    onConvert={(p) => setConvertProduct(p)}
-                    onList={(p) => setListingProduct(p)}
-                    onSell={(p) => setSaleProduct(p)}
-                    onReturn={(p) => setReturnProduct(p)}
-                    onPartialRefund={openPartialRefund}
-                  />
-                ))}
-              </div>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 max-w-md">
+              <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                list="inventory-locations"
+                value={locationFilter}
+                onChange={(e) => { setLocationFilter(e.target.value); setPage(1); }}
+                placeholder="Wybierz lub wpisz lokację (strefa / regał / pudło)..."
+                className="w-full h-9 pl-9 pr-8 rounded-md border border-input bg-white text-sm placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              {locationFilter && (
+                <button onClick={() => { setLocationFilter(""); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-lg leading-none px-1">×</button>
+              )}
+              <datalist id="inventory-locations">
+                {distinctLocations.map(loc => <option key={loc} value={loc} />)}
+              </datalist>
             </div>
-          ))}
+            <span className="text-sm text-slate-500 shrink-0">{locationList.length} {locationList.length === 1 ? "produkt" : "produktów"}</span>
+          </div>
+          {lf && locationList.length === 0 ? (
+            <div className="text-center py-16 text-slate-400">Brak produktów w tej lokacji.</div>
+          ) : !lf ? (
+            <div className="text-center py-16 text-slate-400">Wybierz lokację z podpowiedzi lub wpisz jej fragment, aby zobaczyć produkty.</div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {visibleProducts.map(product => (
+                <ProductGridItem
+                  key={product.id}
+                  product={product}
+                  t={t}
+                  isPracownik={isPracownik}
+                  palletsMap={palletsMap}
+                  refundLoadingId={refundLoadingId}
+                  selected={bulkSelected.has(product.id)}
+                  onToggleSelect={toggleBulkSelect}
+                  onEdit={(p) => { setEditProduct(p); setShowForm(true); }}
+                  onDelete={isPracownik ? undefined : handleDelete}
+                  onFlag={(p) => setFlagProduct(p)}
+                  onConvert={(p) => setConvertProduct(p)}
+                  onList={(p) => setListingProduct(p)}
+                  onSell={(p) => setSaleProduct(p)}
+                  onReturn={(p) => setReturnProduct(p)}
+                  onPartialRefund={openPartialRefund}
+                />
+              ))}
+            </div>
+          )}
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
