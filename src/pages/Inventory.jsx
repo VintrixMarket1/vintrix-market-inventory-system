@@ -18,6 +18,7 @@ import ShopifyProductImporter from "../components/shopify/ShopifyProductImporter
 import BulkActionsBar from "../components/inventory/BulkActionsBar";
 import ShopifyBulkPublishModal from "../components/shopify/ShopifyBulkPublishModal";
 import PalletSummaryCard from "../components/inventory/PalletSummaryCard";
+import ProductGridItem from "../components/inventory/ProductGridItem";
 import ConvertUnknownModal from "../components/inventory/ConvertUnknownModal";
 import ModalErrorBoundary from "../components/inventory/ModalErrorBoundary";
 import ReturnModal from "../components/inventory/ReturnModal";
@@ -135,6 +136,19 @@ export default function Inventory() {
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const visibleProducts = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  // Widok lokacji: grupowanie bieżącej strony po strefie / regale / pudełku
+  const locationGroups = viewMode === "location" ? Object.entries(
+    visibleProducts.reduce((acc, p) => {
+      const key = [p.warehouse_zone || "Bez strefy", p.shelf || "", p.box_number || ""].filter(Boolean).join(" / ");
+      (acc[key] = acc[key] || []).push(p);
+      return acc;
+    }, {})
+  ).sort(([a], [b]) => {
+    if (a === "Bez strefy") return 1;
+    if (b === "Bez strefy") return -1;
+    return a.localeCompare(b, "pl", { numeric: true });
+  }) : [];
+
   const handleDelete = async (product) => {
     if (!confirm(t("inv_delete_confirm"))) return;
     await base44.entities.Product.delete(product.id);
@@ -207,6 +221,9 @@ export default function Inventory() {
             <button onClick={() => setViewMode("list")} className={`px-2 py-1.5 ${viewMode === "list" ? "bg-slate-900 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}>
               <List className="w-4 h-4" />
             </button>
+            <button title="Widok lokacji" onClick={() => setViewMode("location")} className={`px-2 py-1.5 ${viewMode === "location" ? "bg-slate-900 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}>
+              <MapPin className="w-4 h-4" />
+            </button>
           </div>
           <Button size="sm" onClick={() => navigate("/AddProduct")} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
             <Plus className="w-4 h-4" /> {t("inv_add_product")}
@@ -257,65 +274,61 @@ export default function Inventory() {
             {t("inv_add_first")}
           </Button>
         </div>
+      ) : viewMode === "location" ? (
+        <div className="space-y-8">
+          {locationGroups.map(([loc, groupProducts]) => (
+            <div key={loc}>
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin className="w-4 h-4 text-slate-400" />
+                <h2 className="text-sm font-semibold text-slate-700">{loc}</h2>
+                <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{groupProducts.length}</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {groupProducts.map(product => (
+                  <ProductGridItem
+                    key={product.id}
+                    product={product}
+                    t={t}
+                    isPracownik={isPracownik}
+                    palletsMap={palletsMap}
+                    refundLoadingId={refundLoadingId}
+                    selected={bulkSelected.has(product.id)}
+                    onToggleSelect={toggleBulkSelect}
+                    onEdit={(p) => { setEditProduct(p); setShowForm(true); }}
+                    onDelete={isPracownik ? undefined : handleDelete}
+                    onFlag={(p) => setFlagProduct(p)}
+                    onConvert={(p) => setConvertProduct(p)}
+                    onList={(p) => setListingProduct(p)}
+                    onSell={(p) => setSaleProduct(p)}
+                    onReturn={(p) => setReturnProduct(p)}
+                    onPartialRefund={openPartialRefund}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {visibleProducts.map(product => (
-            <div key={product.id}>
-              <ProductCard
-                product={product}
-                onEdit={(p) => { setEditProduct(p); setShowForm(true); }}
-                onDelete={isPracownik ? undefined : handleDelete}
-                onFlag={(p) => setFlagProduct(p)}
-                selected={bulkSelected.has(product.id)}
-                onToggleSelect={toggleBulkSelect}
-              />
-              {product.pallet_id && palletsMap[product.pallet_id] && (
-                <div className="mt-1 px-1">
-                  <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded font-medium">
-                    📦 {palletsMap[product.pallet_id].pallet_code}
-                  </span>
-                </div>
-              )}
-              <div className="flex gap-1 mt-1.5">
-                {product.product_name === "Nieznany produkt" && product.status !== "reclassified" && (
-                  <Button size="sm" className="flex-1 text-xs h-7 bg-amber-500 hover:bg-amber-600 text-white" onClick={() => setConvertProduct(product)}>
-                    🔄 {t("inv_convert")}
-                  </Button>
-                )}
-                {!isPracownik && product.product_name !== "Nieznany produkt" && (product.status || "in_stock") !== "sold" && product.status !== "reclassified" && (
-                  <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setListingProduct(product)}>{t("inv_list")}</Button>
-                )}
-                {!isPracownik && product.product_name !== "Nieznany produkt" && ((product.status || "in_stock") !== "sold" || (product.is_multi_item && product.stock_quantity > 0)) && product.status !== "reclassified" && (
-                  <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => setSaleProduct(product)}>{t("inv_sell")}</Button>
-                )}
-                {!isPracownik && product.status === "sold" && !product.is_multi_item && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-orange-600 border-orange-200 hover:bg-orange-50" disabled={refundLoadingId === product.id}>
-                        {refundLoadingId === product.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "↩ Zwrot"}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setReturnProduct(product)} className="text-orange-600 focus:text-orange-700">Pełny zwrot (na magazyn)</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openPartialRefund(product)} className="text-amber-600 focus:text-amber-700">Częściowy zwrot środków</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-                {!isPracownik && product.is_multi_item && product.product_name !== "Nieznany produkt" && product.status !== "reclassified" && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="flex-1 text-xs h-7 text-amber-600 border-amber-200 hover:bg-amber-50" disabled={refundLoadingId === product.id}>
-                        {refundLoadingId === product.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "↩ Zwrot"}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setReturnProduct(product)} className="text-orange-600 focus:text-orange-700">Pełny zwrot (na magazyn)</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openPartialRefund(product)} className="text-amber-600 focus:text-amber-700">Częściowy zwrot środków</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            </div>
+            <ProductGridItem
+              key={product.id}
+              product={product}
+              t={t}
+              isPracownik={isPracownik}
+              palletsMap={palletsMap}
+              refundLoadingId={refundLoadingId}
+              selected={bulkSelected.has(product.id)}
+              onToggleSelect={toggleBulkSelect}
+              onEdit={(p) => { setEditProduct(p); setShowForm(true); }}
+              onDelete={isPracownik ? undefined : handleDelete}
+              onFlag={(p) => setFlagProduct(p)}
+              onConvert={(p) => setConvertProduct(p)}
+              onList={(p) => setListingProduct(p)}
+              onSell={(p) => setSaleProduct(p)}
+              onReturn={(p) => setReturnProduct(p)}
+              onPartialRefund={openPartialRefund}
+            />
           ))}
         </div>
       ) : (
