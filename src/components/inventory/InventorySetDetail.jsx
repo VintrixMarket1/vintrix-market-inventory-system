@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,36 @@ export default function InventorySetDetail({ set, onBack }) {
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [zoomImage, setZoomImage] = useState(null);
+
+  // Przy otwarciu zestawu: odśwież stan w systemie z bieżących danych produktów
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    const syncSystemQuantities = async () => {
+      const ids = (set.items || []).map((i) => i.product_id).filter(Boolean);
+      if (ids.length === 0) return;
+      const page = await base44.entities.Product.filter(
+        { id: { $in: ids } },
+        { limit: 500, fields: ["stock_quantity", "is_multi_item", "images"] }
+      );
+      if (cancelled) return;
+      const map = {};
+      page.items.forEach((p) => { map[p.id] = p; });
+      setItems((prev) => prev.map((it) => {
+        const p = map[it.product_id];
+        if (!p) return it;
+        const sys = p.is_multi_item ? (p.stock_quantity || 0) : 1;
+        return {
+          ...it,
+          system_quantity: sys,
+          is_multi_item: !!p.is_multi_item,
+          image: it.image || (p.images && p.images[0]) || null,
+        };
+      }));
+    };
+    syncSystemQuantities();
+    return () => { cancelled = true; };
+  }, [set.id, isOpen]);
 
   // Miniaturki dla starszych pozycji bez zapisanego zdjęcia — jedno zapytanie o obrazy
   const { data: itemImages = {} } = useQuery({
