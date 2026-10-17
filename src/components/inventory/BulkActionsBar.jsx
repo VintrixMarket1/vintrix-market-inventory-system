@@ -3,13 +3,16 @@ import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
-import { X, CheckSquare, Tag, TrendingUp, Trash2, Loader2, ShoppingBag, Package, ClipboardList } from "lucide-react";
+import { X, CheckSquare, Tag, TrendingUp, Trash2, Loader2, ShoppingBag, Package, ClipboardList, MapPin } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useLang } from "@/lib/i18n";
 
 export default function BulkActionsBar({ selectedIds, allProducts, pallets = [], onClear, onListSelected, onShopifyPublish, onAddToSet }) {
   const [loading, setLoading] = useState(false);
   const [selectedPallet, setSelectedPallet] = useState("");
+  const [locZone, setLocZone] = useState("");
+  const [locShelf, setLocShelf] = useState("");
+  const [locBox, setLocBox] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useLang();
@@ -38,6 +41,22 @@ export default function BulkActionsBar({ selectedIds, allProducts, pallets = [],
     const pallet = pallets.find(p => p.id === selectedPallet);
     toast({ title: t("bulk_updated"), description: t("bulk_assigned_pallet")(ids.length, pallet?.pallet_code || "") });
     setSelectedPallet("");
+    setLoading(false);
+    onClear();
+  };
+
+  const bulkSetLocation = async () => {
+    if (!locZone && !locShelf && !locBox) return;
+    setLoading(true);
+    const ids = [...selectedIds];
+    const patch = {};
+    if (locZone) patch.warehouse_zone = locZone;
+    if (locShelf) patch.shelf = locShelf;
+    if (locBox) patch.box_number = locBox;
+    await base44.entities.Product.bulkUpdate(ids.map(id => ({ id, ...patch })));
+    queryClient.invalidateQueries({ queryKey: ["products"] });
+    toast({ title: t("bulk_updated"), description: `Zmieniono lokację ${ids.length} produktów.` });
+    setLocZone(""); setLocShelf(""); setLocBox("");
     setLoading(false);
     onClear();
   };
@@ -99,6 +118,18 @@ export default function BulkActionsBar({ selectedIds, allProducts, pallets = [],
           </Button>
         </div>
       )}
+
+      <div className="w-px h-5 bg-slate-600" />
+
+      <div className="flex items-center gap-1.5">
+        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+        <input value={locZone} onChange={e => setLocZone(e.target.value)} placeholder="Strefa" className="h-7 w-24 rounded-md border border-slate-600 bg-slate-800 px-2 text-xs text-slate-200 placeholder:text-slate-500" disabled={loading} />
+        <input value={locShelf} onChange={e => setLocShelf(e.target.value)} placeholder="Regał" className="h-7 w-24 rounded-md border border-slate-600 bg-slate-800 px-2 text-xs text-slate-200 placeholder:text-slate-500" disabled={loading} />
+        <input value={locBox} onChange={e => setLocBox(e.target.value)} placeholder="Pudło" className="h-7 w-24 rounded-md border border-slate-600 bg-slate-800 px-2 text-xs text-slate-200 placeholder:text-slate-500" disabled={loading} />
+        <Button size="sm" className="h-7 text-xs bg-sky-600 hover:bg-sky-700 text-white" onClick={bulkSetLocation} disabled={loading || (!locZone && !locShelf && !locBox)}>
+          {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : "OK"}
+        </Button>
+      </div>
 
       <div className="w-px h-5 bg-slate-600" />
 
