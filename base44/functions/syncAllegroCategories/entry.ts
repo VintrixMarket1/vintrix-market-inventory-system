@@ -18,13 +18,13 @@ async function fetchChildren(parentId, accessToken) {
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-async function withRetry(fn, tries = 5) {
+async function withRetry(fn, tries = 8) {
   for (let i = 0; ; i++) {
     try {
       return await fn();
     } catch (e) {
       if (i >= tries - 1 || !/rate limit/i.test(e?.message || "")) throw e;
-      await sleep(2000 * (i + 1));
+      await sleep(3000 * (i + 1));
     }
   }
 }
@@ -44,12 +44,12 @@ Deno.serve(async (req) => {
 
     // RESET: czyszczenie kolejki i dotychczasowego cache kategorii, wstawienie działów (root)
     if (body.action === "reset") {
-      await base44.entities.AllegroSyncState.deleteMany({ status: "pending" });
-      await base44.entities.AllegroSyncState.deleteMany({ status: "done" });
-      const roots = await fetchChildren(null, accessToken);
+      await withRetry(() => base44.entities.AllegroSyncState.deleteMany({ status: "pending" }));
+      await withRetry(() => base44.entities.AllegroSyncState.deleteMany({ status: "done" }));
+      const roots = await withRetry(() => fetchChildren(null, accessToken), 3);
       // Usuń stary cache kategorii (po działach — dokładne dopasowania)
       for (const c of roots) {
-        await base44.asServiceRole.entities.AllegroCategory.deleteMany({ dzial: c.name });
+        await withRetry(() => base44.asServiceRole.entities.AllegroCategory.deleteMany({ dzial: c.name }));
       }
       await withRetry(() => base44.entities.AllegroSyncState.bulkCreate(
         roots.map(c => ({ node_id: c.id, full_path: c.name, status: "pending" }))
@@ -71,9 +71,19 @@ Deno.serve(async (req) => {
       if (all.length === 0) { done = true; break; }
       const items = all.slice(0, BATCH);
 
-      const childrenLists = await Promise.all(
-        items.map(n => fetchChildren(n.node_id, accessToken).catch(() => []))
-      );
+      let childrenLists;
+      try {
+        childrenLists = await Promise.all(
+          items.map(n => withRetry(() => fetchChildren(n.node_id, accessToken), 3))
+        );
+      } catch (e) {
+        // Nie oznaczaj węzłów jako przetworzonych — kolejne wywołanie wznowi od tego miejsca
+        if (/rate limit/i.test(e?.message || "")) {
+          await sleep(5000);
+          continue;
+        }
+        throw e;
+      }
 
       const newPending = [];
       const leafRows = [];
@@ -100,12 +110,10 @@ Deno.serve(async (req) => {
         }
       }
       // Oznacz przetworzone węzły jako "done" (dokładne dopasowanie po node_id)
-      for (const n of items) {
-        await withRetry(() => base44.entities.AllegroSyncState.updateMany(
-          { node_id: n.node_id },
-          { $set: { status: "done" } }
-        ));
-      }
+      // Jedno zbiorcze oznaczenie węzłów jako przetworzonych (mniej wywołań = mniej limitów)
+      await withRetry(() => base44.entities.AllegroSyncState.bulkUpdate(
+        items.map(n => ({ id: n.id, status: "done" }))
+      ));
       processed += items.length;
     }
 
