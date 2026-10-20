@@ -16,6 +16,23 @@ async function fetchChildren(parentId, accessToken) {
   return data.categories || [];
 }
 
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+async function withRetry(fn, tries = 5) {
+  for (let i = 0; ; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      if (i >= tries - 1 || !/rate limit/i.test(e?.message || "")) throw e;
+      await sleep(2000 * (i + 1));
+    }
+  }
+}
+
+// UWAGA (środowisko funkcji): zapytania z opcjami ({ limit, sort... }) zwracają puste
+// wyniki — wywołuj filter/deleteMany/updateMany BEZ obiektu opcji. Flaga kolejki to
+// pole tekstowe `status` ("pending" | "done"); batchowanie robimy po stronie JS.
+// SDK w funkcjach nie ma upsert/count — liście zapisujemy bulkCreate (dedupe w pamięci).
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -25,13 +42,18 @@ Deno.serve(async (req) => {
     const accessToken = await getAllegroToken(base44);
     const body = await req.json().catch(() => ({}));
 
-    // RESET: czyszczony jest stan synchronizacji, a działy (root) wstawiane jako oczekujące
+    // RESET: czyszczenie kolejki i dotychczasowego cache kategorii, wstawienie działów (root)
     if (body.action === "reset") {
-      await base44.entities.AllegroSyncState.deleteMany({ pending: true });
+      await base44.entities.AllegroSyncState.deleteMany({ status: "pending" });
+      await base44.entities.AllegroSyncState.deleteMany({ status: "done" });
       const roots = await fetchChildren(null, accessToken);
-      await base44.entities.AllegroSyncState.bulkCreate(
-        roots.map(c => ({ node_id: c.id, full_path: c.name, pending: true }))
-      );
+      // Usuń stary cache kategorii (po działach — dokładne dopasowania)
+      for (const c of roots) {
+        await base44.asServiceRole.entities.AllegroCategory.deleteMany({ dzial: c.name });
+      }
+      await withRetry(() => base44.entities.AllegroSyncState.bulkCreate(
+        roots.map(c => ({ node_id: c.id, full_path: c.name, status: "pending" }))
+      ));
       return Response.json({ reset: true, dzials: roots.length });
     }
 
@@ -41,11 +63,13 @@ Deno.serve(async (req) => {
     let processed = 0;
     let leavesSaved = 0;
     let done = false;
+    const seenLeafIds = new Set();
 
     while (Date.now() < deadline) {
-      const page = await base44.entities.AllegroSyncState.filter({ pending: true }, { limit: BATCH });
-      const items = (page.items || page) || [];
-      if (items.length === 0) { done = true; break; }
+      const page = await withRetry(() => base44.entities.AllegroSyncState.filter({ status: "pending" }));
+      const all = (page.items || page) || [];
+      if (all.length === 0) { done = true; break; }
+      const items = all.slice(0, BATCH);
 
       const childrenLists = await Promise.all(
         items.map(n => fetchChildren(n.node_id, accessToken).catch(() => []))
@@ -57,30 +81,35 @@ Deno.serve(async (req) => {
         for (const c of childrenLists[i]) {
           const path = `${items[i].full_path} > ${c.name}`;
           if (c.leaf) {
-            leafRows.push({ dzial: items[i].full_path.split(" > ")[0], full_path: path, category_id: c.id });
+            if (!seenLeafIds.has(c.id)) {
+              seenLeafIds.add(c.id);
+              leafRows.push({ dzial: items[i].full_path.split(" > ")[0], full_path: path, category_id: c.id });
+            }
           } else {
-            newPending.push({ node_id: c.id, full_path: path, pending: true });
+            newPending.push({ node_id: c.id, full_path: path, status: "pending" });
           }
         }
       }
       if (newPending.length > 0) {
-        await base44.entities.AllegroSyncState.bulkCreate(newPending);
+        await withRetry(() => base44.entities.AllegroSyncState.bulkCreate(newPending));
       }
       if (leafRows.length > 0) {
         for (let i = 0; i < leafRows.length; i += 500) {
-          await base44.asServiceRole.entities.AllegroCategory.upsert(
-            leafRows.slice(i, i + 500), { key: "category_id" }
-          );
+          await withRetry(() => base44.asServiceRole.entities.AllegroCategory.bulkCreate(leafRows.slice(i, i + 500)));
           leavesSaved += leafRows.slice(i, i + 500).length;
         }
       }
-      await base44.entities.AllegroSyncState.deleteMany({
-        node_id: { $in: items.map(n => n.node_id) },
-      });
+      // Oznacz przetworzone węzły jako "done" (dokładne dopasowanie po node_id)
+      for (const n of items) {
+        await withRetry(() => base44.entities.AllegroSyncState.updateMany(
+          { node_id: n.node_id },
+          { $set: { status: "done" } }
+        ));
+      }
       processed += items.length;
     }
 
-    const check = await base44.entities.AllegroSyncState.filter({ pending: true }, { limit: 1 });
+    const check = await base44.entities.AllegroSyncState.filter({ status: "pending" });
     const remaining = ((check.items || check) || []).length;
     return Response.json({
       done: remaining === 0,

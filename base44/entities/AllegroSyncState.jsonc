@@ -10,10 +10,14 @@
       "type": "string",
       "description": "Pe\u0142na \u015bcie\u017cka kategorii od dzia\u0142u"
     },
-    "pending": {
-      "type": "boolean",
-      "default": true,
-      "description": "Czy w\u0119ze\u0142 czeka na przetworzenie (frontier synchronizacji)"
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "done"
+      ],
+      "default": "pending",
+      "description": "Stan w\u0119z\u0142a w kolejce synchronizacji (tekst \u2014 booleany nie dzia\u0142aj\u0105 w filtrach funkcji)"
     }
   },
   "required": [
