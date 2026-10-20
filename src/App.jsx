@@ -31,6 +31,7 @@ import AllegroSettings from './pages/AllegroSettings';
 import AllegroCallback from './pages/AllegroCallback';
 import AllegroPublish from './pages/AllegroPublish';
 import AllegroTemplates from './pages/AllegroTemplates';
+import AllegroCsvImport from './pages/AllegroCsvImport';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import WarehouseDocuments from './pages/WarehouseDocuments';
 import InventorySets from './pages/InventorySets';
@@ -117,6 +118,7 @@ const ProtectedApp = () => {
         <Route path="/AllegroSettings" element={<AllegroSettings />} />
         <Route path="/AllegroPublish" element={<AllegroPublish />} />
         <Route path="/AllegroTemplates" element={<AllegroTemplates />} />
+        <Route path="/AllegroCsvImport" element={<AllegroCsvImport />} />
         <Route path="/Settings" element={<Settings />} />
         <Route path="/WarehouseDocuments" element={<WarehouseDocuments />} />
         <Route path="/MonthlyReport" element={<MonthlyReport />} />

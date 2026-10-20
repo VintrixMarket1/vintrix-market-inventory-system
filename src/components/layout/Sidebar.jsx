@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Package, Tag, DollarSign,
-  Menu, X, ChevronRight, Layers, BookOpen, Settings, FileText, MessageCircle, BarChart3, Flag, Percent, ClipboardList
+  Menu, X, ChevronRight, Layers, BookOpen, Settings, FileText, MessageCircle, BarChart3, Flag, Percent, ClipboardList, Upload
   } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthContext";
@@ -39,6 +39,7 @@ export default function Sidebar() {
     { path: "/Pallets", labelKey: "nav_pallets", icon: Layers },
     { path: "/Listings", labelKey: "nav_listings", icon: Tag },
     { path: "/Sales", labelKey: "nav_sales", icon: DollarSign },
+    { path: "/AllegroCsvImport", label: "Allegro CSV", icon: Upload },
     { path: "/Discounts", labelKey: "nav_discounts", icon: Percent },
     { path: "/WarehouseDocuments", label: "Dokumenty Mag.", icon: FileText },
     { path: "/MonthlyReport", label: "Raport Miesięczny", icon: BarChart3 },
@@ -46,7 +47,7 @@ export default function Sidebar() {
     { path: "/Settings", labelKey: "nav_settings", icon: Settings },
   ];
 
-  const pracownikHidden = ["/Listings", "/Sales", "/Discounts", "/WarehouseDocuments", "/MonthlyReport", "/Inquiries", "/InventorySets"];
+  const pracownikHidden = ["/Listings", "/Sales", "/Discounts", "/WarehouseDocuments", "/MonthlyReport", "/Inquiries", "/InventorySets", "/AllegroCsvImport"];
   const navItems = isPracownik
     ? allNavItems.filter(item => !pracownikHidden.includes(item.path))
     : allNavItems;
