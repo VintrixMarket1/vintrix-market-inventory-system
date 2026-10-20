@@ -1,0 +1,45 @@
+{
+  "name": "AllegroSyncState",
+  "type": "object",
+  "properties": {
+    "node_id": {
+      "type": "string",
+      "description": "ID kategorii Allegro (w\u0119ze\u0142 do przetworzenia)"
+    },
+    "full_path": {
+      "type": "string",
+      "description": "Pe\u0142na \u015bcie\u017cka kategorii od dzia\u0142u"
+    },
+    "pending": {
+      "type": "boolean",
+      "default": true,
+      "description": "Czy w\u0119ze\u0142 czeka na przetworzenie (frontier synchronizacji)"
+    }
+  },
+  "required": [
+    "node_id",
+    "full_path"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
