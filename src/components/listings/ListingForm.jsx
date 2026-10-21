@@ -105,18 +105,16 @@ Jesteś ekspertem Allegro z 10-letnim doświadczeniem. Tworzysz opisy, które:
 - Cena: ${form.listing_price || "atrakcyjna"} PLN
 
 === ZASADY ===
-1. Używaj WYŁĄCZNIE tagów: h1, h2, p, ul, ol, li, b
-2. ZERO atrybutów (brak class, style, id)
-3. ZERO CSS, divów, table, img, br
-4. Używaj tagów P zamiast BR - każdy akapit to oddzielny <p>
-5. CZYSTY HTML - bez komentarzy
+1. CZYSTY TEKST - ZERO tagów HTML, ZERO markdown (bez <, >, *, #)
+2. Sekcje i akapity oddzielaj pustą linią
+3. Listy zapisuj jako osobne linie zaczynające się od "- "
 
 === STRUKTURA ===
-1. **H1** - Tytuł (max 75 znaków, marka + stan + korzyść)
-2. **H2 "✨ DLACZEGO WARTO?"** - UL z 3-4 korzyściami
-3. **H2 "📋 OPIS"** - 2-3 akapity P z perswazyjnym tekstem
-4. **H2 "⭐ CECHY"** - UL z 5-6 zaletami (stan, rozmiar, kolor, marka)
-5. **H2 "📦 DOSTAWA"** - P o wysyłce 1-2 dni + zwroty
+1. Tytuł w pierwszej linii (max 75 znaków, marka + stan + korzyść)
+2. Nagłówek "✨ DLACZEGO WARTO?" - lista 3-4 korzyści
+3. Nagłówek "📋 OPIS" - 2-3 akapity perswazyjnego tekstu
+4. Nagłówek "⭐ CECHY" - lista 5-6 zalet (stan, rozmiar, kolor, marka)
+5. Nagłówek "📦 DOSTAWA" - akapit o wysyłce 1-2 dni + zwroty
 
 === TECHNIKI ===
 - Język korzyści: nie "ma rozmiar M", tylko "idealnie dopasuje się"
@@ -129,10 +127,10 @@ ekskluzywny, premium, profesjonalny, sprawdzony, gwarantowany, wyjątkowy, orygi
 
 === FORMATOWANIE ===
 - Emoji w nagłówkach: ✨, 📋, ⭐, 📦, ❓
-- Pogrubienia wewnątrz tekstu: użyj <b>tekst</b>
-- Każdy akapit odrębnym tagiem <p>
+- Bez pogrubień i jakichkolwiek znaczników
+- Każdy akapit w osobnym bloku oddzielonym pustą linią
 
-Wygeneruj WYŁĄCZNIE gotowy HTML. Bez wstępów. Zacznij od h1. HTML musi być ściśle walidny.`;
+Wygeneruj WYŁĄCZNIE gotowy opis jako zwykły tekst, bez HTML. Bez wstępów. Zacznij od tytułu.`;
     } else if (isClothing) {
       prompt = `You are an expert e-commerce copywriter for Vinted/OLX clothing listings. Create a listing description following this EXACT format and structure.
 
