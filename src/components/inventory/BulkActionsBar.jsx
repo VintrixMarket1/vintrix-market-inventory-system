@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { X, CheckSquare, Tag, TrendingUp, Trash2, Loader2, ShoppingBag, Package, ClipboardList, MapPin } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useLang } from "@/lib/i18n";
+import BulkAccountExport from "./BulkAccountExport";
 
 export default function BulkActionsBar({ selectedIds, allProducts, pallets = [], onClear, onListSelected, onShopifyPublish, onAddToSet }) {
   const [loading, setLoading] = useState(false);
@@ -130,6 +131,10 @@ export default function BulkActionsBar({ selectedIds, allProducts, pallets = [],
           {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : "OK"}
         </Button>
       </div>
+
+      <div className="w-px h-5 bg-slate-600" />
+
+      <BulkAccountExport selectedIds={selectedIds} onDone={onClear} />
 
       <div className="w-px h-5 bg-slate-600" />
 
