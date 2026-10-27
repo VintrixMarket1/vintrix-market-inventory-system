@@ -7,6 +7,7 @@ import { Download, Loader2, X } from "lucide-react";
 import AddCategoryToList from "@/components/export/AddCategoryToList";
 import AddProductToList from "@/components/export/AddProductToList";
 import { downloadAllegroCsv, AVAILABLE_STATUSES } from "@/lib/allegroCsv";
+import { downloadOlxCsv } from "@/lib/olxCsv";
 
 const STATUS_LABEL = { in_stock: "Na stanie", listed: "Wystawiony" };
 
@@ -36,10 +37,16 @@ export default function ExportListDetail({ list, onUpdate }) {
     <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-slate-900">{list.name}</h2>
-        <Button disabled={products.length === 0} onClick={() => downloadAllegroCsv(products, `allegro-${list.name}.csv`)}
-          className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
-          <Download className="w-4 h-4" /> Generuj CSV ({products.length})
-        </Button>
+        <div className="flex gap-2">
+          <Button disabled={products.length === 0} onClick={() => downloadAllegroCsv(products, `allegro-${list.name}.csv`)}
+            className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
+            <Download className="w-4 h-4" /> Allegro CSV ({products.length})
+          </Button>
+          <Button disabled={products.length === 0} onClick={() => downloadOlxCsv(products, `olx-${list.name}.csv`)}
+            className="gap-1.5 bg-sky-600 hover:bg-sky-700">
+            <Download className="w-4 h-4" /> OLX CSV ({products.length})
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="products">
