@@ -29,6 +29,7 @@ import ShopifySettings from './pages/ShopifySettings';
 import ShopifyCallback from './pages/ShopifyCallback';
 import AllegroSettings from './pages/AllegroSettings';
 import AllegroCallback from './pages/AllegroCallback';
+import OlxCallback from './pages/OlxCallback';
 import AllegroPublish from './pages/AllegroPublish';
 import AllegroTemplates from './pages/AllegroTemplates';
 import AllegroCsvImport from './pages/AllegroCsvImport';
@@ -160,6 +161,7 @@ function AppRoutes() {
       {/* OAuth callback routes (public) */}
       <Route path="/ShopifyCallback" element={<ShopifyCallback />} />
       <Route path="/AllegroCallback" element={<AllegroCallback />} />
+      <Route path="/OlxCallback" element={<OlxCallback />} />
       {/* Public catalog — browse without login */}
       <Route path="/" element={<PublicCatalog />} />
       {/* Public product share page */}

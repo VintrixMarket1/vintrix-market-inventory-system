@@ -1,0 +1,51 @@
+{
+  "name": "OlxConnection",
+  "type": "object",
+  "properties": {
+    "access_token": {
+      "type": "string",
+      "description": "Token dost\u0119powy OLX"
+    },
+    "refresh_token": {
+      "type": "string",
+      "description": "Token od\u015bwie\u017cania OLX"
+    },
+    "token_expires_at": {
+      "type": "string",
+      "description": "Wyga\u015bni\u0119cie tokenu (ISO)"
+    },
+    "installed_by": {
+      "type": "string",
+      "description": "Email autoryzuj\u0105cego"
+    },
+    "connected_at": {
+      "type": "string",
+      "description": "Data po\u0142\u0105czenia (ISO)"
+    }
+  },
+  "required": [
+    "access_token"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
