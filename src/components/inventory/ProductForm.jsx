@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import ListingAccountInput from "@/components/listings/ListingAccountInput";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -372,6 +373,8 @@ No HTML tags or formatting whatsoever.`;
               <Input value={form.box_number} onChange={e => handleChange("box_number", e.target.value)} placeholder="12" />
             </div>
           </div>
+
+          <ListingAccountInput value={form.listing_account} onChange={v => handleChange("listing_account", v)} />
 
           <div className="space-y-1.5">
             <Label>{t("pf_barcode")}</Label>

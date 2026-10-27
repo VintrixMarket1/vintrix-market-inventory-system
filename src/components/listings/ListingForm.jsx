@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/AuthContext";
 import ShopifyActions from "./ShopifyActions";
 import AllegroActions from "./AllegroActions";
 import AllegroDescriptionEditor from "./AllegroDescriptionEditor";
+import ListingAccountInput from "./ListingAccountInput";
 
 const platforms = [
   { value: "shopify", label: "Shopify" },
@@ -31,6 +32,7 @@ export default function ListingForm({ open, onClose, product, listing, onSaved }
     listing_price: product?.suggested_sale_price || "",
     listing_status: "draft",
   });
+  const [account, setAccount] = useState(product?.listing_account || "");
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [selectedImages, setSelectedImages] = useState(listing?.selected_images || []);
@@ -229,6 +231,9 @@ Wygeneruj czysty tekst bez HTML. Tylko zwykły tekst z podziałami na akapity. B
   const handleSubmit = async () => {
     setSaving(true);
     const data = { ...form, listing_price: parseFloat(form.listing_price) || 0, selected_images: selectedImages };
+    if (product && account !== (product.listing_account || "")) {
+      await base44.entities.Product.update(product.id, { listing_account: account });
+    }
     if (isEdit || savedListing) {
       const id = savedListing?.id || listing?.id;
       await base44.entities.Listing.update(id, data);
@@ -272,6 +277,7 @@ Wygeneruj czysty tekst bez HTML. Tylko zwykły tekst z podziałami na akapity. B
               <Input type="number" value={form.listing_price} onChange={e => handleChange("listing_price", e.target.value)} />
             </div>
           </div>
+          {product && <ListingAccountInput value={account} onChange={setAccount} />}
           <div className="space-y-1.5">
             {!isAllegro && (
               <>

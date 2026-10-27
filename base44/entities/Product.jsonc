@@ -156,6 +156,10 @@
       "type": "string",
       "description": "Opis ogloszenia wygenerowany przez AI"
     },
+    "listing_account": {
+      "type": "string",
+      "description": "Konto, na ktorym produkt zostal wystawiony"
+    },
     "images": {
       "type": "array",
       "items": {
