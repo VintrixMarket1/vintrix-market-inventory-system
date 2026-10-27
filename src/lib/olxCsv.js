@@ -8,7 +8,7 @@ export function downloadOlxCsv(products, fileName) {
     (p.listing_title || p.product_name || "").slice(0, 70),
     p.listing_description || p.notes || "",
     p.internal_code,
-    "", "",
+    "Zgierz", "łódzkie",
     (p.images || []).join(","),
     p.suggested_sale_price,
     "PLN",
