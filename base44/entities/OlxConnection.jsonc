@@ -21,6 +21,21 @@
     "connected_at": {
       "type": "string",
       "description": "Data po\u0142\u0105czenia (ISO)"
+    },
+    "package_size": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B",
+        "C"
+      ],
+      "default": "A",
+      "description": "Gabaryt paczki Przesy\u0142ki OLX"
+    },
+    "package_weight_kg": {
+      "type": "number",
+      "default": 2,
+      "description": "Waga paczki (kg)"
     }
   },
   "required": [

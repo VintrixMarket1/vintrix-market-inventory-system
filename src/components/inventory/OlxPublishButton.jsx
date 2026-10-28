@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Loader2, Send } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import OlxShippingSettings from "@/components/inventory/OlxShippingSettings";
 
 export default function OlxPublishButton({ selectedIds, onDone }) {
   const [loading, setLoading] = useState(false);
@@ -40,9 +41,12 @@ export default function OlxPublishButton({ selectedIds, onDone }) {
   };
 
   return (
+    <>
+    <OlxShippingSettings />
     <Button size="sm" className="h-7 text-xs bg-teal-600 hover:bg-teal-700 text-white gap-1" onClick={publish} disabled={loading}>
       {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
       OLX
     </Button>
+    </>
   );
 }

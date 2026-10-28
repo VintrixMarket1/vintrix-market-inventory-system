@@ -26,6 +26,9 @@ export default async function(req) {
     if (!l?.city?.id) return Response.json({ error: "Nie udało się ustalić lokalizacji Zgierz w OLX", details: loc.body }, { status: 502 });
     const location = { city_id: l.city.id, ...(l.district?.id ? { district_id: l.district.id } : {}) };
 
+    const [conn] = await base44.asServiceRole.entities.OlxConnection.list("-connected_at", 1);
+    const size = conn?.package_size || "A";
+    const weight = conn?.package_weight_kg || 2;
     const products = await base44.entities.Product.filter({ id: { $in: product_ids } });
     const results = [];
     for (const p of products) {
@@ -49,10 +52,11 @@ export default async function(req) {
 
       const payload = {
         title,
-        description: buildDescription(p),
+        description: `${buildDescription(p)}\n\nWysyłka: Przesyłka OLX (gabaryt ${size}, do ${weight} kg).`.slice(0, 9000),
         category_id: categoryId,
         advertiser_type: "business",
-        contact: { name: "Vintrix" },
+        contact: { name: "Patryk", phone: "788901237" },
+        courier: true,
         location,
         images: (p.images || []).slice(0, 8).map((url) => ({ url })),
         price: { value: p.suggested_sale_price || 1, currency: "PLN", negotiable: false, trade: false },
