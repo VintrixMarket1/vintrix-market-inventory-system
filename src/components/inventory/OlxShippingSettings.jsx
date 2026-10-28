@@ -40,7 +40,7 @@ export default function OlxShippingSettings() {
   return (
     <Popover onOpenChange={load}>
       <PopoverTrigger asChild>
-        <Button size="sm" variant="outline" className="h-7 text-xs gap-1"><Truck className="w-3.5 h-3.5" />Przesyłka OLX</Button>
+        <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white bg-transparent"><Truck className="w-3.5 h-3.5" />Przesyłka OLX</Button>
       </PopoverTrigger>
       <PopoverContent className="w-72 space-y-3">
         <p className="text-sm font-medium">Przesyłka OLX (zawsze włączona)</p>
