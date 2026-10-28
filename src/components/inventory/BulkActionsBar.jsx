@@ -7,6 +7,7 @@ import { X, CheckSquare, Tag, TrendingUp, Trash2, Loader2, ShoppingBag, Package,
 import { useToast } from "@/components/ui/use-toast";
 import { useLang } from "@/lib/i18n";
 import BulkAccountExport from "./BulkAccountExport";
+import OlxPublishButton from "./OlxPublishButton";
 
 export default function BulkActionsBar({ selectedIds, allProducts, pallets = [], onClear, onListSelected, onShopifyPublish, onAddToSet }) {
   const [loading, setLoading] = useState(false);
@@ -147,6 +148,8 @@ export default function BulkActionsBar({ selectedIds, allProducts, pallets = [],
         <ShoppingBag className="w-3.5 h-3.5" />
         Shopify
       </Button>
+
+      <OlxPublishButton selectedIds={selectedIds} onDone={onClear} />
 
       <Button size="sm" className="h-7 text-xs bg-sky-600 hover:bg-sky-700 text-white gap-1" onClick={() => onAddToSet?.([...selectedIds])} disabled={loading}>
         <ClipboardList className="w-3.5 h-3.5" />
