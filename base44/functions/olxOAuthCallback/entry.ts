@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
         client_id: Deno.env.get("OLX_CLIENT_ID"),
         client_secret: Deno.env.get("OLX_CLIENT_SECRET"),
         code,
-        redirect_uri,
+        redirect_uri: redirect_uri || "https://vintrix-stock-flow.base44.app/OlxCallback",
         scope: "v2 read write",
       }),
     });
