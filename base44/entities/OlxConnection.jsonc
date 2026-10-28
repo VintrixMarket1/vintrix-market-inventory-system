@@ -25,17 +25,20 @@
     "package_size": {
       "type": "string",
       "enum": [
-        "A",
-        "B",
-        "C"
+        "S",
+        "M",
+        "L",
+        "XL"
       ],
-      "default": "A",
+      "default": "M",
       "description": "Gabaryt paczki Przesy\u0142ki OLX"
     },
-    "package_weight_kg": {
-      "type": "number",
-      "default": 2,
-      "description": "Waga paczki (kg)"
+    "carriers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Wybrani przewo\u017anicy OLX (np. INPOST, RUCH, POCZTA)"
     }
   },
   "required": [

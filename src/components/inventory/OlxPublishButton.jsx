@@ -23,10 +23,15 @@ export default function OlxPublishButton({ selectedIds, onDone }) {
       const results = res.data.results || [];
       const ok = results.filter(r => r.ok).length;
       const failed = results.filter(r => !r.ok);
+      const noDelivery = results.filter(r => r.ok && !r.delivery_ok);
+      const lines = [
+        ...failed.slice(0, 4).map(f => `✗ ${f.name}: ${f.error}`),
+        ...noDelivery.slice(0, 3).map(f => `⚠ ${f.name}: OLX nie potwierdził Przesyłki OLX`),
+      ];
       toast({
         title: `OLX: wystawiono ${ok} z ${results.length}`,
-        description: failed.slice(0, 3).map(f => `${f.name}: ${f.error}`).join("\n") || undefined,
-        variant: failed.length ? "destructive" : undefined,
+        description: lines.join("\n") || undefined,
+        variant: failed.length || noDelivery.length ? "destructive" : undefined,
       });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       if (ok) onDone?.();
