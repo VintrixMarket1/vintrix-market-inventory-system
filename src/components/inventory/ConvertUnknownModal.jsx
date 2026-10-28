@@ -111,7 +111,7 @@ export default function ConvertUnknownModal({ product, pallet, palletProductCoun
         // Server-side search: all non-sold products, excluding reclassified and unknown
         const searchQuery = {
           product_name: { $ne: "Nieznany produkt" },
-          status: { $nin: ["sold", "reclassified"] },
+          status: { $ne: "reclassified" },
         };
         if (query.length >= 2) {
           searchQuery.$or = [
@@ -523,7 +523,7 @@ WAŻNE: Musisz wypełnić WSZYSTKIE pola. Jeśli nie możesz ustalić wartości,
                              </div>
                            )}
                            <div className="min-w-0">
-                             <p className="text-sm font-medium text-slate-800 truncate">{p.product_name}</p>
+                             <p className="text-sm font-medium text-slate-800 truncate">{p.product_name}{p.status === "sold" && <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">Sprzedany</span>}</p>
                              <p className="text-xs text-slate-500">{p.brand || "—"} · {p.internal_code || "brak SKU"}</p>
                              <p className="text-xs text-emerald-700 font-mono">{p.suggested_sale_price ? `${p.suggested_sale_price} PLN` : ""}</p>
                            </div>
