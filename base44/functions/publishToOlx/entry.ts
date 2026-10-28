@@ -38,6 +38,14 @@ export default async function(req) {
       const attributes = [];
       const state = (attrsRes.body?.data || []).find((a) => a.code === "state");
       if (state) attributes.push({ code: "state", value: p.condition === "new" ? "new" : "used" });
+      const text = `${title} ${p.listing_description || ""} ${p.brand || ""}`.toLowerCase();
+      for (const a of attrsRes.body?.data || []) {
+        if (a.code === "state" || !a.validation?.required || !a.values?.length) continue;
+        const match = a.values.find((v) => v.label && text.includes(v.label.toLowerCase()))
+          || a.values.find((v) => /inne|other/i.test(`${v.code} ${v.label}`))
+          || a.values[0];
+        attributes.push({ code: a.code, value: match.code });
+      }
 
       const payload = {
         title,
