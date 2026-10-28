@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user || user.role !== "admin") return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { code } = await req.json();
+    const { code, redirect_uri } = await req.json();
     if (!code) return Response.json({ error: "code is required" }, { status: 400 });
 
     const tokenRes = await fetch("https://www.olx.pl/api/open/oauth/token", {
@@ -17,6 +17,7 @@ Deno.serve(async (req) => {
         client_id: Deno.env.get("OLX_CLIENT_ID"),
         client_secret: Deno.env.get("OLX_CLIENT_SECRET"),
         code,
+        redirect_uri,
         scope: "v2 read write",
       }),
     });

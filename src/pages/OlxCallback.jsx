@@ -16,7 +16,7 @@ export default function OlxCallback() {
       setStatus("error");
       return;
     }
-    base44.functions.invoke("olxOAuthCallback", { code })
+    base44.functions.invoke("olxOAuthCallback", { code, redirect_uri: `${window.location.origin}/OlxCallback` })
       .then((res) => {
         const data = res.data ?? res;
         if (data?.error) { setError(data.error); setStatus("error"); } else setStatus("success");
