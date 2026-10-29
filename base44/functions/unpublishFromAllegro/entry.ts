@@ -22,15 +22,19 @@ Deno.serve(async (req) => {
     }
 
     const accessToken = await getAllegroToken(base44);
-    const endRes = await fetch(`https://api.allegro.pl/sale/offers/${allegroId}`, {
-      method: "PATCH",
+    const endRes = await fetch(`https://api.allegro.pl/sale/offer-publication-commands/${crypto.randomUUID()}`, {
+      method: "PUT",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
         "Accept": "application/vnd.allegro.public.v1+json",
         "Content-Type": "application/vnd.allegro.public.v1+json",
       },
-      body: JSON.stringify({ publication: { status: "ENDED" } }),
+      body: JSON.stringify({
+        publication: { action: "END" },
+        offerCriteria: [{ type: "CONTAINS_OFFERS", offers: [{ id: String(allegroId) }] }],
+      }),
     });
+    await new Promise((r) => setTimeout(r, 2000));
 
     if (!endRes.ok) {
       const err = await endRes.json().catch(() => ({}));
