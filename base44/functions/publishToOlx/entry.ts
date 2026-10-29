@@ -56,7 +56,7 @@ export default async function(req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     if (!user || user.role !== "admin") return Response.json({ error: "Forbidden" }, { status: 403 });
-    const { product_ids, mode, overrides = {} } = await req.json().catch(() => ({}));
+    const { product_ids, mode, overrides = {}, q, category_id } = await req.json().catch(() => ({}));
     if (!Array.isArray(product_ids) || !product_ids.length) return Response.json({ error: "product_ids required" }, { status: 400 });
 
     const token = await getOlxToken(base44);
@@ -77,6 +77,28 @@ export default async function(req) {
       return null;
     };
 
+    const pathOf = (c) => [...(c.path || []).map((x) => x.name), c.name].join(" > ");
+    const fieldsFor = async (categoryId, p) => {
+      const defs = (await olxFetch(token, `/categories/${categoryId}/attributes`)).body?.data || [];
+      return editableDefs(defs).map((a) => ({
+        code: a.code, label: a.label, required: !!a.validation?.required, numeric: !!a.validation?.numeric,
+        max: a.validation?.max ?? null, values: a.values || [], value: autoValue(a, p, titleOf(p)),
+      }));
+    };
+
+    // Ręczna zmiana kategorii: wyszukiwanie kategorii obsługujących Przesyłkę OLX
+    if (mode === "search_categories") {
+      const sug = await olxFetch(token, `/categories/suggestion?q=${encodeURIComponent(String(q || "").slice(0, 100))}`);
+      const cats = (sug.body?.data || []).filter((c) => deliveryCats.has(Number(c.id)));
+      return Response.json({ categories: cats.map((c) => ({ id: Number(c.id), path: pathOf(c) })) });
+    }
+
+    // Pola dla wybranej ręcznie kategorii
+    if (mode === "category_fields") {
+      if (!deliveryCats.has(Number(category_id))) return Response.json({ error: "Kategoria nie obsługuje Przesyłki OLX" }, { status: 400 });
+      return Response.json({ fields: await fieldsFor(category_id, products[0] || {}) });
+    }
+
     // Tryb przygotowania: kategoria + pola do uzupełnienia
     if (mode === "prepare") {
       for (const p of products) {
@@ -87,15 +109,11 @@ export default async function(req) {
         const category = cats.find((c) => deliveryCats.has(Number(c.id))) || cats[0];
         if (!category) { fail(p, "Brak sugerowanej kategorii OLX"); continue; }
         if (!deliveryCats.has(Number(category.id))) { fail(p, `Kategoria OLX ${category.name} nie obsługuje Przesyłki OLX`); continue; }
-        const defs = (await olxFetch(token, `/categories/${category.id}/attributes`)).body?.data || [];
         results.push({
           id: p.id, name: p.product_name, ok: true,
           category_id: Number(category.id),
-          category_path: [...(category.path || []).map((x) => x.name), category.name].join(" > "),
-          fields: editableDefs(defs).map((a) => ({
-            code: a.code, label: a.label, required: !!a.validation?.required, numeric: !!a.validation?.numeric,
-            max: a.validation?.max ?? null, values: a.values || [], value: autoValue(a, p, titleOf(p)),
-          })),
+          category_path: pathOf(category),
+          fields: await fieldsFor(category.id, p),
         });
       }
       return Response.json({ results });

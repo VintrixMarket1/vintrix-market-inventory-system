@@ -3,15 +3,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import OlxAttributeField from "@/components/inventory/OlxAttributeField";
+import OlxCategoryPicker from "@/components/inventory/OlxCategoryPicker";
 
 const VEHICLE = /^(donor_|compatibility|part_number)/;
 
-export default function OlxPublishDialog({ open, items, skipped, onClose, onSubmit, submitting }) {
+const initValues = (fields) => Object.fromEntries(fields.map((f) => [f.code, f.value]));
+
+export default function OlxPublishDialog({ open, items: initialItems, skipped, onClose, onSubmit, submitting }) {
   const [values, setValues] = useState({});
+  const [items, setItems] = useState([]);
+  const [editing, setEditing] = useState(null);
 
   useEffect(() => {
-    setValues(Object.fromEntries(items.map((it) => [it.id, Object.fromEntries(it.fields.map((f) => [f.code, f.value]))])));
-  }, [items]);
+    setItems(initialItems);
+    setEditing(null);
+    setValues(Object.fromEntries(initialItems.map((it) => [it.id, initValues(it.fields)])));
+  }, [initialItems]);
+
+  const changeCategory = (id, cat) => {
+    setItems((list) => list.map((it) => (it.id === id ? { ...it, ...cat } : it)));
+    setValues((s) => ({ ...s, [id]: initValues(cat.fields) }));
+    setEditing(null);
+  };
 
   const set = (id, code, v) => setValues((s) => ({ ...s, [id]: { ...s[id], [code]: v } }));
   const incomplete = items.some((it) => it.fields.some((f) => f.required && !String(values[it.id]?.[f.code] || "").trim()));
@@ -33,10 +46,18 @@ export default function OlxPublishDialog({ open, items, skipped, onClose, onSubm
             const other = it.fields.filter((f) => !VEHICLE.test(f.code));
             return (
               <div key={it.id} className="rounded-xl border p-4 space-y-3">
-                <div>
-                  <p className="font-medium text-sm">{it.name}</p>
-                  <p className="text-xs text-muted-foreground">{it.category_path}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-sm">{it.name}</p>
+                    <p className="text-xs text-muted-foreground">{it.category_path}</p>
+                  </div>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs shrink-0" onClick={() => setEditing(editing === it.id ? null : it.id)}>
+                    {editing === it.id ? "Anuluj" : "Zmień kategorię"}
+                  </Button>
                 </div>
+                {editing === it.id && (
+                  <OlxCategoryPicker productId={it.id} defaultQuery={it.name} onPick={(cat) => changeCategory(it.id, cat)} />
+                )}
                 <div className="grid sm:grid-cols-2 gap-3">
                   {other.map((f) => <OlxAttributeField key={f.code} field={f} value={values[it.id]?.[f.code]} onChange={(v) => set(it.id, f.code, v)} />)}
                 </div>
