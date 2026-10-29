@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ComplianceFields from "@/components/allegro/ComplianceFields";
 import { ArrowLeft, Plus, Trash2, Save, Pencil, Building2 } from "lucide-react";
 
 const EMPTY_TEMPLATE = {
@@ -19,6 +20,10 @@ const EMPTY_TEMPLATE = {
   invoice: "VAT",
   handling_time: "PT24H",
   notes: "",
+  producer_trade_name: "", producer_country: "", producer_email: "",
+  responsible_name: "", responsible_trade_name: "", responsible_street: "", responsible_city: "",
+  responsible_zip: "", responsible_country: "", responsible_email: "",
+  safety_text: "", match_categories: [],
 };
 
 const SAFETY_LABELS = {
@@ -61,6 +66,8 @@ export default function AllegroTemplates() {
 
   const handleEdit = (t) => {
     setForm({
+      ...EMPTY_TEMPLATE,
+      ...Object.fromEntries(Object.keys(EMPTY_TEMPLATE).filter(k => t[k] != null).map(k => [k, t[k]])),
       name: t.name || "",
       producer_name: t.producer_name || "",
       producer_street: t.producer_street || "",
@@ -140,9 +147,23 @@ export default function AllegroTemplates() {
                   <Label className="text-xs">Kod pocztowy</Label>
                   <Input value={form.producer_zip} onChange={e => set("producer_zip", e.target.value)} placeholder="00-000" />
                 </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Kraj</Label>
+                  <Input value={form.producer_country} onChange={e => set("producer_country", e.target.value)} placeholder="Chiny" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Kontakt (email) *</Label>
+                  <Input value={form.producer_email} onChange={e => set("producer_email", e.target.value)} placeholder="kontakt@producent.com" />
+                </div>
+                <div className="space-y-1.5 col-span-2">
+                  <Label className="text-xs">Nazwa własna (Allegro)</Label>
+                  <Input value={form.producer_trade_name} onChange={e => set("producer_trade_name", e.target.value)} placeholder="np. Ciuchy" />
+                </div>
               </div>
             </div>
           </div>
+
+          <ComplianceFields form={form} set={set} />
 
           <div className="border-t pt-4 space-y-3">
             <p className="text-xs font-medium text-slate-600 mb-1">Informacje o bezpieczeństwie</p>

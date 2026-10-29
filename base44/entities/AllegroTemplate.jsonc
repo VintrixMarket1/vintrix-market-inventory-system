@@ -4,11 +4,15 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "Nazwa szablonu (np. 'Odzie\u017c Nike', 'Elektronika Samsung')"
+      "description": "Nazwa szablonu (np. 'Odzie\u017c Ciuchy')"
     },
     "producer_name": {
       "type": "string",
       "description": "Nazwa producenta odpowiedzialnego"
+    },
+    "producer_trade_name": {
+      "type": "string",
+      "description": "Nazwa w\u0142asna producenta w Allegro"
     },
     "producer_street": {
       "type": "string",
@@ -22,6 +26,48 @@
       "type": "string",
       "description": "Kod pocztowy producenta"
     },
+    "producer_country": {
+      "type": "string",
+      "description": "Kraj producenta"
+    },
+    "producer_email": {
+      "type": "string",
+      "description": "Kontakt producenta (email)"
+    },
+    "responsible_name": {
+      "type": "string",
+      "description": "Osoba odpowiedzialna (podmiot w UE)"
+    },
+    "responsible_trade_name": {
+      "type": "string",
+      "description": "Nazwa w\u0142asna osoby odpowiedzialnej w Allegro"
+    },
+    "responsible_street": {
+      "type": "string"
+    },
+    "responsible_city": {
+      "type": "string"
+    },
+    "responsible_zip": {
+      "type": "string"
+    },
+    "responsible_country": {
+      "type": "string"
+    },
+    "responsible_email": {
+      "type": "string"
+    },
+    "safety_text": {
+      "type": "string",
+      "description": "Tekst informacji o bezpiecze\u0144stwie produktu"
+    },
+    "match_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Kategorie produkt\u00f3w (lub prefiksy, np. 'clothing'), do kt\u00f3rych szablon dobierany jest automatycznie"
+    },
     "safety_type": {
       "type": "string",
       "enum": [
@@ -34,7 +80,7 @@
     },
     "safety_url": {
       "type": "string",
-      "description": "URL do dokumentu bezpiecze\u0144stwa (tylko gdy safety_type = DOCUMENT_URL)"
+      "description": "URL do dokumentu bezpiecze\u0144stwa"
     },
     "invoice": {
       "type": "string",
@@ -43,17 +89,14 @@
         "NO_INVOICE",
         "VAT_MARGIN"
       ],
-      "default": "VAT",
-      "description": "Domy\u015blny typ faktury"
+      "default": "VAT"
     },
     "handling_time": {
       "type": "string",
-      "default": "PT24H",
-      "description": "Domy\u015blny czas obs\u0142ugi (ISO 8601 duration)"
+      "default": "PT24H"
     },
     "notes": {
-      "type": "string",
-      "description": "Notatki do szablonu"
+      "type": "string"
     }
   },
   "required": [
@@ -67,9 +110,18 @@
       }
     },
     "read": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "pracownik"
+          }
+        }
+      ]
     },
     "update": {
       "user_condition": {

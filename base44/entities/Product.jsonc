@@ -232,6 +232,10 @@
       "type": "string",
       "description": "Pelna sciezka kategorii Allegro"
     },
+    "allegro_template_id": {
+      "type": "string",
+      "description": "Przypisany szablon zgodnosci Allegro (producent, osoba odpowiedzialna, bezpieczenstwo)"
+    },
     "vinted_listing_id": {
       "type": "string",
       "description": "ID ogloszenia na Vinted"
