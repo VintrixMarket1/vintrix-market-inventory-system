@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
     const offers = (data.offers || []).map(o => ({
       id: o.id,
       name: o.name || "",
+      signature: o.external?.id || "",
       category_id: o.category?.id || null,
       status: o.publication?.status || "UNKNOWN",
       price: parseFloat(o.sellingMode?.price?.amount || "0"),
