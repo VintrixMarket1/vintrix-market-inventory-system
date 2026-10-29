@@ -41,7 +41,12 @@ function buildAttributes(defs, p, values) {
   const stateDef = defs.find((a) => a.code === "state");
   if (stateDef?.values?.length) attributes.push({ code: "state", value: p.condition === "new" ? "new" : "used" });
   for (const a of editableDefs(defs)) {
-    const v = String(values[a.code] ?? "").trim();
+    let v = String(values[a.code] ?? "").trim().replace(/\s+/g, " ");
+    // Model: pełna nazwa jak w OLX ("Seria 5 G30/G31 (2017-2023)"), bez powtórzonej marki na początku
+    if (a.code === "donor_model") {
+      const make = String(values.donor_make ?? "").trim();
+      if (make && v.toLowerCase().startsWith(make.toLowerCase() + " ")) v = v.slice(make.length + 1).trim();
+    }
     if (!v) { if (a.validation?.required) errors.push(`brak: ${a.label}`); continue; }
     if (a.values?.length && !a.values.some((o) => o.code === v)) { errors.push(`nieobsługiwana wartość: ${a.label}`); continue; }
     if (a.validation?.numeric && isNaN(Number(v))) { errors.push(`${a.label} musi być liczbą`); continue; }
