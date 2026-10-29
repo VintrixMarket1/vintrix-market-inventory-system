@@ -36,10 +36,13 @@ export default function AllegroReconcile() {
   };
   useEffect(refresh, []);
 
-  const handleDone = (id, status) => {
+  const handleDone = (id, status, action) => {
     setItems((list) => list.filter((i) => i.offer.id !== id));
     setSelected(null);
-    toast({ title: "Oferta zakończona", description: `Oferta ${id} — status: ${status}` });
+    toast({
+      title: action === "deleted" ? "Oferta usunięta" : "Oferta zakończona",
+      description: `Oferta ${id} — status: ${status}`,
+    });
   };
 
   return (

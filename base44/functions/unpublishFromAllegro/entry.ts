@@ -22,6 +22,29 @@ Deno.serve(async (req) => {
     }
 
     const accessToken = await getAllegroToken(base44);
+    const headers = {
+      "Authorization": `Bearer ${accessToken}`,
+      "Accept": "application/vnd.allegro.public.v1+json",
+      "Content-Type": "application/vnd.allegro.public.v1+json",
+    };
+
+    const offerRes = await fetch(`https://api.allegro.pl/sale/product-offers/${allegroId}`, { headers });
+    if (!offerRes.ok) {
+      const err = await offerRes.json().catch(() => ({}));
+      return Response.json({ error: `Nie udało się pobrać oferty: ${JSON.stringify(err.errors || err)}` }, { status: 400 });
+    }
+    const offer = await offerRes.json();
+
+    if (offer.publication?.status === "INACTIVE") {
+      const delRes = await fetch(`https://api.allegro.pl/sale/offers/${allegroId}`, { method: "DELETE", headers });
+      if (!delRes.ok) {
+        const err = await delRes.json().catch(() => ({}));
+        return Response.json({ error: `Błąd usuwania oferty: ${JSON.stringify(err.errors || err)}` }, { status: 400 });
+      }
+      if (listing) await base44.entities.Listing.update(listing.id, { listing_status: "draft" });
+      return Response.json({ success: true, action: "deleted", status: "DELETED" });
+    }
+
     const endRes = await fetch(`https://api.allegro.pl/sale/offer-publication-commands/${crypto.randomUUID()}`, {
       method: "PUT",
       headers: {
@@ -47,7 +70,7 @@ Deno.serve(async (req) => {
       headers: { "Authorization": `Bearer ${accessToken}`, "Accept": "application/vnd.allegro.public.v1+json" },
     });
     const data = check.ok ? await check.json() : {};
-    return Response.json({ success: true, status: data.publication?.status || "ENDED" });
+    return Response.json({ success: true, action: "ended", status: data.publication?.status || "ENDED" });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

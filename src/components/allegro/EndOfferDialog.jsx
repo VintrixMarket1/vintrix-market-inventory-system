@@ -13,7 +13,7 @@ export default function EndOfferDialog({ item, onClose, onDone }) {
     setError("");
     try {
       const res = await base44.functions.invoke("unpublishFromAllegro", { offer_id: item.offer.id });
-      onDone(item.offer.id, res.data.status);
+      onDone(item.offer.id, res.data.status, res.data.action);
     } catch (e) {
       setError(e.response?.data?.error || e.message);
     } finally {
