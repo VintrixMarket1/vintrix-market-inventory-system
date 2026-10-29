@@ -40,6 +40,7 @@ export default function Sidebar() {
     { path: "/Listings", labelKey: "nav_listings", icon: Tag },
     { path: "/Sales", labelKey: "nav_sales", icon: DollarSign },
     { path: "/AllegroCsvImport", label: "Allegro CSV", icon: Upload },
+    { path: "/AllegroReconcile", label: "Rozbieżności Allegro", icon: Flag },
     { path: "/Discounts", labelKey: "nav_discounts", icon: Percent },
     { path: "/WarehouseDocuments", label: "Dokumenty Mag.", icon: FileText },
     { path: "/MonthlyReport", label: "Raport Miesięczny", icon: BarChart3 },

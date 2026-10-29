@@ -42,6 +42,7 @@ import ActionQueue from './pages/ActionQueue';
 import Discounts from './pages/Discounts';
 import Collections from './pages/Collections';
 import CollectionDetail from './pages/CollectionDetail';
+import AllegroReconcile from './pages/AllegroReconcile';
 
 const PublicCatalog = () => {
   const { user, isLoadingAuth, isLoadingPublicSettings } = useAuth();
@@ -120,6 +121,7 @@ const ProtectedApp = () => {
         <Route path="/AllegroPublish" element={<AllegroPublish />} />
         <Route path="/AllegroTemplates" element={<AllegroTemplates />} />
         <Route path="/AllegroCsvImport" element={<AllegroCsvImport />} />
+        <Route path="/AllegroReconcile" element={<AllegroReconcile />} />
         <Route path="/Settings" element={<Settings />} />
         <Route path="/WarehouseDocuments" element={<WarehouseDocuments />} />
         <Route path="/MonthlyReport" element={<MonthlyReport />} />
