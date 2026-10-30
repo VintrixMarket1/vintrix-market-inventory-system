@@ -66,7 +66,7 @@ export default function Inventory() {
   // Reset paginacji przy zmianie filtrów
   useEffect(() => {
     setPage(1);
-  }, [filters.search, filters.category, filters.subcategory, filters.status, filters.pallet_id, filters.sortBy]);
+  }, [filters.search, filters.category, filters.subcategory, filters.status, filters.pallet_id, filters.sortBy, filters.set_id]);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products"],
@@ -94,6 +94,12 @@ export default function Inventory() {
     queryFn: () => base44.entities.Pallet.list(),
   });
   const palletsMap = Object.fromEntries(pallets.map(p => [p.id, p]));
+  const { data: inventorySets = [] } = useQuery({
+    queryKey: ["inventorySets"],
+    queryFn: () => base44.entities.InventorySet.list("-created_date"),
+  });
+  const activeSet = inventorySets.find(s => s.id === filters.set_id);
+  const activeSetIds = activeSet ? new Set((activeSet.items || []).map(i => i.product_id)) : null;
 
   // Palety nieskalkulowane (bez cen) — wyświetlane jako karty zbiorcze
   const unsettledPallets = pallets.filter(p => !["exploded", "processed", "closed"].includes(p.status));
@@ -103,6 +109,7 @@ export default function Inventory() {
   const filtered = products.filter(p => {
     // Ukryj przeklasyfikowane produkty
     if (p.status === "reclassified") return false;
+    if (activeSetIds) return activeSetIds.has(p.id) && (!filters.search || p.product_name?.toLowerCase().includes(filters.search.toLowerCase()) || p.internal_code?.toLowerCase().includes(filters.search.toLowerCase()));
     const isUnknown = p.product_name === "Nieznany produkt";
     // Filtr "unknown" pokazuje tylko nieznane; inne filtry ukrywają nieznane
     if (filters.status === "unknown") return isUnknown;
@@ -234,7 +241,7 @@ export default function Inventory() {
         </div>
       </div>
 
-      <SearchFilters filters={filters} onChange={setFilters} pallets={pallets} />
+      <SearchFilters filters={filters} onChange={setFilters} pallets={pallets} inventorySets={inventorySets} />
 
       {/* Karty palet nieskalkulowanych */}
       {unsettledPallets.length > 0 && !isPracownik && (

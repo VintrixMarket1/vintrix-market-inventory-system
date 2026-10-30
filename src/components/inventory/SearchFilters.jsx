@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import CategorySelectButton from "@/components/categories/CategorySelectButton";
 
-export default function SearchFilters({ filters, onChange, pallets = [] }) {
+export default function SearchFilters({ filters, onChange, pallets = [], inventorySets = [] }) {
   const { t, lang } = useLang();
   const update = (key, value) => onChange({ ...filters, [key]: value });
 
@@ -37,6 +37,18 @@ export default function SearchFilters({ filters, onChange, pallets = [] }) {
         onChange={(c, s) => onChange({ ...filters, category: c || "all", subcategory: s || "all" })}
         className="w-full sm:w-56"
       />
+      {inventorySets.length > 0 && (
+        <select
+          value={filters.set_id || "all"}
+          onChange={e => update("set_id", e.target.value)}
+          className={`${selectClass} w-full sm:w-48`}
+        >
+          <option value="all">Wszystkie (bez listy inwent.)</option>
+          {inventorySets.map(s => (
+            <option key={s.id} value={s.id}>{s.name} ({(s.items || []).length}){s.status === "closed" ? " — zamknięta" : ""}</option>
+          ))}
+        </select>
+      )}
       {pallets.length > 0 && (
         <select
           value={filters.pallet_id || "all"}
