@@ -56,7 +56,7 @@ export default function Inventory() {
       return next;
     });
   };
-  const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "in_stock", pallet_id: "all", sortBy: "newest" });
+  const [filters, setFilters] = useState({ search: "", category: "all", subcategory: "all", status: "in_stock", pallet_id: "all", sortBy: "newest", set_id: new URLSearchParams(window.location.search).get("set") || "all" });
   const [locationFilter, setLocationFilter] = useState("");
   const [viewMode, setViewMode] = useState("grid");
   const [palletsExpanded, setPalletsExpanded] = useState(true);

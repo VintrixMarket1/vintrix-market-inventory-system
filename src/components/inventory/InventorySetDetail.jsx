@@ -206,6 +206,9 @@ export default function InventorySetDetail({ set, onBack }) {
         </div>
         {isOpen && (
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => { window.location.href = `/Inventory?set=${set.id}`; }} className="gap-2">
+              <PackageSearch className="w-4 h-4" /> Pokaż w magazynie
+            </Button>
             <Button variant="outline" onClick={applyToWarehouse} disabled={saving || items.length === 0} className="gap-2">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Zapisz zmiany
             </Button>
