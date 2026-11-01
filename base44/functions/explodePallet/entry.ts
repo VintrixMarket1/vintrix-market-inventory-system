@@ -216,7 +216,6 @@ Deno.serve(async (req) => {
         const unitPrice = parseFloat((allocations[p.id] / qty).toFixed(2));
         return base44.asServiceRole.entities.Product.update(p.id, {
           purchase_price: unitPrice,
-          status: 'in_stock',
         });
       }));
     }
