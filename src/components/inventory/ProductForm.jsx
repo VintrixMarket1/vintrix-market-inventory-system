@@ -12,6 +12,7 @@ import { Upload, X, Loader2, RefreshCw, Package, Sparkles, MessageSquare } from 
 import { compressImage } from "@/lib/compressImage";
 import { useQuery } from "@tanstack/react-query";
 import { useLang } from "@/lib/i18n";
+import { descriptionRules } from "@/lib/descriptionPrompt";
 import CategoryTreePicker from "@/components/categories/CategoryTreePicker";
 
 const generateSKU = (category) => {
@@ -113,9 +114,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
 
     const condMapClothing = { new: "Brand new with tags", like_new: "Like new, excellent condition", used: "Used, good condition" };
 
-    let prompt;
-    if (isClothing) {
-      prompt = `You are an expert e-commerce copywriter for Vinted/OLX clothing listings. Create a listing description following this EXACT format and structure.
+    const prompt = `You are an expert e-commerce copywriter for second-hand marketplace listings. Create a listing description following the EXACT format below.
 
 === PRODUCT DATA ===
 - Name: ${form.product_name || "Product"}
@@ -126,90 +125,8 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
 - Category: ${form.category}${form.subcategory ? ` / ${form.subcategory}` : ""}
 - Notes: ${form.notes || "none"}
 
-=== REQUIRED FORMAT (follow this example EXACTLY, including all blank lines between sections) ===
-Please check measurements before purchasing!
-Premium Addonee cable knit sweater in a stylish olive green colour. Made from 100% merino wool, this classic jumper features a timeless textured cable knit design, making it perfect for autumn, winter, smart casual outfits, office wear, or everyday comfort.
-
-Condition: Brand new with tags
-
-Size on label: M
-Actual fit: Approx. Men's M
-
-Measurements:
-Chest: 50 cm
-Length: 57 cm
-Sleeve: 58 cm
-
-Material:
-100% Merino Wool
-
-Features:
-Premium cable knit pattern
-Soft and breathable merino wool
-Ribbed mock neck, cuffs and hem
-Warm yet lightweight
-Classic regular fit
-Ideal for casual, business casual and winter layering
-
-Fast shipping
-
-${form.internal_code || "PRODUCT-CODE"}
-
-=== RULES ===
-- Plain text only, NO HTML, NO markdown, NO emojis
-- ALWAYS keep blank lines between every section as shown in the example — this is critical for readability
-- Line 1 is ALWAYS: "Please check measurements before purchasing!"
-- Then one descriptive paragraph (2-4 sentences: brand, type, colour, material, style, occasions)
-- Then blank line, then "Condition: [value]"
-- Then blank line, then "Size on label: [value]" and "Actual fit: [value]" on the next line
-- Then blank line, then "Measurements:" header followed by Chest/Length/Sleeve lines
-- Then blank line, then "Material:" header followed by material composition
-- Then blank line, then "Features:" header followed by 5-6 bullet points (one per line, no bullet characters)
-- Then blank line, then "Fast shipping"
-- Then blank line, then the product internal code (SKU)
-- If a measurement value is unknown, write "Not provided" but KEEP the line so the structure stays intact
-- Write naturally and persuasively, like a real seller
+${descriptionRules(t("ai_lang_name"), form.internal_code)}
 - Output ONLY the description, no preamble or explanation.`;
-    } else {
-      prompt = isPolish
-      ? `Jesteś ekspertem copywritingu e-commerce specjalizującym się w sprzedaży second-hand na OLX/Vinted/Allegro. Twój opis ma SPRZEDAĆ produkt — szybko i skutecznie.
-
-=== DANE PRODUKTU ===
-- Nazwa: ${form.product_name || "Produkt"}
-- Marka: ${form.brand || "nieznana"}
-- Stan: ${conditionLabel}
-- Rozmiar: ${form.size || "nie podano"}
-- Kolor: ${form.color || "nie podano"}
-- Kategoria: ${form.category}${form.subcategory ? ` / ${form.subcategory}` : ""}
-- Notatki sprzedawcy: ${form.notes || "brak"}
-
-=== ZASADY ===
-- Zacznij od najmocniejszej cechy produktu — tej, która przyciąga uwagę kupującego
-- Używaj konkretnych, opisowych przymiotników zamiast ogólników
-- Podkreśl wartość (co kupujący zyska) a nie tylko cechy
-- Stan opisz szczerze ale pozytywnie
-- Pisz naturalnie, angażująco — jak do znajomego
-
-=== FORMAT WYJŚCIOWY ===
-Czysty tekst, BEZ HTML, BEZ tagów, BEZ markdown.
-3-5 zdań: co to jest i do czego służy, dlaczego warto (marka, jakość), szczery opis stanu, konkretne parametry (rozmiar, kolor).
-Pisz po polsku. Żadnych tagów HTML ani formatowania.`
-      : `You are an e-commerce copywriting expert specializing in second-hand sales on OLX/Vinted/eBay. Your description must SELL the product — quickly and effectively.
-
-=== PRODUCT DATA ===
-- Name: ${form.product_name || "Product"}
-- Brand: ${form.brand || "unknown"}
-- Condition: ${conditionLabel}
-- Size: ${form.size || "not specified"}
-- Color: ${form.color || "not specified"}
-- Category: ${form.category}${form.subcategory ? ` / ${form.subcategory}` : ""}
-- Seller notes: ${form.notes || "none"}
-
-=== OUTPUT FORMAT ===
-Plain text, NO HTML, NO tags, NO markdown.
-3-5 sentences: what it is and its purpose, why it's worth buying (brand, quality), honest condition description, specific parameters (size, color).
-No HTML tags or formatting whatsoever.`;
-    }
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
