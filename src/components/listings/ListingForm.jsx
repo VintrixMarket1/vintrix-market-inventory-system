@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { base44 } from "@/api/base44Client";
 import { Loader2, Sparkles, CheckSquare, Square, Download } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import { useLang } from "@/lib/i18n";
 import ShopifyActions from "./ShopifyActions";
 import AllegroActions from "./AllegroActions";
 import AllegroDescriptionEditor from "./AllegroDescriptionEditor";
@@ -22,6 +23,7 @@ const platforms = [
 ];
 
 export default function ListingForm({ open, onClose, product, listing, onSaved }) {
+  const { t } = useLang();
   const [savedListing, setSavedListing] = useState(listing || null);
   const isEdit = !!listing;
   const [form, setForm] = useState(listing || {
@@ -188,7 +190,8 @@ ${product?.internal_code || "PRODUCT-CODE"}
 - Then blank line, then the product internal code (SKU)
 - If a measurement value is unknown, write "Not provided" but KEEP the line so the structure stays intact
 - Write naturally and persuasively, like a real seller
-- Output ONLY the description, no preamble or explanation.`;
+- Output ONLY the description, no preamble or explanation.
+- LANGUAGE: Write the ENTIRE description in ${t("ai_lang_name")}. Translate every fixed line and header from the example (e.g. "Please check measurements before purchasing!", "Condition:", "Size on label:", "Actual fit:", "Measurements:", "Chest/Length/Sleeve", "Material:", "Features:", "Fast shipping", "Not provided") into ${t("ai_lang_name")}, keeping the same structure.`;
     } else {
       const conditionLabel = { new: "nowy", like_new: "jak nowy / powystawowy", used: "używany" }[product?.condition] || "dobry";
       prompt = `Jesteś sprzedawcą na platformach Vinted/OLX. Napisz naturalny, ludzki opis ogłoszenia sprzedażowego.
