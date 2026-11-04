@@ -9,6 +9,7 @@ import { base44 } from "@/api/base44Client";
 import { Loader2, Sparkles, CheckSquare, Square, Download } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useLang } from "@/lib/i18n";
+import { descriptionRules } from "@/lib/descriptionPrompt";
 import ShopifyActions from "./ShopifyActions";
 import AllegroActions from "./AllegroActions";
 import AllegroDescriptionEditor from "./AllegroDescriptionEditor";
@@ -90,53 +91,7 @@ export default function ListingForm({ open, onClose, product, listing, onSaved }
     const condMapClothing = { new: "Brand new with tags", like_new: "Like new, excellent condition", used: "Used, good condition" };
     const isClothing = product?.category?.startsWith("clothing_");
 
-    let prompt;
-    if (isAllegro) {
-      prompt = `### MASTER PROMPT: SPECJALISTA SPRZEDAŻY ALLEGRO ###
-
-Jesteś ekspertem Allegro z 10-letnim doświadczeniem. Tworzysz opisy, które:
-- SPRZEDAJĄ poprzez język korzyści i emocji
-- BUDUJĄ ZAUFANIE profesjonalnym wizerunkiem
-- KONWERTUJĄ dzięki perswazyjnej strukturze
-
-=== PRODUKT ===
-- Nazwa: ${product?.product_name || form.listing_title}
-- Marka: ${product?.brand || "produkt premium"}
-- Kategoria: ${product?.category}
-- Stan: ${conditionMap[product?.condition] || "bardzo dobry"}
-- Rozmiar: ${product?.size || "dostępny"}
-- Kolor: ${product?.color || "klasyczny"}
-- Cena: ${form.listing_price || "atrakcyjna"} PLN
-
-=== ZASADY ===
-1. CZYSTY TEKST - ZERO tagów HTML, ZERO markdown (bez <, >, *, #)
-2. Sekcje i akapity oddzielaj pustą linią
-3. Listy zapisuj jako osobne linie zaczynające się od "- "
-
-=== STRUKTURA ===
-1. Tytuł w pierwszej linii (max 75 znaków, marka + stan + korzyść)
-2. Nagłówek "✨ DLACZEGO WARTO?" - lista 3-4 korzyści
-3. Nagłówek "📋 OPIS" - 2-3 akapity perswazyjnego tekstu
-4. Nagłówek "⭐ CECHY" - lista 5-6 zalet (stan, rozmiar, kolor, marka)
-5. Nagłówek "📦 DOSTAWA" - akapit o wysyłce 1-2 dni + zwroty
-
-=== TECHNIKI ===
-- Język korzyści: nie "ma rozmiar M", tylko "idealnie dopasuje się"
-- Społeczny dowód: "Wybierany przez tysiące klientów"
-- Pilność: "Ostatnie sztuki w tej cenie"
-- Odwrócenie ryzyka: "14 dni na zwrot, pełna gwarancja"
-
-=== SŁOWA MOCY ===
-ekskluzywny, premium, profesjonalny, sprawdzony, gwarantowany, wyjątkowy, oryginalny, limitowany
-
-=== FORMATOWANIE ===
-- Emoji w nagłówkach: ✨, 📋, ⭐, 📦, ❓
-- Bez pogrubień i jakichkolwiek znaczników
-- Każdy akapit w osobnym bloku oddzielonym pustą linią
-
-Wygeneruj WYŁĄCZNIE gotowy opis jako zwykły tekst, bez HTML. Bez wstępów. Zacznij od tytułu.`;
-    } else if (isClothing) {
-      prompt = `You are an expert e-commerce copywriter for Vinted/OLX clothing listings. Create a listing description following this EXACT format and structure.
+    const prompt = `You are an expert e-commerce copywriter for second-hand marketplace listings (${form.platform}). Create a listing description following the EXACT format below.
 
 === PRODUCT DATA ===
 - Name: ${product?.product_name || form.listing_title}
@@ -147,77 +102,8 @@ Wygeneruj WYŁĄCZNIE gotowy opis jako zwykły tekst, bez HTML. Bez wstępów. Z
 - Category: ${product?.category}
 - Notes: ${product?.notes || "none"}
 
-=== REQUIRED FORMAT (follow this example EXACTLY, including all blank lines between sections) ===
-Please check measurements before purchasing!
-Premium Addonee cable knit sweater in a stylish olive green colour. Made from 100% merino wool, this classic jumper features a timeless textured cable knit design, making it perfect for autumn, winter, smart casual outfits, office wear, or everyday comfort.
-
-Condition: Brand new with tags
-
-Size on label: M
-Actual fit: Approx. Men's M
-
-Measurements:
-Chest: 50 cm
-Length: 57 cm
-Sleeve: 58 cm
-
-Material:
-100% Merino Wool
-
-Features:
-Premium cable knit pattern
-Soft and breathable merino wool
-Ribbed mock neck, cuffs and hem
-Warm yet lightweight
-Classic regular fit
-Ideal for casual, business casual and winter layering
-
-Fast shipping
-
-${product?.internal_code || "PRODUCT-CODE"}
-
-=== RULES ===
-- Plain text only, NO HTML, NO markdown, NO emojis
-- ALWAYS keep blank lines between every section as shown in the example — this is critical for readability
-- Line 1 is ALWAYS: "Please check measurements before purchasing!"
-- Then one descriptive paragraph (2-4 sentences: brand, type, colour, material, style, occasions)
-- Then blank line, then "Condition: [value]"
-- Then blank line, then "Size on label: [value]" and "Actual fit: [value]" on the next line
-- Then blank line, then "Measurements:" header followed by Chest/Length/Sleeve lines
-- Then blank line, then "Material:" header followed by material composition
-- Then blank line, then "Features:" header followed by 5-6 bullet points (one per line, no bullet characters)
-- Then blank line, then "Fast shipping"
-- Then blank line, then the product internal code (SKU)
-- If a measurement value is unknown, write "Not provided" but KEEP the line so the structure stays intact
-- Write naturally and persuasively, like a real seller
-- Output ONLY the description, no preamble or explanation.
-- LANGUAGE: Write the ENTIRE description in ${t("ai_lang_name")}. Translate every fixed line and header from the example (e.g. "Please check measurements before purchasing!", "Condition:", "Size on label:", "Actual fit:", "Measurements:", "Chest/Length/Sleeve", "Material:", "Features:", "Fast shipping", "Not provided") into ${t("ai_lang_name")}, keeping the same structure.`;
-    } else {
-      const conditionLabel = { new: "nowy", like_new: "jak nowy / powystawowy", used: "używany" }[product?.condition] || "dobry";
-      prompt = `Jesteś sprzedawcą na platformach Vinted/OLX. Napisz naturalny, ludzki opis ogłoszenia sprzedażowego.
-
-=== STYL ===
-- Pisz jak prawdziwy człowiek sprzedający rzecz
-- Krótkie zdania, konkretnie, bez marketingowego bełkotu
-- Żadnych nagłówków, emoji ani ozdobników — tylko zwykły tekst
-- NIE wspominaj o wysyłce, zwrotach, czasie dostawy
-- Opis ma być praktyczny i rzeczowy
-
-=== DANE PRODUKTU ===
-- Nazwa: ${product?.product_name || form.listing_title}
-- Stan: ${conditionLabel}
-- Rozmiar: ${product?.size || ""}
-- Kategoria: ${product?.category}
-- Notatki: ${product?.notes || "brak"}
-
-=== STRUKTURA ===
-1. Jeden akapit — krótki opis produktu i jego zastosowania (2-3 zdania)
-2. "W zestawie:" — lista punktowana z zawartością (jeśli dotyczy, inaczej pomiń)
-3. Jeden akapit — opis stanu (co sprawdzono, co działa, co widoczne na zdjęciach)
-4. "Parametry:" — lista punktowana z kluczowymi parametrami w formacie "nazwa: wartość"
-
-Wygeneruj czysty tekst bez HTML. Tylko zwykły tekst z podziałami na akapity. Bez wstępów.`;
-    }
+${descriptionRules(t("ai_lang_name"), product?.internal_code)}
+- Output ONLY the description, no preamble or explanation.`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,

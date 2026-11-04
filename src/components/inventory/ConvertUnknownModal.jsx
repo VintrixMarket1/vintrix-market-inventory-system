@@ -17,6 +17,8 @@ import { exportDptPdf } from "@/lib/dptPdfExport";
 import { CATEGORY_LABELS } from "@/lib/categoryConfig";
 import CategorySelectButton from "@/components/categories/CategorySelectButton";
 import ModalErrorBoundary from "@/components/inventory/ModalErrorBoundary";
+import { useLang } from "@/lib/i18n";
+import { descriptionRules } from "@/lib/descriptionPrompt";
 
 const CONDITION_OPTIONS = [
   { value: "new", label: "Nowy" },
@@ -45,6 +47,7 @@ function FieldRow({ label, children, required }) {
 
 export default function ConvertUnknownModal({ product, pallet, palletProductCount = 0, user, onClose, onConverted }) {
   const queryClient = useQueryClient();
+  const { t } = useLang();
 
   // Validation
   const validationError = (() => {
@@ -220,13 +223,7 @@ Zwróć obiekt JSON z WSZYSTKIMI polami wymienionymi poniżej — żadne pole ni
 Kategorie do wyboru (użyj DOKŁADNIE jednej): ${categoriesList}
 
 Zasady opisu listing_description:
-- Czysty tekst, BEZ HTML, BEZ tagów, BEZ markdown, BEZ emoji
-- Zacznij od najmocniejszej cechy produktu — tej, która przyciąga uwagę kupującego
-- Używaj konkretnych, opisowych przymiotników zamiast ogólników
-- Podkreśl wartość (co kupujący zyska) a nie tylko cechy
-- Stan opisz szczerze ale pozytywnie. Pisz naturalnie, angażująco — jak do znajomego
-- 3-5 zdań: co to jest i do czego służy, dlaczego warto (marka, jakość), szczery opis stanu, konkretne parametry (rozmiar, kolor)
-- Dla odzieży/obuwia/akcesoriów zacznij od: "Proszę sprawdzić wymiary przed zakupem!" jeśli rozmiar jest istotny
+${descriptionRules(t("ai_lang_name"), form.internal_code)}
 
 WAŻNE: Musisz wypełnić WSZYSTKIE pola. Jeśli nie możesz ustalić wartości, wpisz "Nieznana" lub pusty string — nigdy nie pomijaj pola.`;
 

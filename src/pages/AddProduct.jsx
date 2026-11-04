@@ -9,6 +9,7 @@ import CopyFromCatalog from "@/components/add-product/CopyFromCatalog";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MessageSquare, Sparkles, Copy } from "lucide-react";
 import { useLang } from "@/lib/i18n";
+import { descriptionRules } from "@/lib/descriptionPrompt";
 import { generateDocumentNumber } from "@/lib/documentNumber";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -70,11 +71,8 @@ listing_title (MAX 60 znaków!):
 - Przykłady: "Nike Air Force 1 białe r.42 jak nowe", "Płaszcz wełniany H&M oversize szary M"
 - Zawsze konkretny, bez "super", "piękny", "polecam"
 
-listing_description (czysty tekst, BEZ HTML, BEZ emoji):
-- Zacznij od najmocniejszej cechy — tej która przyciągnie uwagę kupującego
-- 3-5 zdań: co to jest i do czego służy, dlaczego warto (marka, jakość, popularność modelu), szczery opis stanu
-- Zakończ konkretnymi parametrami (rozmiar, materiał, wymiary jeśli ważne)
-- Pisz jak osoba polecająca produkt znajomemu — naturalnie, rzeczowo, bez bełkotu
+listing_description:
+${descriptionRules(t("ai_lang_name"))}
 
 === FORMAT WYJŚCIOWY ===
 JSON z polami: product_name, brand, category, gender, condition, size, color, suggested_sale_price, notes, listing_title, listing_description, confidence (0-1)
@@ -106,11 +104,8 @@ listing_title (MAX 60 characters!):
 - Examples: "Nike Air Force 1 white sz.42 like new", "H&M wool oversize coat grey M"
 - Always specific, no "super", "beautiful", "highly recommend"
 
-listing_description (plain text, NO HTML, NO emojis):
-- Open with the strongest feature — the one that grabs the buyer's attention
-- 3-5 sentences: what it is and its purpose, why it's worth buying (brand, quality, model popularity), honest condition description
-- End with specific parameters (size, material, dimensions if relevant)
-- Write like recommending a product to a friend — naturally, factually, without fluff
+listing_description:
+${descriptionRules(t("ai_lang_name"))}
 
 === OUTPUT FORMAT ===
 JSON with fields: product_name, brand, category, gender, condition, size, color, suggested_sale_price, notes, listing_title, listing_description, confidence (0-1)
@@ -149,6 +144,9 @@ If you cannot determine something from photos — use null.`,
     try {
       product = await base44.entities.Product.create({
         ...formData,
+        listing_description: formData.listing_description && !formData.listing_description.includes(internalCode)
+          ? `${formData.listing_description.trimEnd()}\n\n${internalCode}`
+          : formData.listing_description,
         internal_code: internalCode,
         images: uploadedImages,
         pallet_id: palletId || null,
